@@ -49,6 +49,18 @@ func parseTimestamp(input string) (time.Time, bool) {
 		return time.Time{}, false
 	}
 
+	// Check if the input is mostly digits (at least 80%)
+	// This prevents "5 minutes ago" from being parsed as timestamp "5"
+	digitCount := 0
+	for _, r := range input {
+		if r >= '0' && r <= '9' {
+			digitCount++
+		}
+	}
+	if float64(digitCount) / float64(len(input)) < 0.8 {
+		return time.Time{}, false
+	}
+
 	// Try as seconds
 	if seconds, err := strconv.ParseInt(clean, 10, 64); err == nil {
 		// Check if it's seconds (10 digits) or milliseconds (13 digits)
@@ -367,8 +379,18 @@ func ParseDateInLocation(input string, loc *time.Location) (time.Time, error) {
 
 // IsValidDate checks if a date string can be parsed
 func IsValidDate(input string) bool {
-	_, err := ParseDate(input)
-	return err == nil
+	input = strings.TrimSpace(input)
+	if input == "" {
+		return true // Empty input is valid (returns zero time)
+	}
+
+	t, err := ParseDate(input)
+	if err != nil {
+		return false
+	}
+
+	// If input is non-empty but we got zero time, it's invalid
+	return !t.IsZero()
 }
 
 // FormatDate formats a time to a standard string
