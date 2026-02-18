@@ -2,6 +2,8 @@ package client
 
 import (
 	"context"
+	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"io"
 	"net/http"
@@ -12,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/rsshub/go/internal/parser"
 	"go.uber.org/zap"
 )
 
@@ -386,4 +389,260 @@ func minDuration(a, b time.Duration) time.Duration {
 		return a
 	}
 	return b
+}
+
+// ============================================================================
+// Response Parsing Helpers
+// ============================================================================
+
+// GetJSON performs a GET request and parses JSON response into target
+func (c *Client) GetJSON(ctx context.Context, urlStr string, target interface{}) error {
+	body, err := c.Get(ctx, urlStr)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(body, target)
+}
+
+// GetJSONWithHeaders performs a GET request with custom headers and parses JSON
+func (c *Client) GetJSONWithHeaders(ctx context.Context, urlStr string, headers map[string]string, target interface{}) error {
+	body, err := c.GetWithHeaders(ctx, urlStr, headers)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(body, target)
+}
+
+// GetXML performs a GET request and parses XML response into target
+func (c *Client) GetXML(ctx context.Context, urlStr string, target interface{}) error {
+	body, err := c.Get(ctx, urlStr)
+	if err != nil {
+		return err
+	}
+	return xml.Unmarshal(body, target)
+}
+
+// GetXMLWithHeaders performs a GET request with custom headers and parses XML
+func (c *Client) GetXMLWithHeaders(ctx context.Context, urlStr string, headers map[string]string, target interface{}) error {
+	body, err := c.GetWithHeaders(ctx, urlStr, headers)
+	if err != nil {
+		return err
+	}
+	return xml.Unmarshal(body, target)
+}
+
+// GetHTML performs a GET request and returns parsed HTML document
+func (c *Client) GetHTML(ctx context.Context, urlStr string) (*parser.Document, error) {
+	body, err := c.Get(ctx, urlStr)
+	if err != nil {
+		return nil, err
+	}
+	return parser.LoadString(string(body))
+}
+
+// GetHTMLWithHeaders performs a GET request with custom headers and returns parsed HTML
+func (c *Client) GetHTMLWithHeaders(ctx context.Context, urlStr string, headers map[string]string) (*parser.Document, error) {
+	body, err := c.GetWithHeaders(ctx, urlStr, headers)
+	if err != nil {
+		return nil, err
+	}
+	return parser.LoadString(string(body))
+}
+
+// ============================================================================
+// Response Validation Helpers
+// ============================================================================
+
+// ResponseInfo contains metadata about an HTTP response
+type ResponseInfo struct {
+	StatusCode int
+	Header     http.Header
+	ContentType string
+	ContentLength int64
+	OK         bool
+}
+
+// GetResponseInfo performs a HEAD request to get response metadata
+func (c *Client) GetResponseInfo(ctx context.Context, urlStr string) (*ResponseInfo, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodHead, urlStr, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if req.Header.Get("User-Agent") == "" {
+		req.Header.Set("User-Agent", c.userAgent)
+	}
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch %s: %w", urlStr, err)
+	}
+	defer resp.Body.Close()
+
+	info := &ResponseInfo{
+		StatusCode:    resp.StatusCode,
+		Header:        resp.Header,
+		ContentLength: resp.ContentLength,
+		OK:           resp.StatusCode == http.StatusOK,
+	}
+
+	if ct := resp.Header.Get("Content-Type"); ct != "" {
+		// Parse content type (e.g., "text/html; charset=utf-8")
+		if parts := strings.SplitN(ct, ";", 2); len(parts) > 0 {
+			info.ContentType = strings.TrimSpace(parts[0])
+		}
+	}
+
+	return info, nil
+}
+
+// IsValidURL checks if a URL is accessible and returns appropriate status
+func (c *Client) IsValidURL(ctx context.Context, urlStr string) bool {
+	info, err := c.GetResponseInfo(ctx, urlStr)
+	if err != nil {
+		return false
+	}
+	return info.StatusCode >= 200 && info.StatusCode < 400
+}
+
+// ============================================================================
+// Request Builder (Fluent API)
+// ============================================================================
+
+// RequestBuilder provides a fluent API for building HTTP requests
+type RequestBuilder struct {
+	client    *Client
+	ctx       context.Context
+	method    string
+	url       string
+	headers   map[string]string
+	query     map[string]string
+	body      io.Reader
+	basicAuth struct{ username, password string }
+}
+
+// NewRequest creates a new request builder
+func (c *Client) NewRequest(method, urlStr string) *RequestBuilder {
+	return &RequestBuilder{
+		client:  c,
+		ctx:     context.Background(),
+		method:  method,
+		url:     urlStr,
+		headers: make(map[string]string),
+		query:   make(map[string]string),
+	}
+}
+
+// WithContext sets the request context
+func (rb *RequestBuilder) WithContext(ctx context.Context) *RequestBuilder {
+	rb.ctx = ctx
+	return rb
+}
+
+// WithHeader adds a header to the request
+func (rb *RequestBuilder) WithHeader(key, value string) *RequestBuilder {
+	rb.headers[key] = value
+	return rb
+}
+
+// WithHeaders adds multiple headers
+func (rb *RequestBuilder) WithHeaders(headers map[string]string) *RequestBuilder {
+	for k, v := range headers {
+		rb.headers[k] = v
+	}
+	return rb
+}
+
+// WithQuery adds a query parameter
+func (rb *RequestBuilder) WithQuery(key, value string) *RequestBuilder {
+	rb.query[key] = value
+	return rb
+}
+
+// WithQueryMap adds multiple query parameters
+func (rb *RequestBuilder) WithQueryMap(params map[string]string) *RequestBuilder {
+	for k, v := range params {
+		rb.query[k] = v
+	}
+	return rb
+}
+
+// WithBody sets the request body
+func (rb *RequestBuilder) WithBody(body io.Reader) *RequestBuilder {
+	rb.body = body
+	return rb
+}
+
+// WithJSON sets the request body as JSON
+func (rb *RequestBuilder) WithJSON(data interface{}) (*RequestBuilder, error) {
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return nil, err
+	}
+	rb.body = strings.NewReader(string(jsonData))
+	rb.headers["Content-Type"] = "application/json"
+	return rb, nil
+}
+
+// WithBasicAuth sets basic authentication
+func (rb *RequestBuilder) WithBasicAuth(username, password string) *RequestBuilder {
+	rb.basicAuth.username = username
+	rb.basicAuth.password = password
+	return rb
+}
+
+// Do executes the request and returns raw response
+func (rb *RequestBuilder) Do() ([]byte, error) {
+	req, err := http.NewRequestWithContext(rb.ctx, rb.method, rb.url, rb.body)
+	if err != nil {
+		return nil, err
+	}
+
+	// Apply headers
+	for k, v := range rb.headers {
+		req.Header.Set(k, v)
+	}
+
+	// Apply query parameters
+	if len(rb.query) > 0 {
+		q := req.URL.Query()
+		for k, v := range rb.query {
+			q.Add(k, v)
+		}
+		req.URL.RawQuery = q.Encode()
+	}
+
+	// Apply basic auth
+	if rb.basicAuth.username != "" {
+		req.SetBasicAuth(rb.basicAuth.username, rb.basicAuth.password)
+	}
+
+	return rb.client.doRequestWithRetry(rb.ctx, req)
+}
+
+// DoJSON executes the request and parses JSON response
+func (rb *RequestBuilder) DoJSON(target interface{}) error {
+	body, err := rb.Do()
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(body, target)
+}
+
+// DoXML executes the request and parses XML response
+func (rb *RequestBuilder) DoXML(target interface{}) error {
+	body, err := rb.Do()
+	if err != nil {
+		return err
+	}
+	return xml.Unmarshal(body, target)
+}
+
+// DoHTML executes the request and returns parsed HTML document
+func (rb *RequestBuilder) DoHTML() (*parser.Document, error) {
+	body, err := rb.Do()
+	if err != nil {
+		return nil, err
+	}
+	return parser.LoadString(string(body))
 }
