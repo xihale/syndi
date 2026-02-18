@@ -15,8 +15,8 @@ type PageData struct {
 
 // RoutePageData represents a single route page data
 type RoutePageData struct {
-	Route       *RouteDoc
-	Related     []*RouteDoc
+	Route   *RouteDoc
+	Related []*RouteDoc
 }
 
 const baseTemplate = `
@@ -25,185 +25,158 @@ const baseTemplate = `
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{.Title}} - RSSHub Go Documentation</title>
+    <title>{{.Title}} - RSSHub Go</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background: #f5f5f5;
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+            line-height: 1.5;
+            color: #c5c8c6;
+            background: #1d1f21;
+            font-size: 14px;
         }
         .container {
-            max-width: 1200px;
+            max-width: 900px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 20px 30px;
         }
         header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            border-bottom: 1px solid #373b41;
             padding: 30px 0;
             margin-bottom: 30px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
         header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
+            font-size: 1.5em;
+            font-weight: 600;
+            color: #f0f0f0;
+            margin-bottom: 5px;
         }
         header p {
-            font-size: 1.1em;
-            opacity: 0.9;
+            color: #969896;
+            font-size: 0.9em;
         }
         .search-box {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
             margin-bottom: 30px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
         .search-box input {
             width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 5px;
-            font-size: 16px;
-            transition: border-color 0.3s;
+            padding: 10px;
+            background: #282a2e;
+            border: 1px solid #373b41;
+            color: #c5c8c6;
+            font-family: inherit;
+            font-size: 14px;
         }
         .search-box input:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #81a2be;
         }
         .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
+            display: flex;
+            gap: 30px;
             margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #373b41;
         }
-        .stat-card {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            text-align: center;
+        .stat {
+            color: #969896;
         }
-        .stat-card h3 {
-            font-size: 2em;
-            color: #667eea;
-            margin-bottom: 5px;
-        }
-        .stat-card p {
-            color: #666;
-            font-size: 0.9em;
+        .stat strong {
+            color: #81a2be;
+            font-size: 1.2em;
         }
         .namespace {
-            background: white;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            overflow: hidden;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
         }
         .namespace-header {
-            background: #f8f9fa;
-            padding: 15px 20px;
-            border-bottom: 2px solid #e0e0e0;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #373b41;
+            margin-bottom: 10px;
         }
         .namespace-header h2 {
-            font-size: 1.3em;
-            color: #333;
+            font-size: 1.1em;
+            color: #f0f0f0;
+            font-weight: 600;
         }
         .namespace-header .count {
-            background: #667eea;
-            color: white;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.85em;
-        }
-        .route-list {
-            padding: 0;
+            color: #969896;
+            font-size: 0.9em;
         }
         .route {
-            padding: 20px;
-            border-bottom: 1px solid #f0f0f0;
-            transition: background 0.2s;
+            padding: 15px 0;
+            border-bottom: 1px solid #282a2e;
         }
         .route:last-child {
             border-bottom: none;
-        }
-        .route:hover {
-            background: #f8f9fa;
         }
         .route-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 10px;
-            flex-wrap: wrap;
-            gap: 10px;
+            margin-bottom: 8px;
+            gap: 15px;
         }
         .route-title h3 {
-            font-size: 1.1em;
-            color: #667eea;
-            margin-bottom: 5px;
+            font-size: 1em;
+            color: #81a2be;
+            font-weight: 600;
+            margin-bottom: 3px;
         }
         .route-title .path {
-            font-family: "Courier New", monospace;
-            background: #f0f0f0;
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-size: 0.9em;
-            color: #e83e8c;
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+            background: #282a2e;
+            padding: 2px 6px;
+            font-size: 0.85em;
+            color: #b294bb;
         }
         .route-meta {
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
+            font-size: 0.9em;
         }
         .badge {
-            padding: 3px 10px;
-            border-radius: 12px;
+            padding: 2px 6px;
             font-size: 0.75em;
-            font-weight: 600;
         }
-        .badge-category { background: #e3f2fd; color: #1976d2; }
-        .badge-cache { background: #f3e5f5; color: #7b1fa2; }
+        .badge-category { color: #8abeb7; }
+        .badge-cache { color: #de935f; }
         .route-desc {
-            color: #666;
-            margin-bottom: 10px;
+            color: #969896;
+            margin: 8px 0;
+            font-size: 0.9em;
         }
         .route-example {
-            background: #263238;
-            color: #aed581;
-            padding: 10px 15px;
-            border-radius: 5px;
-            font-family: "Courier New", monospace;
-            font-size: 0.85em;
+            background: #282a2e;
+            color: #b5bd68;
+            padding: 10px;
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+            font-size: 0.8em;
             overflow-x: auto;
-            margin-top: 10px;
+            margin-top: 8px;
         }
         .params {
-            margin-top: 10px;
+            margin-top: 8px;
         }
         .param {
             display: inline-block;
-            background: #fff3e0;
-            color: #f57c00;
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-size: 0.85em;
+            background: #282a2e;
+            color: #cc6666;
+            padding: 2px 6px;
+            font-size: 0.8em;
             margin-right: 5px;
-            margin-bottom: 5px;
+            margin-bottom: 3px;
         }
         .param .required {
-            color: #d32f2f;
-            font-weight: bold;
+            color: #de935f;
         }
         .back-link {
             display: inline-block;
             margin-bottom: 20px;
-            color: #667eea;
+            color: #81a2be;
             text-decoration: none;
         }
         .back-link:hover {
@@ -212,35 +185,51 @@ const baseTemplate = `
         footer {
             text-align: center;
             padding: 30px 0;
-            color: #666;
+            color: #969896;
+            border-top: 1px solid #373b41;
             margin-top: 50px;
+            font-size: 0.85em;
         }
         .query-params {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 5px;
-            margin-top: 15px;
+            background: #282a2e;
+            padding: 12px;
+            margin-top: 12px;
         }
         .query-params h4 {
-            margin-bottom: 10px;
-            color: #333;
-        }
-        .query-param {
             margin-bottom: 8px;
+            color: #f0f0f0;
             font-size: 0.9em;
         }
+        .query-param {
+            margin-bottom: 6px;
+            font-size: 0.85em;
+            color: #969896;
+        }
         .query-param code {
-            background: #fff;
-            padding: 2px 6px;
-            border-radius: 3px;
-            color: #e83e8c;
+            background: #1d1f21;
+            padding: 2px 5px;
+            color: #b294bb;
+        }
+        code {
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+        }
+        a {
+            color: #81a2be;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
         }
         @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
             .route-header {
                 flex-direction: column;
             }
             .stats {
-                grid-template-columns: 1fr;
+                flex-direction: column;
+                gap: 10px;
             }
         }
     </style>
@@ -248,8 +237,8 @@ const baseTemplate = `
 <body>
     <header>
         <div class="container">
-            <h1>🚀 RSSHub Go</h1>
-            <p>Lightweight, fast RSS feed generation service</p>
+            <h1>RSSHub Go</h1>
+            <p>/docs</p>
         </div>
     </header>
 
@@ -258,7 +247,7 @@ const baseTemplate = `
     </div>
 
     <footer>
-        <p>Powered by <strong>RSSHub Go</strong> | Generated from route metadata</p>
+        <p>github.com/xihale/rsshub-go</p>
     </footer>
 </body>
 </html>
@@ -267,22 +256,13 @@ const baseTemplate = `
 const indexContent = `
 {{define "content"}}
 <div class="search-box">
-    <input type="text" id="searchInput" placeholder="🔍 Search routes by name, description, or path..." onkeyup="filterRoutes()">
+    <input type="text" id="searchInput" placeholder="search routes..." onkeyup="filterRoutes()">
 </div>
 
 <div class="stats">
-    <div class="stat-card">
-        <h3>{{.TotalRoutes}}</h3>
-        <p>Total Routes</p>
-    </div>
-    <div class="stat-card">
-        <h3>{{len .Namespaces}}</h3>
-        <p>Namespaces</p>
-    </div>
-    <div class="stat-card">
-        <h3>{{len .Categories}}</h3>
-        <p>Categories</p>
-    </div>
+    <div class="stat"><strong>{{.TotalRoutes}}</strong> routes</div>
+    <div class="stat"><strong>{{len .Namespaces}}</strong> namespaces</div>
+    <div class="stat"><strong>{{len .Categories}}</strong> categories</div>
 </div>
 
 <div id="routesContainer">
@@ -290,7 +270,7 @@ const indexContent = `
 <div class="namespace" data-namespace="{{.Name}}">
     <div class="namespace-header">
         <h2>{{.Name}}</h2>
-        <span class="count">{{.RouteCount}} routes</span>
+        <span class="count">{{.RouteCount}}</span>
     </div>
     <div class="route-list">
     {{range .Routes}}
@@ -304,7 +284,7 @@ const indexContent = `
                 {{range .Categories}}
                 <span class="badge badge-category">{{.}}</span>
                 {{end}}
-                <span class="badge badge-cache">⏱ {{.CacheTTL}}</span>
+                <span class="badge badge-cache">{{.CacheTTL}}</span>
             </div>
         </div>
         <p class="route-desc">{{.Description}}</p>
@@ -338,7 +318,6 @@ function filterRoutes() {
         }
     });
 
-    // Hide empty namespaces
     const namespaces = document.querySelectorAll('.namespace');
     namespaces.forEach(ns => {
         const visibleRoutes = ns.querySelectorAll('.route[style=""]');
@@ -350,18 +329,13 @@ function filterRoutes() {
         }
     });
 }
-
-// Make lower available to template
-function lower(s) {
-    return s.toLowerCase();
-}
 </script>
 {{end}}
 `
 
 const routeContent = `
 {{define "content"}}
-<a href="/docs" class="back-link">← Back to all routes</a>
+<a href="/docs" class="back-link">← back</a>
 
 <div class="namespace">
     <div class="namespace-header">
@@ -370,17 +344,17 @@ const routeContent = `
             {{range .Route.Categories}}
             <span class="badge badge-category">{{.}}</span>
             {{end}}
-            <span class="badge badge-cache">⏱ {{.Route.CacheTTL}}</span>
+            <span class="badge badge-cache">{{.Route.CacheTTL}}</span>
         </div>
     </div>
     <div class="route">
-        <p class="route-desc" style="font-size: 1.1em; margin-bottom: 20px;">{{.Route.Description}}</p>
+        <p class="route-desc" style="font-size: 1em; margin-bottom: 20px;">{{.Route.Description}}</p>
 
-        <h3 style="margin-bottom: 10px;">📍 Route Path</h3>
+        <h3 style="margin-bottom: 10px; color: #f0f0f0; font-size: 0.95em;">PATH</h3>
         <div class="route-example" style="margin-bottom: 20px;">{{.Route.Path}}</div>
 
         {{if .Route.Parameters}}
-        <h3 style="margin-bottom: 10px;">📝 Path Parameters</h3>
+        <h3 style="margin-bottom: 10px; color: #f0f0f0; font-size: 0.95em;">PARAMS</h3>
         <div class="params" style="margin-bottom: 20px;">
             {{range .Route.Parameters}}
             <span class="param">{{.Name}}{{if .Required}} <span class="required">*</span>{{end}} - {{.Description}}</span>
@@ -388,12 +362,12 @@ const routeContent = `
         </div>
         {{end}}
 
-        <h3 style="margin-bottom: 10px;">🚀 Example Usage</h3>
+        <h3 style="margin-bottom: 10px; color: #f0f0f0; font-size: 0.95em;">EXAMPLE</h3>
         <div class="route-example" style="margin-bottom: 20px;">{{.Route.CurlExample}}</div>
 
         {{if .Route.QueryParams}}
         <div class="query-params">
-            <h4>❓ Query Parameters</h4>
+            <h4>QUERY PARAMS</h4>
             {{range .Route.QueryParams}}
             <div class="query-param">
                 <strong>{{.Name}}:</strong> {{.Description}}<br>
@@ -404,22 +378,16 @@ const routeContent = `
         {{end}}
 
         {{if .Route.Features}}
-        <h3 style="margin-top: 20px; margin-bottom: 10px;">⚡ Features</h3>
-        <ul style="margin-left: 20px;">
-            {{if .Route.Features.SupportRadar}}<li>✅ Supports Radar (WebSub)</li>{{end}}
-            {{if .Route.Features.AntiCrawler}}<li>🛡️ Anti-crawler handling</li>{{end}}
-        </ul>
-        {{end}}
-
-        {{if .Route.Maintainers}}
-        <h3 style="margin-top: 20px; margin-bottom: 10px;">👥 Maintainers</h3>
-        <p>{{join .Route.Maintainers ", "}}</p>
+        <div style="margin-top: 20px;">
+            {{if .Route.Features.SupportRadar}}<span style="color: #b5bd68; font-size: 0.85em;">✓ radar</span>{{end}}
+            {{if .Route.Features.AntiCrawler}}<span style="color: #b5bd68; font-size: 0.85em;">✓ anti-crawler</span>{{end}}
+        </div>
         {{end}}
     </div>
 </div>
 
 {{if .Related}}
-<h3 style="margin-top: 30px; margin-bottom: 15px;">🔗 Related Routes</h3>
+<h3 style="margin-top: 30px; margin-bottom: 15px; color: #f0f0f0; font-size: 0.95em;">RELATED</h3>
 <div class="route-list">
 {{range .Related}}
 <div class="route" style="cursor: pointer;" onclick="window.location.href='/docs/route?path={{.Path}}'">
@@ -439,7 +407,7 @@ const routeContent = `
 
 // Template helpers
 func join(strs []string, sep string) string {
-    return strings.Join(strs, sep)
+	return strings.Join(strs, sep)
 }
 
 // ParseTemplates parses and returns the HTML templates
