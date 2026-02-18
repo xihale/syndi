@@ -14,6 +14,7 @@ import (
 	rssubcache "github.com/rsshub/go/pkg/cache"
 	"github.com/rsshub/go/pkg/logger"
 	"github.com/rsshub/go/pkg/models"
+	"github.com/rsshub/go/internal/middleware"
 )
 
 // HandlerFunc is the function signature for cached handlers
@@ -56,32 +57,57 @@ func Cached(cacheInstance rssubcache.Cache, handler HandlerFunc, opts *CachedHan
 				zap.String("query", c.Request.URL.RawQuery))
 		}
 
-		// Check if we have a cached response
-		if cached, ok := cacheInstance.Get(cacheKey); ok {
-			if cachedResp, ok := cached.(*CachedResponse); ok {
+		// Check if we have a cached full feed (*models.Feed) - the RAW feed without parameter processing
+		if cachedFeed, ok := cacheInstance.Get(cacheKey); ok {
+			if feed, ok := cachedFeed.(*models.Feed); ok {
 				if logger.Logger.Core().Enabled(zap.DebugLevel) {
 					logger.Logger.Debug("[CACHE] HIT",
 						zap.String("key", cacheKey),
-						zap.Int("status", cachedResp.StatusCode),
-						zap.Int("body_len", len(cachedResp.Body)))
+						zap.Int("raw_items", len(feed.Items)))
 				}
-				// Check ETag for 304 response
+				// Apply query parameter processing to the cached raw feed
+				processedItems := middleware.ProcessFeed(c, feed.Items)
+
+				// Build response feed with processed items
+				responseFeed := &models.Feed{
+					Title:       feed.Title,
+					Link:        feed.Link,
+					Description: feed.Description,
+					Items:       processedItems,
+				}
+
+				// Serialize to response format
+				format := c.DefaultQuery("format", "rss")
+				var contentType string
+				var body []byte
+
+				switch format {
+				case "atom":
+					body, contentType = serializeAtom(responseFeed)
+				case "json":
+					body, contentType = serializeJSON(responseFeed)
+				default:
+					body, contentType = serializeRSS(responseFeed)
+				}
+
+				// Set cache status header
+				c.Header("X-Cache", "HIT")
+
+				// Handle ETag
 				if opts.ETagEnabled {
+					etag := generateETag(body)
+					c.Header("ETag", etag)
+
 					if ifNoneMatch := c.GetHeader("If-None-Match"); ifNoneMatch != "" {
-						if ifNoneMatch == cachedResp.ETag {
-							c.Header("ETag", cachedResp.ETag)
-							c.Header("X-Cache", "HIT")
+						if ifNoneMatch == etag {
 							c.AbortWithStatus(http.StatusNotModified)
 							return
 						}
 					}
-					c.Header("ETag", cachedResp.ETag)
 				}
 
-				// Return cached response
-				c.Header("Content-Type", cachedResp.ContentType)
-				c.Header("X-Cache", "HIT")
-				c.Data(cachedResp.StatusCode, cachedResp.ContentType, cachedResp.Body)
+				c.Header("Content-Type", contentType)
+				c.Data(http.StatusOK, contentType, body)
 				c.Abort()
 				return
 			}
@@ -108,77 +134,65 @@ func Cached(cacheInstance rssubcache.Cache, handler HandlerFunc, opts *CachedHan
 			return
 		}
 
-		// Check if we should cache this response
+		// Cache miss: fetch fresh feed from handler
+		// feed was already retrieved from handler(c) above
+		// Now we need to:
+		// 1. Cache the RAW full feed for future requests
+		// 2. Apply parameter processing for this request's response
+
+		// Step 1: Cache raw full feed (if applicable)
 		if opts.ShouldCache(c, feed) {
-			// Serialize feed to response format
-			format := c.DefaultQuery("format", "rss")
-			var contentType string
-			var body []byte
-
-			switch format {
-			case "atom":
-				body, contentType = serializeAtom(feed)
-			case "json":
-				body, contentType = serializeJSON(feed)
-			default:
-				body, contentType = serializeRSS(feed)
-			}
-
-			// Generate ETag
-			var etag string
-			if opts.ETagEnabled {
-				etag = generateETag(body)
-				c.Header("ETag", etag)
-			}
-
-			// Set cache status
-			c.Header("X-Cache", "MISS")
-			c.Header("Content-Type", contentType)
-
-			// Store in cache
-			cachedResp := &CachedResponse{
-				StatusCode:  http.StatusOK,
-				ContentType: contentType,
-				Body:        body,
-				ETag:        etag,
-				ExpiresAt:   time.Now().Add(opts.TTL),
-			}
-
+			// Important: store the unfiltered full feed
 			if logger.Logger.Core().Enabled(zap.DebugLevel) {
 				logger.Logger.Debug("[CACHE] SET",
 					zap.String("key", cacheKey),
 					zap.Duration("ttl", opts.TTL),
-					zap.Int("items", len(feed.Items)),
-					zap.Int("body_len", len(body)))
+					zap.Int("raw_items", len(feed.Items)))
 			}
-
-			cacheInstance.Set(cacheKey, cachedResp, opts.TTL)
-
-			// Return response
-			c.Data(http.StatusOK, contentType, body)
-		} else {
-			if logger.Logger.Core().Enabled(zap.DebugLevel) {
-				logger.Logger.Debug("[CACHE] SKIP",
-					zap.String("key", cacheKey),
-					zap.String("reason", "ShouldCache returned false"))
-			}
-			// Not caching, just return the response
-			format := c.DefaultQuery("format", "rss")
-			var contentType string
-			var body []byte
-
-			switch format {
-			case "atom":
-				body, contentType = serializeAtom(feed)
-			case "json":
-				body, contentType = serializeJSON(feed)
-			default:
-				body, contentType = serializeRSS(feed)
-			}
-
-			c.Header("Content-Type", contentType)
-			c.Data(http.StatusOK, contentType, body)
+			cacheInstance.Set(cacheKey, feed, opts.TTL)
 		}
+
+		// Step 2: Apply parameter processing for this specific response
+		processedItems := middleware.ProcessFeed(c, feed.Items)
+		responseFeed := &models.Feed{
+			Title:       feed.Title,
+			Link:        feed.Link,
+			Description: feed.Description,
+			Items:       processedItems,
+		}
+
+		// Serialize processed feed to response format
+		format := c.DefaultQuery("format", "rss")
+		var contentType string
+		var body []byte
+
+		switch format {
+		case "atom":
+			body, contentType = serializeAtom(responseFeed)
+		case "json":
+			body, contentType = serializeJSON(responseFeed)
+		default:
+			body, contentType = serializeRSS(responseFeed)
+		}
+
+		// Set cache status header
+		c.Header("X-Cache", "MISS")
+
+		// Handle ETag
+		if opts.ETagEnabled {
+			etag := generateETag(body)
+			c.Header("ETag", etag)
+
+			if ifNoneMatch := c.GetHeader("If-None-Match"); ifNoneMatch != "" {
+				if ifNoneMatch == etag {
+					c.AbortWithStatus(http.StatusNotModified)
+					return
+				}
+			}
+		}
+
+		c.Header("Content-Type", contentType)
+		c.Data(http.StatusOK, contentType, body)
 	}
 }
 

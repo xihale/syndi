@@ -62,8 +62,7 @@ func main() {
 		middleware.Recovery(),           // 1. Panic recovery (OUTERMOST)
 		middleware.Logger(),             // 2. Request logging
 		middleware.Header(cfg.CacheTTL), // 3. HTTP headers (CORS, ETag, Cache-Control)
-		middleware.Parameter(),          // 4. Query parameter processing (INNERMOST)
-		// Note: Cache middleware removed - using handler-level caching instead
+		// Note: Parameter handling moved into handler-level caching
 	)
 
 	// Register routes (auto-registered via init() in route packages)
@@ -139,6 +138,7 @@ func setupGinRoutes(engine *gin.Engine, routeRegistry *registry.Registry, cacheI
 	cachedHandlerOpts := &handlercache.CachedHandlerOptions{
 		KeyGenerator: handlercache.DefaultKeyGenerator,
 		TTL:          cfg.CacheTTL,
+		ETagEnabled:  true,
 		ShouldCache: func(c *gin.Context, feed *models.Feed) bool {
 			if errorCode, exists := c.Get("error_code"); exists && errorCode.(int) >= 400 {
 				return false

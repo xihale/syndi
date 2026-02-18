@@ -41,46 +41,48 @@ func Parameter() gin.HandlerFunc {
 		}
 
 		// Process query parameters in order
-		items := feedObj.Items
-
-		// 1. Filter by time window
-		if filterTime := c.Query(paramFilterTime); filterTime != "" {
-			items = filterByTime(items, filterTime)
-		}
-
-		// 2. Filter items (include)
-		if filter := c.Query(paramFilter); filter != "" {
-			items = filterItems(items, filter, false)
-		}
-
-		// 3. Filter out items (exclude)
-		if filterOut := c.Query(paramFilterOut); filterOut != "" {
-			items = filterItems(items, filterOut, true)
-		}
-
-		// 4. Sort items
-		sorted := true // Default to sorted
-		if sortedStr := c.Query(paramSorted); sortedStr != "" {
-			sorted = strings.ToLower(sortedStr) == "true"
-		}
-		if sorted {
-			items = sortItemsByPubDate(items)
-		}
-
-		// 5. Limit items
-		if limit := c.Query(paramLimit); limit != "" {
-			items = limitItems(items, limit)
-		}
-
-		// 6. Brief mode (truncate descriptions)
-		if brief := c.Query(paramBrief); brief != "" {
-			items = applyBriefMode(items, brief)
-		}
-
-		// Update feed with processed items
-		feedObj.Items = items
-		c.Set(contextFeedKey, feedObj)
+		feedObj.Items = ProcessFeed(c, feedObj.Items)
 	}
+}
+
+// ProcessFeed applies all query parameter transformations to a feed's items
+// This function can be called directly by caching handlers
+func ProcessFeed(c *gin.Context, items []models.Item) []models.Item {
+	// 1. Filter by time window
+	if filterTime := c.Query(paramFilterTime); filterTime != "" {
+		items = filterByTime(items, filterTime)
+	}
+
+	// 2. Filter items (include)
+	if filter := c.Query(paramFilter); filter != "" {
+		items = filterItems(items, filter, false)
+	}
+
+	// 3. Filter out items (exclude)
+	if filterOut := c.Query(paramFilterOut); filterOut != "" {
+		items = filterItems(items, filterOut, true)
+	}
+
+	// 4. Sort items
+	sorted := true // Default to sorted
+	if sortedStr := c.Query(paramSorted); sortedStr != "" {
+		sorted = strings.ToLower(sortedStr) == "true"
+	}
+	if sorted {
+		items = sortItemsByPubDate(items)
+	}
+
+	// 5. Limit items
+	if limit := c.Query(paramLimit); limit != "" {
+		items = limitItems(items, limit)
+	}
+
+	// 6. Brief mode (truncate descriptions)
+	if brief := c.Query(paramBrief); brief != "" {
+		items = applyBriefMode(items, brief)
+	}
+
+	return items
 }
 
 // filterItems filters items based on regex pattern
