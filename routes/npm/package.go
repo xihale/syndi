@@ -11,6 +11,8 @@ import (
 )
 
 func init() {
+	cacheTTL := 4 * time.Hour // npm package versions change infrequently
+
 	route := &models.Route{
 		Path:         "/npm/:package",
 		Name:         "npm Package Versions",
@@ -23,6 +25,7 @@ func init() {
 		Parameters: []models.Parameter{
 			{Name: "package", Required: true, Description: "npm package name"},
 		},
+		CacheTTL: &cacheTTL,
 	}
 	if err := registry.GetRegistry().Register(route); err != nil {
 		panic(err)

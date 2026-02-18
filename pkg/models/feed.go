@@ -48,6 +48,7 @@ type Route struct {
 	Features     Features
 	Parameters   []Parameter
 	Radar        []RadarItem
+	CacheTTL     *time.Duration `json:"cacheTTL,omitempty"` // Optional cache TTL override
 }
 
 // HandlerFunc is the function signature for route handlers

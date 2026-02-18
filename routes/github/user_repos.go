@@ -22,6 +22,8 @@ func safeSlice(slice []byte, max int) []byte {
 
 // GitHub user repositories route
 func init() {
+	cacheTTL := 2 * time.Hour // User repositories change slowly
+
 	route := &models.Route{
 		Path:         "/github/users/:username/repos",
 		Name:         "GitHub User Repositories",
@@ -34,6 +36,7 @@ func init() {
 		Parameters: []models.Parameter{
 			{Name: "username", Required: true, Description: "GitHub username"},
 		},
+		CacheTTL: &cacheTTL,
 	}
 	if err := registry.GetRegistry().Register(route); err != nil {
 		panic(err)

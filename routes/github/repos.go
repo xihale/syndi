@@ -11,6 +11,8 @@ import (
 
 // GitHub repos route
 func init() {
+	cacheTTL := 1 * time.Hour // GitHub releases are infrequent
+
 	route := &models.Route{
 		Path:         "/github/repos/:owner/:repo",
 		Name:         "GitHub Repository Releases",
@@ -24,6 +26,7 @@ func init() {
 			{Name: "owner", Required: true, Description: "Repository owner"},
 			{Name: "repo", Required: true, Description: "Repository name"},
 		},
+		CacheTTL: &cacheTTL,
 	}
 	if err := registry.GetRegistry().Register(route); err != nil {
 		panic(err)

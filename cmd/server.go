@@ -136,21 +136,26 @@ func setupGinRoutes(engine *gin.Engine, routeRegistry *registry.Registry, cacheI
 	// Get all routes from registry
 	allRoutes := routeRegistry.GetAllRoutes()
 
-	// Common cache options
-	cachedHandlerOpts := &handlercache.CachedHandlerOptions{
-		KeyGenerator: handlercache.DefaultKeyGenerator,
-		TTL:          cfg.CacheTTL,
-		ETagEnabled:  true,
-		ShouldCache: func(c *gin.Context, feed *models.Feed) bool {
-			if errorCode, exists := c.Get("error_code"); exists && errorCode.(int) >= 400 {
-				return false
-			}
-			return handlercache.DefaultShouldCache(c, feed)
-		},
-	}
-
 	// Register each route with Gin using parameterized patterns
 	for _, route := range allRoutes {
+		// Determine TTL for this route (use route-specific or default)
+		ttl := cfg.CacheTTL
+		if route.CacheTTL != nil {
+			ttl = *route.CacheTTL
+		}
+
+		// Create cache options for this specific route
+		cachedHandlerOpts := &handlercache.CachedHandlerOptions{
+			KeyGenerator: handlercache.DefaultKeyGenerator,
+			TTL:          ttl,
+			ETagEnabled:  true,
+			ShouldCache: func(c *gin.Context, feed *models.Feed) bool {
+				if errorCode, exists := c.Get("error_code"); exists && errorCode.(int) >= 400 {
+					return false
+				}
+				return handlercache.DefaultShouldCache(c, feed)
+			},
+		}
 		// Convert route path to Gin pattern (e.g., "/github/repos/:username" stays the same)
 		// The route already contains :param syntax which Gin understands
 		ginPath := route.Path

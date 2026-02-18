@@ -11,6 +11,8 @@ import (
 )
 
 func init() {
+	cacheTTL := 10 * time.Minute // Reddit is very active, shorter cache
+
 	route := &models.Route{
 		Path:         "/reddit/:subreddit",
 		Name:         "Reddit Subreddit",
@@ -23,6 +25,7 @@ func init() {
 		Parameters: []models.Parameter{
 			{Name: "subreddit", Required: true, Description: "Subreddit name (without r/)"},
 		},
+		CacheTTL: &cacheTTL,
 	}
 	if err := registry.GetRegistry().Register(route); err != nil {
 		panic(err)

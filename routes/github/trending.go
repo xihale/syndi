@@ -12,6 +12,8 @@ import (
 )
 
 func init() {
+	cacheTTL := 30 * time.Minute // Trending changes moderately
+
 	route := &models.Route{
 		Path:         "/github/trending/:language",
 		Name:         "GitHub Trending",
@@ -24,6 +26,7 @@ func init() {
 		Parameters: []models.Parameter{
 			{Name: "language", Required: false, Description: "Programming language (use 'all' for any language)"},
 		},
+		CacheTTL: &cacheTTL,
 	}
 	if err := registry.GetRegistry().Register(route); err != nil {
 		panic(err)

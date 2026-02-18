@@ -12,6 +12,8 @@ import (
 )
 
 func init() {
+	cacheTTL := 1 * time.Hour // Hacker News updates infrequently
+
 	route := &models.Route{
 		Path:         "/hackernews/stories",
 		Name:         "Hacker News Top Stories",
@@ -21,6 +23,7 @@ func init() {
 		Categories:   []models.Category{{Name: "social-media"}, {Name: "it"}},
 		Features:     models.Features{},
 		Handler:      HackerNewsStoriesHandler,
+		CacheTTL:     &cacheTTL,
 	}
 	if err := registry.GetRegistry().Register(route); err != nil {
 		panic(err)
