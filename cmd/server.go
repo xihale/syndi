@@ -25,7 +25,13 @@ import (
 
 	// Import route packages to trigger init() registration
 	_ "github.com/rsshub/go/routes/005"
+	_ "github.com/rsshub/go/routes/dribbble"
 	_ "github.com/rsshub/go/routes/github"
+	_ "github.com/rsshub/go/routes/hackernews"
+	_ "github.com/rsshub/go/routes/indiehackers"
+	_ "github.com/rsshub/go/routes/juejin"
+	_ "github.com/rsshub/go/routes/npm"
+	_ "github.com/rsshub/go/routes/reddit"
 )
 
 func main() {
