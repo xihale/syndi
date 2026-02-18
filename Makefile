@@ -1,22 +1,27 @@
-.PHONY: all build test run clean fmt lint install-config
+.PHONY: all build test run clean fmt lint install-config gen-routes-imports
 
 # Build variables
 BINARY_NAME=rsshub-go
-CMD_DIR=cmd/server
+CMD_DIR=cmd
 BUILD_DIR=build
 CONFIG_DIR=/etc/rsshub-go
 
 all: build
 
+# Generate route imports (auto-run before build)
+gen-routes-imports:
+	@echo "Generating route imports..."
+	@go run scripts/generate-routes.go
+
 # Build the server binary
-build:
+build: gen-routes-imports
 	@echo "Building $(BINARY_NAME)..."
 	@mkdir -p $(BUILD_DIR)
 	go build -o $(BUILD_DIR)/$(BINARY_NAME) ./$(CMD_DIR)
 	@echo "Built $(BUILD_DIR)/$(BINARY_NAME)"
 
 # Run the server
-run:
+run: gen-routes-imports
 	go run ./$(CMD_DIR)
 
 # Run tests
