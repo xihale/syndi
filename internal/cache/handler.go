@@ -10,7 +10,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 	rssubcache "github.com/rsshub/go/pkg/cache"
+	"github.com/rsshub/go/pkg/logger"
 	"github.com/rsshub/go/pkg/models"
 )
 
@@ -46,9 +48,23 @@ func Cached(cacheInstance rssubcache.Cache, handler HandlerFunc, opts *CachedHan
 		// Generate cache key
 		cacheKey := opts.KeyGenerator(c)
 
+		// Debug: log cache lookup
+		if logger.Logger.Core().Enabled(zap.DebugLevel) {
+			logger.Logger.Debug("[CACHE] Lookup",
+				zap.String("key", cacheKey),
+				zap.String("path", c.Request.URL.Path),
+				zap.String("query", c.Request.URL.RawQuery))
+		}
+
 		// Check if we have a cached response
 		if cached, ok := cacheInstance.Get(cacheKey); ok {
 			if cachedResp, ok := cached.(*CachedResponse); ok {
+				if logger.Logger.Core().Enabled(zap.DebugLevel) {
+					logger.Logger.Debug("[CACHE] HIT",
+						zap.String("key", cacheKey),
+						zap.Int("status", cachedResp.StatusCode),
+						zap.Int("body_len", len(cachedResp.Body)))
+				}
 				// Check ETag for 304 response
 				if opts.ETagEnabled {
 					if ifNoneMatch := c.GetHeader("If-None-Match"); ifNoneMatch != "" {
@@ -69,6 +85,12 @@ func Cached(cacheInstance rssubcache.Cache, handler HandlerFunc, opts *CachedHan
 				c.Abort()
 				return
 			}
+		}
+
+		if logger.Logger.Core().Enabled(zap.DebugLevel) {
+			logger.Logger.Debug("[CACHE] MISS",
+				zap.String("key", cacheKey),
+				zap.String("path", c.Request.URL.Path))
 		}
 
 		// Call the actual handler
@@ -121,11 +143,25 @@ func Cached(cacheInstance rssubcache.Cache, handler HandlerFunc, opts *CachedHan
 				ETag:        etag,
 				ExpiresAt:   time.Now().Add(opts.TTL),
 			}
+
+			if logger.Logger.Core().Enabled(zap.DebugLevel) {
+				logger.Logger.Debug("[CACHE] SET",
+					zap.String("key", cacheKey),
+					zap.Duration("ttl", opts.TTL),
+					zap.Int("items", len(feed.Items)),
+					zap.Int("body_len", len(body)))
+			}
+
 			cacheInstance.Set(cacheKey, cachedResp, opts.TTL)
 
 			// Return response
 			c.Data(http.StatusOK, contentType, body)
 		} else {
+			if logger.Logger.Core().Enabled(zap.DebugLevel) {
+				logger.Logger.Debug("[CACHE] SKIP",
+					zap.String("key", cacheKey),
+					zap.String("reason", "ShouldCache returned false"))
+			}
 			// Not caching, just return the response
 			format := c.DefaultQuery("format", "rss")
 			var contentType string
@@ -159,15 +195,13 @@ type CachedResponse struct {
 func DefaultKeyGenerator(c *gin.Context) string {
 	path := c.Request.URL.Path
 	format := c.Query("format")
-	limit := c.Query("limit")
+	// Note: we intentionally exclude 'limit' from cache key so that
+	// different limit requests can share the same full feed cache
 
-	// Build cache key: feed:path:format:limit
+	// Build cache key: feed:path:format
 	key := fmt.Sprintf("feed:%s", path)
 	if format != "" {
 		key += ":" + format
-	}
-	if limit != "" {
-		key += ":" + limit
 	}
 
 	return key

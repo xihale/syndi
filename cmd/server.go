@@ -77,7 +77,7 @@ func main() {
 	}
 
 	// Setup routes on Gin
-	setupGinRoutes(engine, routeRegistry, cacheInstance, httpClient)
+	setupGinRoutes(engine, routeRegistry, cacheInstance, httpClient, cfg)
 
 	// Start server
 	server := &http.Server{
@@ -112,7 +112,7 @@ func main() {
 }
 
 // setupGinRoutes registers all routes from the registry directly with Gin
-func setupGinRoutes(engine *gin.Engine, routeRegistry *registry.Registry, cacheInstance cache.Cache, httpClient *client.Client) {
+func setupGinRoutes(engine *gin.Engine, routeRegistry *registry.Registry, cacheInstance cache.Cache, httpClient *client.Client, cfg *config.Config) {
 	// Health check - no caching (always fresh status)
 	engine.GET("/status", func(c *gin.Context) {
 		feed := &models.Feed{
@@ -138,6 +138,7 @@ func setupGinRoutes(engine *gin.Engine, routeRegistry *registry.Registry, cacheI
 	// Common cache options
 	cachedHandlerOpts := &handlercache.CachedHandlerOptions{
 		KeyGenerator: handlercache.DefaultKeyGenerator,
+		TTL:          cfg.CacheTTL,
 		ShouldCache: func(c *gin.Context, feed *models.Feed) bool {
 			if errorCode, exists := c.Get("error_code"); exists && errorCode.(int) >= 400 {
 				return false
