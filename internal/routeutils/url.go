@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/rsshub/go/pkg/models"
+	"github.com/xihale/rsshub-go/pkg/models"
 )
 
 // ResolveURL resolves a relative URL against a base URL

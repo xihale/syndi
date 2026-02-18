@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rsshub/go/pkg/models"
+	"github.com/xihale/rsshub-go/pkg/models"
 )
 
 // ApplyOptions contains options for ApplyParameters

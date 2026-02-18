@@ -15,7 +15,7 @@ func TestNew(t *testing.T) {
 		t.Fatal("expected non-nil client")
 	}
 
-	if c.userAgent != "RSSHub-Go/1.0 (+https://github.com/rsshub/go)" {
+	if c.userAgent != "RSSHub-Go/1.0 (+https://github.com/xihale/rsshub-go)" {
 		t.Errorf("expected default user agent, got %s", c.userAgent)
 	}
 

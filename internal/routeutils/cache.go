@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	rssubcache "github.com/rsshub/go/pkg/cache"
-	"github.com/rsshub/go/pkg/models"
+	rssubcache "github.com/xihale/rsshub-go/pkg/cache"
+	"github.com/xihale/rsshub-go/pkg/models"
 )
 
 // CacheResult represents cached response with metadata

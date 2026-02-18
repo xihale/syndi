@@ -6,8 +6,8 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/rsshub/go/internal/client"
-	"github.com/rsshub/go/pkg/cache"
+	"github.com/xihale/rsshub-go/internal/client"
+	"github.com/xihale/rsshub-go/pkg/cache"
 )
 
 // Context wraps the HTTP request with utilities for route handlers

@@ -3,7 +3,7 @@ package routeutils
 import (
 	"time"
 
-	"github.com/rsshub/go/pkg/models"
+	"github.com/xihale/rsshub-go/pkg/models"
 )
 
 // FeedOptions contains optional fields for NewFeedWithOptions

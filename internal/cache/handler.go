@@ -11,10 +11,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
-	rssubcache "github.com/rsshub/go/pkg/cache"
-	"github.com/rsshub/go/pkg/logger"
-	"github.com/rsshub/go/pkg/models"
-	"github.com/rsshub/go/internal/middleware"
+	rssubcache "github.com/xihale/rsshub-go/pkg/cache"
+	"github.com/xihale/rsshub-go/pkg/logger"
+	"github.com/xihale/rsshub-go/pkg/models"
+	"github.com/xihale/rsshub-go/internal/middleware"
 )
 
 // HandlerFunc is the function signature for cached handlers

@@ -6,8 +6,8 @@ import (
 	"encoding/xml"
 	"fmt"
 
-	"github.com/rsshub/go/internal/client"
-	"github.com/rsshub/go/internal/parser"
+	"github.com/xihale/rsshub-go/internal/client"
+	"github.com/xihale/rsshub-go/internal/parser"
 )
 
 // GetJSON fetches URL and unmarshals JSON response into target

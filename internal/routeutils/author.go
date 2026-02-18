@@ -3,7 +3,7 @@ package routeutils
 import (
 	"strings"
 
-	"github.com/rsshub/go/pkg/models"
+	"github.com/xihale/rsshub-go/pkg/models"
 )
 
 // GetAuthorString extracts display name from Item.Author

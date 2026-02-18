@@ -6,7 +6,7 @@ import (
 	"runtime/debug"
 
 	"github.com/gin-gonic/gin"
-	"github.com/rsshub/go/pkg/logger"
+	"github.com/xihale/rsshub-go/pkg/logger"
 	"go.uber.org/zap"
 )
 

@@ -5,8 +5,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/rsshub/go/pkg/models"
-	"github.com/rsshub/go/pkg/registry"
+	"github.com/xihale/rsshub-go/pkg/models"
+	"github.com/xihale/rsshub-go/pkg/registry"
 )
 
 // DocData represents the complete documentation structure

@@ -3,7 +3,7 @@ package models
 import (
 	"time"
 
-	ctxpkg "github.com/rsshub/go/pkg/context"
+	ctxpkg "github.com/xihale/rsshub-go/pkg/context"
 )
 
 // Feed represents an RSS/Atom feed

@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rsshub/go/pkg/cache"
-	"github.com/rsshub/go/pkg/models"
+	"github.com/xihale/rsshub-go/pkg/cache"
+	"github.com/xihale/rsshub-go/pkg/models"
 )
 
 func TestResolveURL(t *testing.T) {

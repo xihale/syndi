@@ -49,7 +49,7 @@ func DefaultConfig() *Config {
 		RedisURL:     "redis://localhost:6379",
 		CacheTTL:     15 * time.Minute,
 		MemoryCache:  10000,
-		UserAgent:    "RSSHub-Go/1.0 (+https://github.com/rsshub/go)",
+		UserAgent:    "RSSHub-Go/1.0 (+https://github.com/xihale/rsshub-go)",
 		Timeout:      30 * time.Second,
 		MaxRedirects: 10,
 		Proxy:        "",

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/rsshub/go/pkg/cache"
+	"github.com/xihale/rsshub-go/pkg/cache"
 	"github.com/stretchr/testify/assert"
 )
 

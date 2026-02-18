@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	ctxpkg "github.com/rsshub/go/pkg/context"
-	"github.com/rsshub/go/pkg/models"
-	"github.com/rsshub/go/pkg/registry"
-	"github.com/rsshub/go/internal/routeutils"
+	ctxpkg "github.com/xihale/rsshub-go/pkg/context"
+	"github.com/xihale/rsshub-go/pkg/models"
+	"github.com/xihale/rsshub-go/pkg/registry"
+	"github.com/xihale/rsshub-go/internal/routeutils"
 )
 
 func init() {

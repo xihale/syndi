@@ -4,10 +4,10 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/rsshub/go/internal/cache"
-	rsshubcache "github.com/rsshub/go/pkg/cache"
-	"github.com/rsshub/go/pkg/models"
-	ctxpkg "github.com/rsshub/go/pkg/context"
+	"github.com/xihale/rsshub-go/internal/cache"
+	rsshubcache "github.com/xihale/rsshub-go/pkg/cache"
+	"github.com/xihale/rsshub-go/pkg/models"
+	ctxpkg "github.com/xihale/rsshub-go/pkg/context"
 )
 
 // Example demonstrates handler-level caching with route handlers

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/rsshub/go/pkg/models"
+	"github.com/xihale/rsshub-go/pkg/models"
 )
 
 // Registry manages route registration and discovery

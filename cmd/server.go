@@ -12,23 +12,23 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	"github.com/rsshub/go/internal/client"
-	"github.com/rsshub/go/internal/middleware"
-	handlercache "github.com/rsshub/go/internal/cache"
-	"github.com/rsshub/go/pkg/cache"
-	"github.com/rsshub/go/pkg/config"
-	ctxpkg "github.com/rsshub/go/pkg/context"
-	"github.com/rsshub/go/pkg/docs"
-	"github.com/rsshub/go/pkg/logger"
-	"github.com/rsshub/go/pkg/models"
-	"github.com/rsshub/go/pkg/registry"
-	"github.com/rsshub/go/pkg/rss"
+	"github.com/xihale/rsshub-go/internal/client"
+	"github.com/xihale/rsshub-go/internal/middleware"
+	handlercache "github.com/xihale/rsshub-go/internal/cache"
+	"github.com/xihale/rsshub-go/pkg/cache"
+	"github.com/xihale/rsshub-go/pkg/config"
+	ctxpkg "github.com/xihale/rsshub-go/pkg/context"
+	"github.com/xihale/rsshub-go/pkg/docs"
+	"github.com/xihale/rsshub-go/pkg/logger"
+	"github.com/xihale/rsshub-go/pkg/models"
+	"github.com/xihale/rsshub-go/pkg/registry"
+	"github.com/xihale/rsshub-go/pkg/rss"
 
 	// Import route packages to trigger init() registration
-	_ "github.com/rsshub/go/routes/github"
-	_ "github.com/rsshub/go/routes/hackernews"
-	_ "github.com/rsshub/go/routes/npm"
-	_ "github.com/rsshub/go/routes/reddit"
+	_ "github.com/xihale/rsshub-go/routes/github"
+	_ "github.com/xihale/rsshub-go/routes/hackernews"
+	_ "github.com/xihale/rsshub-go/routes/npm"
+	_ "github.com/xihale/rsshub-go/routes/reddit"
 )
 
 func main() {

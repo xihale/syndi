@@ -1,4 +1,4 @@
-module github.com/rsshub/go
+module github.com/xihale/rsshub-go
 
 go 1.25.6
 

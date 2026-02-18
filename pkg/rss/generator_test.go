@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rsshub/go/pkg/models"
+	"github.com/xihale/rsshub-go/pkg/models"
 )
 
 func TestGenerateRSS(t *testing.T) {

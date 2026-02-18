@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	ctxpkg "github.com/rsshub/go/pkg/context"
-	"github.com/rsshub/go/pkg/logger"
-	"github.com/rsshub/go/pkg/models"
-	"github.com/rsshub/go/pkg/registry"
+	ctxpkg "github.com/xihale/rsshub-go/pkg/context"
+	"github.com/xihale/rsshub-go/pkg/logger"
+	"github.com/xihale/rsshub-go/pkg/models"
+	"github.com/xihale/rsshub-go/pkg/registry"
 	"go.uber.org/zap"
 )
 

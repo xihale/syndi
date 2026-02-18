@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"time"
 
-	ctxpkg "github.com/rsshub/go/pkg/context"
-	"github.com/rsshub/go/pkg/models"
-	"github.com/rsshub/go/pkg/registry"
+	ctxpkg "github.com/xihale/rsshub-go/pkg/context"
+	"github.com/xihale/rsshub-go/pkg/models"
+	"github.com/xihale/rsshub-go/pkg/registry"
 )
 
 // GitHub repos route
