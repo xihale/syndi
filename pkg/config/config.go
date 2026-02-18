@@ -1,131 +1,206 @@
 package config
 
 import (
+	"fmt"
 	"os"
-	"strconv"
+	"path/filepath"
 	"time"
+
+	"gopkg.in/yaml.v3"
 )
 
 // Config holds application configuration
 type Config struct {
 	// Server settings
-	Port         string
-	Env          string
-	ReadTimeout  time.Duration
-	WriteTimeout time.Duration
-	IdleTimeout  time.Duration
+	Server struct {
+		Port         string        `yaml:"port"`
+		Env          string        `yaml:"env"`
+		ReadTimeout  time.Duration `yaml:"read_timeout"`
+		WriteTimeout time.Duration `yaml:"write_timeout"`
+		IdleTimeout  time.Duration `yaml:"idle_timeout"`
+	} `yaml:"server"`
 
 	// Cache settings
-	CacheType   string // "memory" or "redis"
-	RedisURL    string
-	CacheTTL    time.Duration
-	MemoryCache int
+	Cache struct {
+		Type   string        `yaml:"type"` // "memory" or "redis"
+		Redis  struct {
+			URL string `yaml:"url"`
+		} `yaml:"redis"`
+		TTL        time.Duration `yaml:"ttl"`
+		MemorySize int           `yaml:"memory_size"`
+	} `yaml:"cache"`
 
 	// Client settings
-	UserAgent    string
-	Timeout      time.Duration
-	MaxRedirects int
-	Proxy        string
-	NoProxy      bool
+	Client struct {
+		UserAgent    string        `yaml:"user_agent"`
+		Timeout      time.Duration `yaml:"timeout"`
+		MaxRedirects int           `yaml:"max_redirects"`
+		Proxy        string        `yaml:"proxy"`
+		NoProxy      bool          `yaml:"no_proxy"`
+	} `yaml:"client"`
 
 	// Route specific
-	DisableNSFW bool
+	Routes struct {
+		DisableNSFW bool `yaml:"disable_nsfw"`
+	} `yaml:"routes"`
 
 	// Middleware options
-	EnableCache bool
-	AccessKey   string
-	AllowOrigin string
+	Middleware struct {
+		EnableCache bool   `yaml:"enable_cache"`
+		AccessKey   string `yaml:"access_key"`
+		AllowOrigin string `yaml:"allow_origin"`
+	} `yaml:"middleware"`
 }
 
 // DefaultConfig returns the default configuration
 func DefaultConfig() *Config {
-	return &Config{
-		Port:         "1200",
-		Env:          "production",
-		ReadTimeout:  30 * time.Second,
-		WriteTimeout: 30 * time.Second,
-		IdleTimeout:  120 * time.Second,
-		CacheType:    "memory",
-		RedisURL:     "redis://localhost:6379",
-		CacheTTL:     15 * time.Minute,
-		MemoryCache:  10000,
-		UserAgent:    "RSSHub-Go/1.0 (+https://github.com/xihale/rsshub-go)",
-		Timeout:      30 * time.Second,
-		MaxRedirects: 10,
-		Proxy:        "",
-		NoProxy:      false,
-		DisableNSFW:  false,
-		EnableCache:  true,
-		AccessKey:    "",
-		AllowOrigin:  "*",
-	}
-}
+	cfg := &Config{}
 
-// Load loads configuration from environment variables
-func Load() *Config {
-	cfg := DefaultConfig()
+	// Server defaults
+	cfg.Server.Port = "1200"
+	cfg.Server.Env = "production"
+	cfg.Server.ReadTimeout = 30 * time.Second
+	cfg.Server.WriteTimeout = 30 * time.Second
+	cfg.Server.IdleTimeout = 120 * time.Second
 
-	if port := os.Getenv("PORT"); port != "" {
-		cfg.Port = port
-	}
+	// Cache defaults
+	cfg.Cache.Type = "memory"
+	cfg.Cache.Redis.URL = "redis://localhost:6379"
+	cfg.Cache.TTL = 15 * time.Minute
+	cfg.Cache.MemorySize = 10000
 
-	if env := os.Getenv("NODE_ENV"); env != "" {
-		cfg.Env = env
-	}
+	// Client defaults
+	cfg.Client.UserAgent = "RSSHub-Go/1.0 (+https://github.com/xihale/rsshub-go)"
+	cfg.Client.Timeout = 30 * time.Second
+	cfg.Client.MaxRedirects = 10
+	cfg.Client.Proxy = ""
+	cfg.Client.NoProxy = false
 
-	if cacheType := os.Getenv("CACHE_TYPE"); cacheType != "" {
-		cfg.CacheType = cacheType
-	}
+	// Route defaults
+	cfg.Routes.DisableNSFW = false
 
-	if redisURL := os.Getenv("REDIS_URL"); redisURL != "" {
-		cfg.RedisURL = redisURL
-	}
-
-	if ua := os.Getenv("USER_AGENT"); ua != "" {
-		cfg.UserAgent = ua
-	}
-
-	if timeout := os.Getenv("TIMEOUT"); timeout != "" {
-		if t, err := strconv.Atoi(timeout); err == nil {
-			cfg.Timeout = time.Duration(t) * time.Second
-		}
-	}
-
-	if proxy := os.Getenv("HTTP_PROXY"); proxy != "" {
-		cfg.Proxy = proxy
-	}
-
-	if noProxy := os.Getenv("NO_PROXY"); noProxy != "" {
-		cfg.NoProxy = true
-	}
-
-	if disableNSFW := os.Getenv("DISABLE_NSFW"); disableNSFW != "" {
-		cfg.DisableNSFW = true
-	}
-
-	if enableCache := os.Getenv("ENABLE_CACHE"); enableCache != "" {
-		cfg.EnableCache = enableCache == "true" || enableCache == "1"
-	}
-
-	if accessKey := os.Getenv("ACCESS_KEY"); accessKey != "" {
-		cfg.AccessKey = accessKey
-	}
-
-	if allowOrigin := os.Getenv("ALLOW_ORIGIN"); allowOrigin != "" {
-		cfg.AllowOrigin = allowOrigin
-	}
-
-	// Route-specific configs (prefixed with SITE_)
-	// Example: TWITTER_COOKIE, GITHUB_TOKEN
-	for _, env := range os.Environ() {
-		// Routes can read these environment variables directly
-		_ = env // placeholder
-	}
+	// Middleware defaults
+	cfg.Middleware.EnableCache = true
+	cfg.Middleware.AccessKey = ""
+	cfg.Middleware.AllowOrigin = "*"
 
 	return cfg
 }
 
+// Load loads configuration from a YAML file
+// If configPath is empty, it tries to find config.yaml in:
+// 1. ./config.yaml (current directory)
+// 2. /etc/rsshub-go/config.yaml (system-wide config)
+func Load(configPath string) (*Config, error) {
+	cfg := DefaultConfig()
+
+	// If no path specified, try default locations
+	if configPath == "" {
+		// Try environment variable first
+		if envPath := os.Getenv("RSSHUB_CONFIG"); envPath != "" {
+			configPath = envPath
+		} else {
+			// Try default locations in order of precedence
+			for _, path := range []string{"config.yaml", "/etc/rsshub-go/config.yaml"} {
+				if _, err := os.Stat(path); err == nil {
+					configPath = path
+					break
+				}
+			}
+		}
+	}
+
+	// If we found a config file, load it
+	if configPath != "" {
+		data, err := os.ReadFile(configPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read config file %s: %w", configPath, err)
+		}
+
+		if err := yaml.Unmarshal(data, cfg); err != nil {
+			return nil, fmt.Errorf("failed to parse config file %s: %w", configPath, err)
+		}
+	}
+
+	return cfg, nil
+}
+
+// LoadOrPanic loads configuration and panics on error
+func LoadOrPanic(configPath string) *Config {
+	cfg, err := Load(configPath)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to load configuration: %v", err))
+	}
+	return cfg
+}
+
+// GetPort returns the server port (for backward compatibility)
+func (c *Config) GetPort() string {
+	return c.Server.Port
+}
+
+// GetEnv returns the environment (for backward compatibility)
+func (c *Config) GetEnv() string {
+	return c.Server.Env
+}
+
+// GetCacheTTL returns the cache TTL (for backward compatibility)
+func (c *Config) GetCacheTTL() time.Duration {
+	return c.Cache.TTL
+}
+
+// GetCacheType returns the cache type (for backward compatibility)
+func (c *Config) GetCacheType() string {
+	return c.Cache.Type
+}
+
+// GetRedisURL returns the Redis URL (for backward compatibility)
+func (c *Config) GetRedisURL() string {
+	return c.Cache.Redis.URL
+}
+
+// GetMemoryCacheSize returns the memory cache size (for backward compatibility)
+func (c *Config) GetMemoryCacheSize() int {
+	return c.Cache.MemorySize
+}
+
+// GetUserAgent returns the user agent (for backward compatibility)
+func (c *Config) GetUserAgent() string {
+	return c.Client.UserAgent
+}
+
+// GetTimeout returns the HTTP client timeout (for backward compatibility)
+func (c *Config) GetTimeout() time.Duration {
+	return c.Client.Timeout
+}
+
+// GetProxy returns the proxy URL (for backward compatibility)
+func (c *Config) GetProxy() string {
+	return c.Client.Proxy
+}
+
+// GetDisableNSFW returns whether NSFW routes are disabled (for backward compatibility)
+func (c *Config) GetDisableNSFW() bool {
+	return c.Routes.DisableNSFW
+}
+
+// GetEnableCache returns whether caching is enabled (for backward compatibility)
+func (c *Config) GetEnableCache() bool {
+	return c.Middleware.EnableCache
+}
+
+// GetAccessKey returns the access key (for backward compatibility)
+func (c *Config) GetAccessKey() string {
+	return c.Middleware.AccessKey
+}
+
+// GetAllowOrigin returns the allowed origin (for backward compatibility)
+func (c *Config) GetAllowOrigin() string {
+	return c.Middleware.AllowOrigin
+}
+
 // Get retrieves a configuration value for a route
+// This checks environment variables for route-specific configs
 func (c *Config) Get(key, defaultValue string) string {
 	if val := os.Getenv(key); val != "" {
 		return val
@@ -135,5 +210,33 @@ func (c *Config) Get(key, defaultValue string) string {
 
 // IsProduction checks if running in production
 func (c *Config) IsProduction() bool {
-	return c.Env == "production"
+	return c.Server.Env == "production"
+}
+
+// GetConfigPath returns the absolute path to the config file
+func GetConfigPath(configPath string) (string, error) {
+	if configPath == "" {
+		if envPath := os.Getenv("RSSHUB_CONFIG"); envPath != "" {
+			configPath = envPath
+		} else {
+			// Return first existing default config
+			for _, path := range []string{"config.yaml", "/etc/rsshub-go/config.yaml"} {
+				if _, err := os.Stat(path); err == nil {
+					return filepath.Abs(path)
+				}
+			}
+			return "", fmt.Errorf("no config file found, tried config.yaml and /etc/rsshub-go/config.yaml")
+		}
+	}
+
+	absPath, err := filepath.Abs(configPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to get absolute path for %s: %w", configPath, err)
+	}
+
+	if _, err := os.Stat(absPath); err != nil {
+		return "", fmt.Errorf("config file not found: %s", absPath)
+	}
+
+	return absPath, nil
 }

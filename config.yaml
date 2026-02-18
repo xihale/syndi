@@ -1,0 +1,52 @@
+# RSSHub Go Configuration File
+# This file controls the behavior of the RSSHub Go server
+
+# Server settings
+server:
+  # Port to listen on
+  port: "1200"
+  # Environment: production, development, or test
+  env: "production"
+  # Server timeouts
+  read_timeout: 30s
+  write_timeout: 30s
+  idle_timeout: 120s
+
+# Cache settings
+cache:
+  # Cache type: memory or redis
+  type: "memory"
+  # Redis configuration (only used if type is "redis")
+  redis:
+    url: "redis://localhost:6379"
+  # Cache time-to-live for feeds
+  ttl: 15m
+  # Memory cache size (number of items, only used if type is "memory")
+  memory_size: 10000
+
+# HTTP client settings
+client:
+  # User agent string for HTTP requests
+  user_agent: "RSSHub-Go/1.0 (+https://github.com/xihale/rsshub-go)"
+  # Request timeout
+  timeout: 30s
+  # Maximum number of redirects to follow
+  max_redirects: 10
+  # Proxy URL (leave empty to disable proxy)
+  proxy: ""
+  # Disable proxy for specific hosts
+  no_proxy: false
+
+# Route settings
+routes:
+  # Disable NSFW (Not Safe For Work) routes
+  disable_nsfw: false
+
+# Middleware settings
+middleware:
+  # Enable response caching
+  enable_cache: true
+  # Access key for restricted routes (leave empty for no authentication)
+  access_key: ""
+  # CORS allowed origin
+  allow_origin: "*"

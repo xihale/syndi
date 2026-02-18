@@ -1,6 +1,8 @@
 package logger
 
 import (
+	"os"
+
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -9,24 +11,24 @@ var (
 	Logger *zap.Logger
 )
 
-// Init initializes the logger
+// Init initializes the logger with KDL format
 func Init(env string) error {
-	var err error
-	cfg := zap.NewProductionConfig()
-	cfg.Encoding = "json"
-	cfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	// Build core with KDL encoder
+	core := zapcore.NewCore(
+		NewKDLEncoder(),
+		zapcore.AddSync(zapcore.Lock(os.Stdout)),
+		zapcore.InfoLevel,
+	)
 
 	if env == "development" {
-		cfg = zap.NewDevelopmentConfig()
-		cfg.Encoding = "console"
-		cfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+		core = zapcore.NewCore(
+			NewKDLEncoder(),
+			zapcore.AddSync(zapcore.Lock(os.Stdout)),
+			zapcore.DebugLevel,
+		)
 	}
 
-	Logger, err = cfg.Build()
-	if err != nil {
-		return err
-	}
-
+	Logger = zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
 	return nil
 }
 

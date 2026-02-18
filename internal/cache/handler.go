@@ -49,8 +49,8 @@ func Cached(cacheInstance rssubcache.Cache, handler HandlerFunc, opts *CachedHan
 		// Generate cache key
 		cacheKey := opts.KeyGenerator(c)
 
-		// Debug: log cache lookup
-		if logger.Logger.Core().Enabled(zap.DebugLevel) {
+		// Debug: log cache lookup (only if logger is initialized)
+		if logger.Logger != nil && logger.Logger.Core() != nil && logger.Logger.Core().Enabled(zap.DebugLevel) {
 			logger.Logger.Debug("[CACHE] Lookup",
 				zap.String("key", cacheKey),
 				zap.String("path", c.Request.URL.Path),
@@ -60,7 +60,7 @@ func Cached(cacheInstance rssubcache.Cache, handler HandlerFunc, opts *CachedHan
 		// Check if we have a cached full feed (*models.Feed) - the RAW feed without parameter processing
 		if cachedFeed, ok := cacheInstance.Get(cacheKey); ok {
 			if feed, ok := cachedFeed.(*models.Feed); ok {
-				if logger.Logger.Core().Enabled(zap.DebugLevel) {
+				if logger.Logger != nil && logger.Logger.Core() != nil && logger.Logger.Core().Enabled(zap.DebugLevel) {
 					logger.Logger.Debug("[CACHE] HIT",
 						zap.String("key", cacheKey),
 						zap.Int("raw_items", len(feed.Items)))
@@ -113,7 +113,7 @@ func Cached(cacheInstance rssubcache.Cache, handler HandlerFunc, opts *CachedHan
 			}
 		}
 
-		if logger.Logger.Core().Enabled(zap.DebugLevel) {
+		if logger.Logger != nil && logger.Logger.Core() != nil && logger.Logger.Core().Enabled(zap.DebugLevel) {
 			logger.Logger.Debug("[CACHE] MISS",
 				zap.String("key", cacheKey),
 				zap.String("path", c.Request.URL.Path))
@@ -143,7 +143,7 @@ func Cached(cacheInstance rssubcache.Cache, handler HandlerFunc, opts *CachedHan
 		// Step 1: Cache raw full feed (if applicable)
 		if opts.ShouldCache(c, feed) {
 			// Important: store the unfiltered full feed
-			if logger.Logger.Core().Enabled(zap.DebugLevel) {
+			if logger.Logger != nil && logger.Logger.Core() != nil && logger.Logger.Core().Enabled(zap.DebugLevel) {
 				logger.Logger.Debug("[CACHE] SET",
 					zap.String("key", cacheKey),
 					zap.Duration("ttl", opts.TTL),

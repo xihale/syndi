@@ -32,29 +32,36 @@ import (
 )
 
 func main() {
+	// Load configuration
+	cfg, err := config.Load("")
+	if err != nil {
+		fmt.Printf("Failed to load configuration: %v\n", err)
+		fmt.Println("Using default configuration. Create a config.yaml file to customize settings.")
+		cfg = config.DefaultConfig()
+	}
+
 	// Initialize logger
-	cfg := config.Load()
-	if err := logger.Init(cfg.Env); err != nil {
+	if err := logger.Init(cfg.GetEnv()); err != nil {
 		fmt.Printf("Failed to initialize logger: %v\n", err)
 		os.Exit(1)
 	}
 	defer logger.Sync()
 
-	logger.Info("Starting RSSHub Go", zap.String("port", cfg.Port))
+	logger.Info("Starting RSSHub Go", zap.String("port", cfg.GetPort()))
 
 	// Initialize cache
 	var cacheInstance cache.Cache
-	if cfg.CacheType == "redis" {
+	if cfg.GetCacheType() == "redis" {
 		logger.Warn("Redis cache not yet implemented, falling back to memory")
-		cacheInstance = cache.NewMemoryCache(cfg.MemoryCache)
+		cacheInstance = cache.NewMemoryCache(cfg.GetMemoryCacheSize())
 	} else {
-		cacheInstance = cache.NewMemoryCache(cfg.MemoryCache)
+		cacheInstance = cache.NewMemoryCache(cfg.GetMemoryCacheSize())
 	}
 
 	// Initialize HTTP client
 	httpClient := client.New(
-		client.WithUserAgent(cfg.UserAgent),
-		client.WithTimeout(cfg.Timeout),
+		client.WithUserAgent(cfg.GetUserAgent()),
+		client.WithTimeout(cfg.GetTimeout()),
 	)
 
 	// Create Gin engine with custom middleware stack
@@ -62,9 +69,9 @@ func main() {
 
 	// Apply middleware in order (outermost first)
 	engine.Use(
-		middleware.Recovery(),           // 1. Panic recovery (OUTERMOST)
-		middleware.Logger(),             // 2. Request logging
-		middleware.Header(cfg.CacheTTL), // 3. HTTP headers (CORS, ETag, Cache-Control)
+		middleware.Recovery(),                // 1. Panic recovery (OUTERMOST)
+		middleware.Logger(),                  // 2. Request logging
+		middleware.Header(cfg.GetCacheTTL()), // 3. HTTP headers (CORS, ETag, Cache-Control)
 		// Note: Parameter handling moved into handler-level caching
 	)
 
@@ -83,11 +90,11 @@ func main() {
 
 	// Start server
 	server := &http.Server{
-		Addr:         ":" + cfg.Port,
+		Addr:         ":" + cfg.GetPort(),
 		Handler:      engine,
-		ReadTimeout:  cfg.ReadTimeout,
-		WriteTimeout: cfg.WriteTimeout,
-		IdleTimeout:  cfg.IdleTimeout,
+		ReadTimeout:  cfg.Server.ReadTimeout,
+		WriteTimeout: cfg.Server.WriteTimeout,
+		IdleTimeout:  cfg.Server.IdleTimeout,
 	}
 
 	// Graceful shutdown
@@ -121,7 +128,7 @@ func setupGinRoutes(engine *gin.Engine, routeRegistry *registry.Registry, cacheI
 		logger.Warn("Failed to initialize docs handler", zap.Error(err))
 	} else {
 		docsHandler.RegisterRoutes(engine)
-		logger.Info("Documentation available at", zap.String("url", "http://localhost:"+cfg.Port+"/docs"))
+		logger.Info("Documentation available at", zap.String("url", "http://localhost:"+cfg.GetPort()+"/docs"))
 	}
 
 	// Health check - no caching (always fresh status)
@@ -149,7 +156,7 @@ func setupGinRoutes(engine *gin.Engine, routeRegistry *registry.Registry, cacheI
 	// Register each route with Gin using parameterized patterns
 	for _, route := range allRoutes {
 		// Determine TTL for this route (use route-specific or default)
-		ttl := cfg.CacheTTL
+		ttl := cfg.GetCacheTTL()
 		if route.CacheTTL != nil {
 			ttl = *route.CacheTTL
 		}

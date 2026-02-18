@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 )
@@ -9,130 +10,234 @@ import (
 func TestDefaultConfig(t *testing.T) {
 	cfg := DefaultConfig()
 
-	if cfg.Port != "1200" {
-		t.Errorf("expected default port '1200', got %s", cfg.Port)
+	if cfg.Server.Port != "1200" {
+		t.Errorf("expected default port '1200', got %s", cfg.Server.Port)
 	}
 
-	if cfg.Env != "production" {
-		t.Errorf("expected default env 'production', got %s", cfg.Env)
+	if cfg.Server.Env != "production" {
+		t.Errorf("expected default env 'production', got %s", cfg.Server.Env)
 	}
 
-	if cfg.CacheType != "memory" {
-		t.Errorf("expected default cache type 'memory', got %s", cfg.CacheType)
+	if cfg.Cache.Type != "memory" {
+		t.Errorf("expected default cache type 'memory', got %s", cfg.Cache.Type)
 	}
 
-	if cfg.ReadTimeout != 30*time.Second {
-		t.Errorf("expected default read timeout 30s, got %v", cfg.ReadTimeout)
+	if cfg.Server.ReadTimeout != 30*time.Second {
+		t.Errorf("expected default read timeout 30s, got %v", cfg.Server.ReadTimeout)
 	}
 
-	if cfg.MemoryCache != 10000 {
-		t.Errorf("expected default memory cache 10000, got %d", cfg.MemoryCache)
+	if cfg.Cache.MemorySize != 10000 {
+		t.Errorf("expected default memory cache 10000, got %d", cfg.Cache.MemorySize)
 	}
 
 	if !cfg.IsProduction() {
 		t.Error("expected default config to be production")
 	}
+
+	// Test getters for backward compatibility
+	if cfg.GetPort() != "1200" {
+		t.Errorf("GetPort() expected '1200', got %s", cfg.GetPort())
+	}
+
+	if cfg.GetEnv() != "production" {
+		t.Errorf("GetEnv() expected 'production', got %s", cfg.GetEnv())
+	}
 }
 
-func TestLoad_FromEnv(t *testing.T) {
-	// Save original env values
-	origPort := os.Getenv("PORT")
-	origEnv := os.Getenv("NODE_ENV")
-	origCache := os.Getenv("CACHE_TYPE")
-	origTimeout := os.Getenv("TIMEOUT")
+func TestLoad_FromYAML(t *testing.T) {
+	// Create a temporary config file
+	tmpDir := t.TempDir()
+	configFile := filepath.Join(tmpDir, "config.yaml")
+	configContent := `
+server:
+  port: "8080"
+  env: "development"
+  read_timeout: 60s
+  write_timeout: 60s
+  idle_timeout: 300s
 
-	defer func() {
-		os.Setenv("PORT", origPort)
-		os.Setenv("NODE_ENV", origEnv)
-		os.Setenv("CACHE_TYPE", origCache)
-		os.Setenv("TIMEOUT", origTimeout)
-	}()
+cache:
+  type: "redis"
+  redis:
+    url: "redis://redis.example.com:6380"
+  ttl: 30m
+  memory_size: 5000
 
-	// Set test values
-	os.Setenv("PORT", "8080")
-	os.Setenv("NODE_ENV", "development")
-	os.Setenv("CACHE_TYPE", "redis")
-	os.Setenv("TIMEOUT", "60")
+client:
+  user_agent: "CustomBot/1.0"
+  timeout: 45s
+  max_redirects: 5
+  proxy: "http://proxy.example.com:8080"
+  no_proxy: true
 
-	cfg := Load()
+routes:
+  disable_nsfw: true
 
-	if cfg.Port != "8080" {
-		t.Errorf("expected port '8080', got %s", cfg.Port)
+middleware:
+  enable_cache: false
+  access_key: "secret123"
+  allow_origin: "https://example.com"
+`
+
+	if err := os.WriteFile(configFile, []byte(configContent), 0644); err != nil {
+		t.Fatalf("failed to write config file: %v", err)
 	}
 
-	if cfg.Env != "development" {
-		t.Errorf("expected env 'development', got %s", cfg.Env)
+	cfg, err := Load(configFile)
+	if err != nil {
+		t.Fatalf("failed to load config: %v", err)
 	}
 
-	if cfg.CacheType != "redis" {
-		t.Errorf("expected cache type 'redis', got %s", cfg.CacheType)
+	// Verify server settings
+	if cfg.Server.Port != "8080" {
+		t.Errorf("expected port '8080', got %s", cfg.Server.Port)
 	}
 
-	if cfg.Timeout != 60*time.Second {
-		t.Errorf("expected timeout 60s, got %v", cfg.Timeout)
+	if cfg.Server.Env != "development" {
+		t.Errorf("expected env 'development', got %s", cfg.Server.Env)
+	}
+
+	if cfg.Server.ReadTimeout != 60*time.Second {
+		t.Errorf("expected read timeout 60s, got %v", cfg.Server.ReadTimeout)
+	}
+
+	// Verify cache settings
+	if cfg.Cache.Type != "redis" {
+		t.Errorf("expected cache type 'redis', got %s", cfg.Cache.Type)
+	}
+
+	if cfg.Cache.Redis.URL != "redis://redis.example.com:6380" {
+		t.Errorf("expected redis URL 'redis://redis.example.com:6380', got %s", cfg.Cache.Redis.URL)
+	}
+
+	if cfg.Cache.TTL != 30*time.Minute {
+		t.Errorf("expected cache TTL 30m, got %v", cfg.Cache.TTL)
+	}
+
+	if cfg.Cache.MemorySize != 5000 {
+		t.Errorf("expected memory cache size 5000, got %d", cfg.Cache.MemorySize)
+	}
+
+	// Verify client settings
+	if cfg.Client.UserAgent != "CustomBot/1.0" {
+		t.Errorf("expected user agent 'CustomBot/1.0', got %s", cfg.Client.UserAgent)
+	}
+
+	if cfg.Client.Timeout != 45*time.Second {
+		t.Errorf("expected timeout 45s, got %v", cfg.Client.Timeout)
+	}
+
+	if cfg.Client.MaxRedirects != 5 {
+		t.Errorf("expected max redirects 5, got %d", cfg.Client.MaxRedirects)
+	}
+
+	if cfg.Client.Proxy != "http://proxy.example.com:8080" {
+		t.Errorf("expected proxy 'http://proxy.example.com:8080', got %s", cfg.Client.Proxy)
+	}
+
+	if !cfg.Client.NoProxy {
+		t.Error("expected NoProxy to be true")
+	}
+
+	// Verify route settings
+	if !cfg.Routes.DisableNSFW {
+		t.Error("expected DisableNSFW to be true")
+	}
+
+	// Verify middleware settings
+	if cfg.Middleware.EnableCache {
+		t.Error("expected EnableCache to be false")
+	}
+
+	if cfg.Middleware.AccessKey != "secret123" {
+		t.Errorf("expected access key 'secret123', got %s", cfg.Middleware.AccessKey)
+	}
+
+	if cfg.Middleware.AllowOrigin != "https://example.com" {
+		t.Errorf("expected allow origin 'https://example.com', got %s", cfg.Middleware.AllowOrigin)
+	}
+
+	// Test backward compatibility getters
+	if cfg.GetPort() != "8080" {
+		t.Errorf("GetPort() expected '8080', got %s", cfg.GetPort())
 	}
 
 	if cfg.IsProduction() {
-		t.Error("expected development mode")
+		t.Error("expected development mode, but IsProduction() returned true")
 	}
 }
 
-func TestLoad_ProxySettings(t *testing.T) {
-	origProxy := os.Getenv("HTTP_PROXY")
-	origNoProxy := os.Getenv("NO_PROXY")
-
-	defer func() {
-		os.Setenv("HTTP_PROXY", origProxy)
-		os.Setenv("NO_PROXY", origNoProxy)
-	}()
-
-	os.Setenv("HTTP_PROXY", "http://proxy.example.com:8080")
-	os.Setenv("NO_PROXY", "1")
-
-	cfg := Load()
-
-	if cfg.Proxy != "http://proxy.example.com:8080" {
-		t.Errorf("expected proxy 'http://proxy.example.com:8080', got %s", cfg.Proxy)
+func TestLoad_FileNotFound(t *testing.T) {
+	// When a specific file path is provided but doesn't exist, it should error
+	_, err := Load("/nonexistent/config.yaml")
+	if err == nil {
+		t.Error("expected error when specified config file not found, got nil")
 	}
 
-	if !cfg.NoProxy {
-		t.Error("expected NoProxy to be true")
+	// When no path is provided and no default files exist, should return default config
+	// Create a temp directory with no config files
+	tmpDir := t.TempDir()
+	origWd, _ := os.Getwd()
+	os.Chdir(tmpDir)
+	defer os.Chdir(origWd)
+
+	cfg, err := Load("")
+	if err != nil {
+		t.Fatalf("expected no error when no config files found, got %v", err)
 	}
-}
 
-func TestLoad_DisableNSFW(t *testing.T) {
-	origNSFW := os.Getenv("DISABLE_NSFW")
-	defer os.Setenv("DISABLE_NSFW", origNSFW)
-
-	os.Setenv("DISABLE_NSFW", "true")
-	cfg := Load()
-
-	if !cfg.DisableNSFW {
-		t.Error("expected DisableNSFW to be true")
+	// Should return default config
+	defaultCfg := DefaultConfig()
+	if cfg.Server.Port != defaultCfg.Server.Port {
+		t.Errorf("expected default port when file not found, got %s", cfg.Server.Port)
 	}
 }
 
-func TestLoad_UserAgent(t *testing.T) {
-	origUA := os.Getenv("USER_AGENT")
-	defer os.Setenv("USER_AGENT", origUA)
+func TestLoad_InvalidYAML(t *testing.T) {
+	tmpDir := t.TempDir()
+	configFile := filepath.Join(tmpDir, "config.yaml")
+	invalidContent := `
+server:
+  port: "8080"
+  env: [invalid yaml structure
+`
 
-	os.Setenv("USER_AGENT", "CustomBot/1.0")
-	cfg := Load()
+	if err := os.WriteFile(configFile, []byte(invalidContent), 0644); err != nil {
+		t.Fatalf("failed to write config file: %v", err)
+	}
 
-	if cfg.UserAgent != "CustomBot/1.0" {
-		t.Errorf("expected user agent 'CustomBot/1.0', got %s", cfg.UserAgent)
+	_, err := Load(configFile)
+	if err == nil {
+		t.Error("expected error for invalid YAML, got nil")
 	}
 }
 
-func TestLoad_RedisURL(t *testing.T) {
-	origRedis := os.Getenv("REDIS_URL")
-	defer os.Setenv("REDIS_URL", origRedis)
+func TestLoad_EnvVariableOverride(t *testing.T) {
+	// Test that RSSHUB_CONFIG environment variable works
+	origConfig := os.Getenv("RSSHUB_CONFIG")
+	defer os.Setenv("RSSHUB_CONFIG", origConfig)
 
-	os.Setenv("REDIS_URL", "redis://redis.example.com:6380")
-	cfg := Load()
+	tmpDir := t.TempDir()
+	configFile := filepath.Join(tmpDir, "custom-config.yaml")
+	configContent := `
+server:
+  port: "9999"
+  env: "test"
+`
 
-	if cfg.RedisURL != "redis://redis.example.com:6380" {
-		t.Errorf("expected redis URL 'redis://redis.example.com:6380', got %s", cfg.RedisURL)
+	if err := os.WriteFile(configFile, []byte(configContent), 0644); err != nil {
+		t.Fatalf("failed to write config file: %v", err)
+	}
+
+	os.Setenv("RSSHUB_CONFIG", configFile)
+
+	cfg, err := Load("")
+	if err != nil {
+		t.Fatalf("failed to load config: %v", err)
+	}
+
+	if cfg.Server.Port != "9999" {
+		t.Errorf("expected port '9999' from env var, got %s", cfg.Server.Port)
 	}
 }
 
@@ -181,7 +286,8 @@ func TestConfig_IsProduction(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cfg := &Config{Env: tt.env}
+			cfg := &Config{}
+			cfg.Server.Env = tt.env
 			if cfg.IsProduction() != tt.expected {
 				t.Errorf("expected %v, got %v", tt.expected, cfg.IsProduction())
 			}
@@ -189,83 +295,56 @@ func TestConfig_IsProduction(t *testing.T) {
 	}
 }
 
-func TestLoad_TimeoutParsing(t *testing.T) {
-	tests := []struct {
-		name     string
-		timeout  string
-		expected time.Duration
-	}{
-		{
-			name:     "30 seconds",
-			timeout:  "30",
-			expected: 30 * time.Second,
-		},
-		{
-			name:     "60 seconds",
-			timeout:  "60",
-			expected: 60 * time.Second,
-		},
+func TestGetConfigPath(t *testing.T) {
+	tmpDir := t.TempDir()
+	configFile := filepath.Join(tmpDir, "config.yaml")
+
+	// Test existing file
+	if err := os.WriteFile(configFile, []byte("server:\n  port: \"8080\""), 0644); err != nil {
+		t.Fatalf("failed to write config file: %v", err)
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			origTimeout := os.Getenv("TIMEOUT")
-			defer os.Setenv("TIMEOUT", origTimeout)
+	path, err := GetConfigPath(configFile)
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
 
-			os.Setenv("TIMEOUT", tt.timeout)
-			cfg := Load()
-
-			if cfg.Timeout != tt.expected {
-				t.Errorf("expected timeout %v, got %v", tt.expected, cfg.Timeout)
-			}
-		})
+	if path != configFile {
+		t.Errorf("expected path %s, got %s", configFile, path)
 	}
 }
 
-func TestLoad_InvalidTimeout(t *testing.T) {
-	origTimeout := os.Getenv("TIMEOUT")
-	defer os.Setenv("TIMEOUT", origTimeout)
-
-	os.Setenv("TIMEOUT", "invalid")
-	cfg := Load()
-
-	// Should keep default on invalid value
-	if cfg.Timeout != 30*time.Second {
-		t.Errorf("expected default timeout 30s on invalid input, got %v", cfg.Timeout)
+func TestGetConfigPath_NotFound(t *testing.T) {
+	_, err := GetConfigPath("/nonexistent/config.yaml")
+	if err == nil {
+		t.Error("expected error for non-existent file, got nil")
 	}
 }
 
-func TestLoad_EmptyEnv(t *testing.T) {
-	// Clear all relevant env vars
-	envs := []string{"PORT", "NODE_ENV", "CACHE_TYPE", "REDIS_URL", "USER_AGENT", "TIMEOUT", "HTTP_PROXY", "DISABLE_NSFW"}
-	origValues := make(map[string]string)
+func TestLoadOrPanic(t *testing.T) {
+	// Test successful load
+	tmpDir := t.TempDir()
+	configFile := filepath.Join(tmpDir, "config.yaml")
+	configContent := `
+server:
+  port: "8080"
+`
 
-	for _, env := range envs {
-		origValues[env] = os.Getenv(env)
-		os.Unsetenv(env)
+	if err := os.WriteFile(configFile, []byte(configContent), 0644); err != nil {
+		t.Fatalf("failed to write config file: %v", err)
 	}
 
+	cfg := LoadOrPanic(configFile)
+	if cfg.Server.Port != "8080" {
+		t.Errorf("expected port '8080', got %s", cfg.Server.Port)
+	}
+
+	// Test panic on invalid file
 	defer func() {
-		for env, val := range origValues {
-			if val != "" {
-				os.Setenv(env, val)
-			}
+		if r := recover(); r == nil {
+			t.Error("expected panic for invalid config, but didn't panic")
 		}
 	}()
 
-	cfg := Load()
-
-	// Should have all defaults
-	defaultCfg := DefaultConfig()
-	if cfg.Port != defaultCfg.Port {
-		t.Errorf("expected default port, got %s", cfg.Port)
-	}
-
-	if cfg.Env != defaultCfg.Env {
-		t.Errorf("expected default env, got %s", cfg.Env)
-	}
-
-	if cfg.CacheType != defaultCfg.CacheType {
-		t.Errorf("expected default cache type, got %s", cfg.CacheType)
-	}
+	LoadOrPanic("/nonexistent/config.yaml")
 }
