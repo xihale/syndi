@@ -22,6 +22,10 @@ import (
 	"github.com/rsshub/go/pkg/models"
 	"github.com/rsshub/go/pkg/registry"
 	"github.com/rsshub/go/pkg/rss"
+
+	// Import route packages to trigger init() registration
+	_ "github.com/rsshub/go/routes/005"
+	_ "github.com/rsshub/go/routes/github"
 )
 
 func main() {
@@ -62,9 +66,15 @@ func main() {
 		// Note: Cache middleware removed - using handler-level caching instead
 	)
 
-	// Register routes
+	// Register routes (auto-registered via init() in route packages)
 	routeRegistry := registry.GetRegistry()
-	registerRoutes(routeRegistry)
+
+	// Log registered routes for debugging
+	allRoutes := routeRegistry.GetAllRoutes()
+	logger.Info("Registered routes", zap.Int("count", len(allRoutes)))
+	for _, route := range allRoutes {
+		logger.Info("Route", zap.String("path", route.Path), zap.String("name", route.Name))
+	}
 
 	// Setup routes on Gin
 	setupGinRoutes(engine, routeRegistry, cacheInstance, httpClient)
@@ -101,12 +111,7 @@ func main() {
 	logger.Info("Server exiting")
 }
 
-// Register all routes (init-style for compatibility)
-func registerRoutes(r *registry.Registry) {
-	// Routes will be registered via init() functions in each route file
-	// This is a placeholder - actual registration happens in route packages
-}
-
+// setupGinRoutes registers all routes from the registry directly with Gin
 func setupGinRoutes(engine *gin.Engine, routeRegistry *registry.Registry, cacheInstance cache.Cache, httpClient *client.Client) {
 	// Health check - no caching (always fresh status)
 	engine.GET("/status", func(c *gin.Context) {
@@ -127,87 +132,55 @@ func setupGinRoutes(engine *gin.Engine, routeRegistry *registry.Registry, cacheI
 		outputRSS(c, feed)
 	})
 
-	// Main feed route with handler-level caching
-	// Uses default TTL (15 minutes) and smart caching logic
-	// Custom ShouldCache function prevents caching 404 errors
-	mainRouteOpts := &handlercache.CachedHandlerOptions{
+	// Get all routes from registry
+	allRoutes := routeRegistry.GetAllRoutes()
+
+	// Common cache options
+	cachedHandlerOpts := &handlercache.CachedHandlerOptions{
+		KeyGenerator: handlercache.DefaultKeyGenerator,
 		ShouldCache: func(c *gin.Context, feed *models.Feed) bool {
-			// Don't cache if there's an error code set (404, etc.)
-		if errorCode, exists := c.Get("error_code"); exists && errorCode.(int) >= 400 {
-				return false
-			}
-			// Use default logic for successful responses
-			return handlercache.DefaultShouldCache(c, feed)
-		},
-	}
-
-	engine.GET("/:namespace/:path", handlercache.Cached(cacheInstance, func(c *gin.Context) (*models.Feed, error) {
-		namespace := c.Param("namespace")
-		path := c.Param("path")
-		fullPath := "/" + namespace + "/" + path
-
-		// Check if route exists
-		route := routeRegistry.GetRoute(fullPath)
-		if route == nil {
-			c.Set("error_code", http.StatusNotFound)
-			return nil, fmt.Errorf("route not found: %s", fullPath)
-		}
-
-		// Create context for handler
-		ctx := ctxpkg.NewContext(c.Writer, c.Request)
-		ctx.SetClient(httpClient)
-		ctx.SetCache(cacheInstance)
-
-		// Call the route handler
-		feed, err := route.Handler(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		// Store feed in context for parameter middleware
-		c.Set("_rsshub_feed", feed)
-
-		return feed, nil
-	}, mainRouteOpts))
-
-	// API route with shorter cache TTL (5 minutes for JSON data)
-	apiRouteOpts := &handlercache.CachedHandlerOptions{
-		TTL: 5 * time.Minute,
-		ShouldCache: func(c *gin.Context, feed *models.Feed) bool {
-			// Don't cache if there's an error code set (404, etc.)
 			if errorCode, exists := c.Get("error_code"); exists && errorCode.(int) >= 400 {
 				return false
 			}
-			// Use default logic for successful responses
 			return handlercache.DefaultShouldCache(c, feed)
 		},
 	}
 
-	engine.GET("/api/:namespace/:path", handlercache.Cached(cacheInstance, func(c *gin.Context) (*models.Feed, error) {
-		namespace := c.Param("namespace")
-		path := c.Param("path")
-		fullPath := "/" + namespace + "/" + path
+	// Register each route with Gin using parameterized patterns
+	for _, route := range allRoutes {
+		// Convert route path to Gin pattern (e.g., "/github/repos/:username" stays the same)
+		// The route already contains :param syntax which Gin understands
+		ginPath := route.Path
 
-		route := routeRegistry.GetRoute(fullPath)
-		if route == nil {
-			c.Set("error_code", http.StatusNotFound)
-			return nil, fmt.Errorf("route not found: %s", fullPath)
+		// Create handler wrapper
+		handler := func(c *gin.Context) (*models.Feed, error) {
+			// Extract path parameters into context
+			params := make(map[string]string)
+			for _, param := range route.Parameters {
+				params[param.Name] = c.Param(param.Name)
+			}
+
+			// Create custom context
+			ctx := ctxpkg.NewContext(c.Writer, c.Request)
+			ctx.SetParams(params)
+			ctx.SetClient(httpClient)
+			ctx.SetCache(cacheInstance)
+
+			// Call route handler
+			feed, err := route.Handler(ctx)
+			if err != nil {
+				return nil, err
+			}
+
+			// Store feed for parameter middleware
+			c.Set("_rsshub_feed", feed)
+
+			return feed, nil
 		}
 
-		ctx := ctxpkg.NewContext(c.Writer, c.Request)
-		ctx.SetClient(httpClient)
-		ctx.SetCache(cacheInstance)
-
-		feed, err := route.Handler(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		// Store feed in context for parameter middleware
-		c.Set("_rsshub_feed", feed)
-
-		return feed, nil
-	}, apiRouteOpts))
+		// Register RSS route with caching
+		engine.GET(ginPath, handlercache.Cached(cacheInstance, handler, cachedHandlerOpts))
+	}
 }
 
 func outputRSS(c *gin.Context, feed *models.Feed) {

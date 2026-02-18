@@ -37,6 +37,11 @@ func NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	}
 }
 
+// SetParams sets the path parameters
+func (c *Context) SetParams(params map[string]string) {
+	c.Params = params
+}
+
 // Param retrieves a path parameter
 func (c *Context) Param(key string) string {
 	return c.Params[key]
