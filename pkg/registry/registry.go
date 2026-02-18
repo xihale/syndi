@@ -50,8 +50,13 @@ func (r *Registry) Register(route *models.Route) error {
 		return fmt.Errorf("route already registered: %s", key)
 	}
 
-	// Create catch-all entry for namespace
+	// Extract namespace from path (first path segment)
 	namespace := route.Path
+	// Skip leading slash
+	if strings.HasPrefix(namespace, "/") {
+		namespace = namespace[1:]
+	}
+	// Get first path segment (before second slash)
 	if slash := strings.Index(namespace, "/"); slash > 0 {
 		namespace = namespace[:slash]
 	}
