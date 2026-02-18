@@ -18,6 +18,7 @@ import (
 	"github.com/rsshub/go/pkg/cache"
 	"github.com/rsshub/go/pkg/config"
 	ctxpkg "github.com/rsshub/go/pkg/context"
+	"github.com/rsshub/go/pkg/docs"
 	"github.com/rsshub/go/pkg/logger"
 	"github.com/rsshub/go/pkg/models"
 	"github.com/rsshub/go/pkg/registry"
@@ -114,6 +115,15 @@ func main() {
 
 // setupGinRoutes registers all routes from the registry directly with Gin
 func setupGinRoutes(engine *gin.Engine, routeRegistry *registry.Registry, cacheInstance cache.Cache, httpClient *client.Client, cfg *config.Config) {
+	// Initialize and register documentation routes
+	docsHandler, err := docs.NewHandler()
+	if err != nil {
+		logger.Warn("Failed to initialize docs handler", zap.Error(err))
+	} else {
+		docsHandler.RegisterRoutes(engine)
+		logger.Info("Documentation available at", zap.String("url", "http://localhost:"+cfg.Port+"/docs"))
+	}
+
 	// Health check - no caching (always fresh status)
 	engine.GET("/status", func(c *gin.Context) {
 		feed := &models.Feed{
