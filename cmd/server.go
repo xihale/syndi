@@ -29,6 +29,7 @@ import (
 	_ "github.com/xihale/rsshub-go/routes/hackernews"
 	_ "github.com/xihale/rsshub-go/routes/npm"
 	_ "github.com/xihale/rsshub-go/routes/reddit"
+	_ "github.com/xihale/rsshub-go/routes/techne98"
 )
 
 func main() {
