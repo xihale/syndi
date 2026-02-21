@@ -52,11 +52,21 @@ func main() {
 
 	// Initialize cache
 	var cacheInstance cache.Cache
-	if cfg.GetCacheType() == "redis" {
+	switch cfg.GetCacheType() {
+	case "badger":
+		bc, err := cache.NewBadgerCache(cfg.GetBadgerPath())
+		if err != nil {
+			logger.Fatal("Failed to initialize BadgerDB cache", zap.Error(err))
+		}
+		cacheInstance = bc
+		defer bc.Close()
+		logger.Info("Using BadgerDB cache", zap.String("path", cfg.GetBadgerPath()))
+	case "redis":
 		logger.Warn("Redis cache not yet implemented, falling back to memory")
 		cacheInstance = cache.NewMemoryCache(cfg.GetMemoryCacheSize())
-	} else {
+	default:
 		cacheInstance = cache.NewMemoryCache(cfg.GetMemoryCacheSize())
+		logger.Info("Using memory cache", zap.Int("size", cfg.GetMemoryCacheSize()))
 	}
 
 	// Initialize HTTP client

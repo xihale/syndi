@@ -22,10 +22,13 @@ type Config struct {
 
 	// Cache settings
 	Cache struct {
-		Type   string        `yaml:"type"` // "memory" or "redis"
+		Type   string        `yaml:"type"` // "memory", "redis", or "badger"
 		Redis  struct {
 			URL string `yaml:"url"`
 		} `yaml:"redis"`
+		Badger struct {
+			Path string `yaml:"path"`
+		} `yaml:"badger"`
 		TTL        time.Duration `yaml:"ttl"`
 		MemorySize int           `yaml:"memory_size"`
 	} `yaml:"cache"`
@@ -64,8 +67,9 @@ func DefaultConfig() *Config {
 	cfg.Server.IdleTimeout = 120 * time.Second
 
 	// Cache defaults
-	cfg.Cache.Type = "memory"
+	cfg.Cache.Type = "badger"
 	cfg.Cache.Redis.URL = "redis://localhost:6379"
+	cfg.Cache.Badger.Path = "./data/cache"
 	cfg.Cache.TTL = 15 * time.Minute
 	cfg.Cache.MemorySize = 10000
 
@@ -162,6 +166,11 @@ func (c *Config) GetRedisURL() string {
 // GetMemoryCacheSize returns the memory cache size (for backward compatibility)
 func (c *Config) GetMemoryCacheSize() int {
 	return c.Cache.MemorySize
+}
+
+// GetBadgerPath returns the BadgerDB path (for backward compatibility)
+func (c *Config) GetBadgerPath() string {
+	return c.Cache.Badger.Path
 }
 
 // GetUserAgent returns the user agent (for backward compatibility)
