@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -14,7 +15,7 @@ import (
 )
 
 func init() {
-	cacheTTL := 30 * time.Minute // Blog updates moderately
+	cacheTTL := 5 * 24 * time.Hour // Blog list cache: 5 days
 
 	route := &models.Route{
 		Path:        "/techne98/blog",
@@ -25,8 +26,10 @@ func init() {
 		Categories:  []models.Category{{Name: "blog"}},
 		Features:    models.Features{},
 		Handler:     Techne98BlogHandler,
-		Parameters:  []models.Parameter{},
-		CacheTTL:    &cacheTTL,
+		Parameters: []models.Parameter{
+			{Name: "limit", Required: false, Description: "Maximum number of articles to return (default: all)"},
+		},
+		CacheTTL: &cacheTTL,
 	}
 
 	if err := registry.GetRegistry().Register(route); err != nil {
@@ -96,25 +99,31 @@ func Techne98BlogHandler(c *ctxpkg.Context) (*models.Feed, error) {
 		)
 		item.GUID = link
 
-		detailDoc, err := routeutils.GetHTML(ctx, c.Client(), link)
-		if err == nil {
+		contentCacheKey := fmt.Sprintf("techne98:article:%s", link)
+		contentHTMLVal, err := c.CacheTryGet(contentCacheKey, 30*24*time.Hour, func() (interface{}, error) {
+			detailDoc, err := routeutils.GetHTML(ctx, c.Client(), link)
+			if err != nil {
+				return "", err
+			}
 			articleSel := detailDoc.Find("article.prose-content")
-			if articleSel.Length() > 0 {
-				contentHTML, _ := articleSel.Html()
-				if contentHTML != "" {
-					cleaned, err := routeutils.CleanDescription(contentHTML, rootURL, routeutils.DefaultCleanOptions())
-					if err == nil {
-						// CleanDescription returns full HTML document, extract body content
-						doc, parseErr := parser.LoadString(cleaned)
-						if parseErr == nil {
-							bodySel := doc.Find("body")
-							if bodySel.Length() > 0 {
-								bodyHTML, _ := bodySel.Html()
-								if bodyHTML != "" {
-									item.Description = bodyHTML
-								} else {
-									item.Description = cleaned
-								}
+			if articleSel.Length() == 0 {
+				return "", nil
+			}
+			html, _ := articleSel.Html()
+			return html, nil
+		})
+		if err == nil && contentHTMLVal != "" {
+			contentHTML := contentHTMLVal.(string)
+			if contentHTML != "" {
+				cleaned, err := routeutils.CleanDescription(contentHTML, rootURL, routeutils.DefaultCleanOptions())
+				if err == nil {
+					doc, parseErr := parser.LoadString(cleaned)
+					if parseErr == nil {
+						bodySel := doc.Find("body")
+						if bodySel.Length() > 0 {
+							bodyHTML, _ := bodySel.Html()
+							if bodyHTML != "" {
+								item.Description = bodyHTML
 							} else {
 								item.Description = cleaned
 							}
@@ -122,8 +131,10 @@ func Techne98BlogHandler(c *ctxpkg.Context) (*models.Feed, error) {
 							item.Description = cleaned
 						}
 					} else {
-						item.Description = contentHTML
+						item.Description = cleaned
 					}
+				} else {
+					item.Description = contentHTML
 				}
 			}
 		}

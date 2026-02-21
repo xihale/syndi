@@ -12,9 +12,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
+	handlercache "github.com/xihale/rsshub-go/internal/cache"
 	"github.com/xihale/rsshub-go/internal/client"
 	"github.com/xihale/rsshub-go/internal/middleware"
-	handlercache "github.com/xihale/rsshub-go/internal/cache"
 	"github.com/xihale/rsshub-go/pkg/cache"
 	"github.com/xihale/rsshub-go/pkg/config"
 	ctxpkg "github.com/xihale/rsshub-go/pkg/context"
