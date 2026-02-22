@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -25,6 +26,7 @@ type Client struct {
 	timeout      time.Duration
 	maxRedirects int
 	proxy        *url.URL
+	noProxy      bool
 	cookieJar    http.CookieJar
 	logger       *zap.Logger
 	maxRetries   int
@@ -114,14 +116,16 @@ func New(options ...ClientOption) *Client {
 	}
 
 	transport := &http.Transport{
-		Proxy:               http.ProxyFromEnvironment,
-		MaxIdleConns:        100,
-		IdleConnTimeout:     90 * time.Second,
-		TLSHandshakeTimeout: 10 * time.Second,
+		Proxy:                 http.ProxyFromEnvironment,
+		MaxIdleConns:          100,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
 	}
 
-	if c.proxy != nil {
+	if c.noProxy {
+		transport.Proxy = nil
+	} else if c.proxy != nil {
 		transport.Proxy = http.ProxyURL(c.proxy)
 	}
 
@@ -163,6 +167,14 @@ func WithProxy(proxyURL string) ClientOption {
 	}
 }
 
+// WithNoProxy forces the client to skip proxy usage (including env proxies)
+func WithNoProxy() ClientOption {
+	return func(c *Client) {
+		c.proxy = nil
+		c.noProxy = true
+	}
+}
+
 // WithCookieJar sets the cookie jar
 func WithCookieJar(jar http.CookieJar) ClientOption {
 	return func(c *Client) {
@@ -199,6 +211,15 @@ func WithRetryConfig(maxRetries int, baseDelay, maxDelay time.Duration) ClientOp
 	}
 }
 
+// WithMaxRedirects sets the maximum number of redirects to follow
+func WithMaxRedirects(maxRedirects int) ClientOption {
+	return func(c *Client) {
+		if maxRedirects > 0 {
+			c.maxRedirects = maxRedirects
+		}
+	}
+}
+
 // WithRateLimit sets rate limit (requests per second) for specific host
 func WithRateLimit(host string, rps float64, burst int) ClientOption {
 	return func(c *Client) {
@@ -225,8 +246,20 @@ func (c *Client) doRequestWithRetry(ctx context.Context, req *http.Request) ([]b
 
 	var lastErr error
 	delay := c.baseDelay
+	maxAttempts := 1
+	if isRetryableMethod(req.Method) && isRequestReplayable(req) {
+		maxAttempts = c.maxRetries + 1
+	}
 
-	for attempt := 0; attempt <= c.maxRetries; attempt++ {
+	for attempt := 0; attempt < maxAttempts; attempt++ {
+		if req.GetBody != nil {
+			body, err := req.GetBody()
+			if err != nil {
+				return nil, fmt.Errorf("failed to reset request body: %w", err)
+			}
+			req.Body = body
+		}
+
 		if attempt > 0 {
 			select {
 			case <-ctx.Done():
@@ -255,7 +288,6 @@ func (c *Client) doRequestWithRetry(ctx context.Context, req *http.Request) ([]b
 			delay = minDuration(delay*2, c.maxDelay)
 			continue
 		}
-		defer resp.Body.Close()
 
 		// Check for rate limiting
 		if resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode == http.StatusServiceUnavailable {
@@ -266,8 +298,12 @@ func (c *Client) doRequestWithRetry(ctx context.Context, req *http.Request) ([]b
 				}
 			}
 			lastErr = fmt.Errorf("failed to fetch %s: status %s (rate limited)", req.URL.String(), resp.Status)
-			delay = minDuration(delay*2, c.maxDelay)
-			continue
+			_ = resp.Body.Close()
+			if shouldRetryStatus(resp.StatusCode) {
+				delay = minDuration(delay*2, c.maxDelay)
+				continue
+			}
+			return nil, lastErr
 		}
 
 		if resp.StatusCode != http.StatusOK {
@@ -277,11 +313,16 @@ func (c *Client) doRequestWithRetry(ctx context.Context, req *http.Request) ([]b
 			} else {
 				lastErr = fmt.Errorf("failed to fetch %s: status %s", req.URL.String(), resp.Status)
 			}
-			delay = minDuration(delay*2, c.maxDelay)
-			continue
+			_ = resp.Body.Close()
+			if shouldRetryStatus(resp.StatusCode) {
+				delay = minDuration(delay*2, c.maxDelay)
+				continue
+			}
+			return nil, lastErr
 		}
 
 		body, err := io.ReadAll(resp.Body)
+		_ = resp.Body.Close()
 		if err != nil {
 			lastErr = fmt.Errorf("failed to read response body: %w", err)
 			delay = minDuration(delay*2, c.maxDelay)
@@ -349,11 +390,46 @@ func (c *Client) GetWithHeaders(ctx context.Context, urlStr string, headers map[
 }
 
 func (c *Client) checkRedirect(req *http.Request, via []*http.Request) error {
+	if len(via) >= c.maxRedirects {
+		return errors.New("stopped after too many redirects")
+	}
+
 	// Copy User-Agent from original request
 	if len(via) > 0 {
 		req.Header.Set("User-Agent", c.userAgent)
 	}
 	return nil
+}
+
+func isRequestReplayable(req *http.Request) bool {
+	switch req.Method {
+	case http.MethodGet, http.MethodHead, http.MethodOptions, http.MethodTrace:
+		return true
+	}
+	return req.GetBody != nil
+}
+
+func isRetryableMethod(method string) bool {
+	switch method {
+	case http.MethodGet, http.MethodHead, http.MethodOptions, http.MethodTrace, http.MethodPut, http.MethodDelete:
+		return true
+	}
+	return false
+}
+
+func shouldRetryStatus(statusCode int) bool {
+	switch statusCode {
+	case http.StatusRequestTimeout, // 408
+		http.StatusTooEarly,            // 425
+		http.StatusTooManyRequests,     // 429
+		http.StatusInternalServerError, // 500
+		http.StatusBadGateway,          // 502
+		http.StatusServiceUnavailable,  // 503
+		http.StatusGatewayTimeout:      // 504
+		return true
+	default:
+		return false
+	}
 }
 
 // SetCookie adds a cookie for a domain
@@ -455,11 +531,11 @@ func (c *Client) GetHTMLWithHeaders(ctx context.Context, urlStr string, headers 
 
 // ResponseInfo contains metadata about an HTTP response
 type ResponseInfo struct {
-	StatusCode int
-	Header     http.Header
-	ContentType string
+	StatusCode    int
+	Header        http.Header
+	ContentType   string
 	ContentLength int64
-	OK         bool
+	OK            bool
 }
 
 // GetResponseInfo performs a HEAD request to get response metadata
@@ -483,7 +559,7 @@ func (c *Client) GetResponseInfo(ctx context.Context, urlStr string) (*ResponseI
 		StatusCode:    resp.StatusCode,
 		Header:        resp.Header,
 		ContentLength: resp.ContentLength,
-		OK:           resp.StatusCode == http.StatusOK,
+		OK:            resp.StatusCode == http.StatusOK,
 	}
 
 	if ct := resp.Header.Get("Content-Type"); ct != "" {

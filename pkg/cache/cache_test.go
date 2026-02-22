@@ -68,6 +68,17 @@ func TestMemoryCache_Exists(t *testing.T) {
 	}
 }
 
+func TestMemoryCache_ExistsExpired(t *testing.T) {
+	cache := NewMemoryCache(100)
+
+	cache.Set("expired", "value", 10*time.Millisecond)
+	time.Sleep(20 * time.Millisecond)
+
+	if cache.Exists("expired") {
+		t.Error("expected expired key to not exist")
+	}
+}
+
 func TestMemoryCache_Clear(t *testing.T) {
 	cache := NewMemoryCache(100)
 

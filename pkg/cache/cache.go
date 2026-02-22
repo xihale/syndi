@@ -89,10 +89,18 @@ func (c *MemoryCache) Set(key string, value interface{}, ttl time.Duration) {
 
 func (c *MemoryCache) Exists(key string) bool {
 	c.mu.RLock()
-	defer c.mu.RUnlock()
+	val, ok := c.cache.Get(key)
+	c.mu.RUnlock()
+	if !ok {
+		return false
+	}
 
-	_, ok := c.cache.Get(key)
-	return ok
+	if time.Now().After(val.exp) {
+		c.Delete(key)
+		return false
+	}
+
+	return true
 }
 
 func (c *MemoryCache) Delete(key string) {

@@ -36,7 +36,7 @@ client:
   max_redirects: 10
   # Proxy URL (leave empty to disable proxy)
   proxy: ""
-  # Disable proxy for specific hosts
+  # Disable all proxy usage (overrides proxy and environment proxy settings)
   no_proxy: false
 
 # Route settings

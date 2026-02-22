@@ -80,10 +80,17 @@ func main() {
 	}
 
 	// Initialize HTTP client
-	httpClient := client.New(
+	clientOpts := []client.ClientOption{
 		client.WithUserAgent(cfg.GetUserAgent()),
 		client.WithTimeout(cfg.GetTimeout()),
-	)
+		client.WithMaxRedirects(cfg.Client.MaxRedirects),
+	}
+	if cfg.Client.NoProxy {
+		clientOpts = append(clientOpts, client.WithNoProxy())
+	} else if proxy := cfg.GetProxy(); proxy != "" {
+		clientOpts = append(clientOpts, client.WithProxy(proxy))
+	}
+	httpClient := client.New(clientOpts...)
 
 	// Create Gin engine with custom middleware stack
 	engine := gin.New()

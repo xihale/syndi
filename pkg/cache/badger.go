@@ -13,14 +13,14 @@ import (
 // BadgerCache implements a persistent cache using BadgerDB
 // It works as a two-tier cache: Memory (hot) + Badger (cold/persistent)
 type BadgerCache struct {
-	mu          sync.RWMutex
-	memory      *MemoryCache  // Hot cache (LRU)
-	badger      *badger.DB    // Cold cache (persistent)
-	badgerPath  string        // Path for Badger data
-	defaultTTL  time.Duration // Default TTL for Set operations
+	mu              sync.RWMutex
+	memory          *MemoryCache  // Hot cache (LRU)
+	badger          *badger.DB    // Cold cache (persistent)
+	badgerPath      string        // Path for Badger data
+	defaultTTL      time.Duration // Default TTL for Set operations
 	cleanupInterval time.Duration // Interval for periodic cleanup
-	stopCleanup chan struct{} // Channel to stop background cleanup
-	wg          sync.WaitGroup
+	stopCleanup     chan struct{} // Channel to stop background cleanup
+	wg              sync.WaitGroup
 }
 
 // badgerCacheEntry is stored in Badger with metadata
@@ -45,12 +45,12 @@ func NewBadgerCache(memorySize int, badgerPath string, defaultTTL time.Duration,
 	memory := NewMemoryCache(memorySize)
 
 	c := &BadgerCache{
-		memory:      memory,
-		badger:      db,
-		badgerPath:  badgerPath,
-		defaultTTL:  defaultTTL,
+		memory:          memory,
+		badger:          db,
+		badgerPath:      badgerPath,
+		defaultTTL:      defaultTTL,
 		cleanupInterval: cleanupInterval,
-		stopCleanup: make(chan struct{}),
+		stopCleanup:     make(chan struct{}),
 	}
 
 	// Start background cleanup goroutine
@@ -70,10 +70,10 @@ func (c *BadgerCache) Get(key string) (interface{}, bool) {
 
 	// Try badger (slow path)
 	c.mu.RLock()
-	defer c.mu.RUnlock()
 
 	var result interface{}
 	var expiresAt int64
+	var expired bool
 	err := c.badger.View(func(txn *badger.Txn) error {
 		item, err := txn.Get([]byte(key))
 		if err != nil {
@@ -92,8 +92,7 @@ func (c *BadgerCache) Get(key string) (interface{}, bool) {
 
 		// Check expiration
 		if time.Now().UnixNano() > entry.ExpiresAt {
-			// Expired, delete and return not found
-			c.deleteFromBadger(key)
+			expired = true
 			return nil
 		}
 
@@ -107,8 +106,12 @@ func (c *BadgerCache) Get(key string) (interface{}, bool) {
 		expiresAt = entry.ExpiresAt
 		return nil
 	})
+	c.mu.RUnlock()
 
 	if err != nil || result == nil {
+		if expired {
+			c.deleteFromBadger(key)
+		}
 		return nil, false
 	}
 
@@ -145,8 +148,8 @@ func (c *BadgerCache) Set(key string, value interface{}, ttl time.Duration) {
 
 // setInBadger stores a value in Badger
 func (c *BadgerCache) setInBadger(key string, value interface{}, ttl time.Duration) {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
 	// Encode value using gob
 	var buf bytes.Buffer
@@ -175,8 +178,8 @@ func (c *BadgerCache) setInBadger(key string, value interface{}, ttl time.Durati
 
 // deleteFromBadger removes a key from Badger
 func (c *BadgerCache) deleteFromBadger(key string) {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
 	_ = c.badger.Update(func(txn *badger.Txn) error {
 		return txn.Delete([]byte(key))
@@ -192,9 +195,9 @@ func (c *BadgerCache) Exists(key string) bool {
 
 	// Check badger
 	c.mu.RLock()
-	defer c.mu.RUnlock()
 
 	var exists bool
+	var expired bool
 	_ = c.badger.View(func(txn *badger.Txn) error {
 		item, err := txn.Get([]byte(key))
 		if err != nil {
@@ -214,9 +217,16 @@ func (c *BadgerCache) Exists(key string) bool {
 		// Check expiration
 		if time.Now().UnixNano() <= entry.ExpiresAt {
 			exists = true
+		} else {
+			expired = true
 		}
 		return nil
 	})
+	c.mu.RUnlock()
+
+	if expired {
+		c.deleteFromBadger(key)
+	}
 
 	return exists
 }
@@ -236,8 +246,8 @@ func (c *BadgerCache) Clear() {
 	c.memory.Clear()
 
 	// Clear badger
-	c.mu.RLock()
-	defer c.mu.RUnlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
 	_ = c.badger.Update(func(txn *badger.Txn) error {
 		iter := txn.NewIterator(badger.DefaultIteratorOptions)
@@ -270,8 +280,8 @@ func (c *BadgerCache) cleanupExpired() {
 
 // cleanupBadger removes all expired entries from Badger
 func (c *BadgerCache) cleanupBadger() {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
 	now := time.Now().UnixNano()
 	var keysToDelete [][]byte

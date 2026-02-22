@@ -75,6 +75,7 @@ middleware:
 ```
 
 See `config.yaml` for the default configuration with all options documented.
+For proxy and redirect behavior details (including precedence), see `docs/CLIENT_CONFIG.md`.
 
 ## Development
 
@@ -129,6 +130,7 @@ Routes are auto-registered via `init()` functions. See `routes/` directory for e
 
 - `/docs` - Interactive route documentation (when server is running)
 - `docs/CACHING.md` - Comprehensive caching guide
+- `docs/CLIENT_CONFIG.md` - HTTP client config behavior and precedence
 - `CLAUDE.md` - Developer guide
 
 ## License

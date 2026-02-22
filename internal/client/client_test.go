@@ -2,9 +2,11 @@ package client
 
 import (
 	"context"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -245,6 +247,141 @@ func TestClient_FollowRedirects(t *testing.T) {
 
 	if string(body) != "final destination" {
 		t.Errorf("expected 'final destination', got %s", string(body))
+	}
+}
+
+func TestClient_WithMaxRedirects(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/next", http.StatusFound)
+	}))
+	defer server.Close()
+
+	c := New(WithMaxRedirects(1))
+	ctx := context.Background()
+
+	_, err := c.Get(ctx, server.URL)
+	if err == nil {
+		t.Fatal("expected redirect limit error")
+	}
+}
+
+func TestClient_Post_NoRetryForNonReplayableBody(t *testing.T) {
+	attempts := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		attempts++
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer server.Close()
+
+	c := New(WithRetryConfig(3, 1*time.Millisecond, 5*time.Millisecond))
+	ctx := context.Background()
+
+	_, err := c.Post(ctx, server.URL, &oneShotReader{data: []byte("payload")})
+	if err == nil {
+		t.Fatal("expected request error")
+	}
+	if attempts != 1 {
+		t.Fatalf("expected one attempt for non-replayable body, got %d", attempts)
+	}
+}
+
+func TestClient_Post_NoRetryEvenIfReplayableBody(t *testing.T) {
+	attempts := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		attempts++
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer server.Close()
+
+	c := New(WithRetryConfig(3, 1*time.Millisecond, 5*time.Millisecond))
+	ctx := context.Background()
+
+	_, err := c.Post(ctx, server.URL, strings.NewReader("payload"))
+	if err == nil {
+		t.Fatal("expected request error")
+	}
+	if attempts != 1 {
+		t.Fatalf("expected one attempt for non-idempotent POST, got %d", attempts)
+	}
+}
+
+func TestClient_Put_RetryForIdempotentReplayableBody(t *testing.T) {
+	attempts := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		attempts++
+		if r.Method != http.MethodPut {
+			t.Fatalf("expected PUT method, got %s", r.Method)
+		}
+		body, _ := io.ReadAll(r.Body)
+		if attempts == 1 {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		if string(body) != "payload" {
+			t.Fatalf("expected payload on retry, got %q", string(body))
+		}
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("ok"))
+	}))
+	defer server.Close()
+
+	c := New(WithRetryConfig(3, 1*time.Millisecond, 5*time.Millisecond))
+	ctx := context.Background()
+
+	resp, err := c.NewRequest(http.MethodPut, server.URL).
+		WithContext(ctx).
+		WithBody(strings.NewReader("payload")).
+		Do()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if string(resp) != "ok" {
+		t.Fatalf("expected ok response, got %q", string(resp))
+	}
+	if attempts < 2 {
+		t.Fatalf("expected at least one retry, got %d attempts", attempts)
+	}
+}
+
+func TestClient_RetryAfterDelay(t *testing.T) {
+	attempts := 0
+	var (
+		mu    sync.Mutex
+		times []time.Time
+	)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		times = append(times, time.Now())
+		mu.Unlock()
+		attempts++
+		if attempts == 1 {
+			w.Header().Set("Retry-After", "1")
+			w.WriteHeader(http.StatusTooManyRequests)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("ok"))
+	}))
+	defer server.Close()
+
+	c := New(WithRetryConfig(3, 1*time.Millisecond, 5*time.Second))
+	ctx := context.Background()
+
+	body, err := c.Get(ctx, server.URL)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if string(body) != "ok" {
+		t.Fatalf("expected ok, got %q", string(body))
+	}
+	if attempts < 2 {
+		t.Fatalf("expected at least 2 attempts, got %d", attempts)
+	}
+	if len(times) != 2 {
+		t.Fatalf("expected two timestamps, got %d", len(times))
+	}
+	if delta := times[1].Sub(times[0]); delta < time.Second {
+		t.Fatalf("expected delay >= 1s, got %v", delta)
 	}
 }
 
@@ -690,4 +827,18 @@ func TestRequestBuilder_DoHTML(t *testing.T) {
 	if content != "Test Content" {
 		t.Errorf("expected 'Test Content', got '%s'", content)
 	}
+}
+
+type oneShotReader struct {
+	data []byte
+	read bool
+}
+
+func (r *oneShotReader) Read(p []byte) (int, error) {
+	if r.read {
+		return 0, io.EOF
+	}
+	r.read = true
+	n := copy(p, r.data)
+	return n, io.EOF
 }

@@ -19,26 +19,26 @@ type DocData struct {
 
 // NamespaceDoc represents a namespace documentation
 type NamespaceDoc struct {
-	Name        string       `json:"name"`
-	Description string       `json:"description"`
-	RouteCount  int          `json:"route_count"`
-	Routes      []*RouteDoc  `json:"routes"`
+	Name        string      `json:"name"`
+	Description string      `json:"description"`
+	RouteCount  int         `json:"route_count"`
+	Routes      []*RouteDoc `json:"routes"`
 }
 
 // RouteDoc represents a route documentation
 type RouteDoc struct {
-	Path         string            `json:"path"`
-	Name         string            `json:"name"`
-	Description  string            `json:"description"`
-	Example      string            `json:"example"`
-	ExampleURL   string            `json:"example_url"`
-	Categories   []string          `json:"categories"`
-	Parameters   []*ParameterDoc   `json:"parameters"`
-	Features     *FeaturesDoc      `json:"features,omitempty"`
-	Maintainers  []string          `json:"maintainers"`
-	CacheTTL     string            `json:"cache_ttl"`
-	CurlExample  string            `json:"curl_example"`
-	QueryParams  []*QueryParamDoc  `json:"query_params"`
+	Path        string           `json:"path"`
+	Name        string           `json:"name"`
+	Description string           `json:"description"`
+	Example     string           `json:"example"`
+	ExampleURL  string           `json:"example_url"`
+	Categories  []string         `json:"categories"`
+	Parameters  []*ParameterDoc  `json:"parameters"`
+	Features    *FeaturesDoc     `json:"features,omitempty"`
+	Maintainers []string         `json:"maintainers"`
+	CacheTTL    string           `json:"cache_ttl"`
+	CurlExample string           `json:"curl_example"`
+	QueryParams []*QueryParamDoc `json:"query_params"`
 }
 
 // ParameterDoc represents a route parameter documentation
@@ -86,8 +86,8 @@ var standardQueryParams = []*QueryParamDoc{
 	},
 	{
 		Name:        "sorted",
-		Description: "Sort items by date (asc or desc)",
-		Example:     "?sorted=asc",
+		Description: "Sort items by date (true or false, default true)",
+		Example:     "?sorted=false",
 	},
 }
 
@@ -171,8 +171,8 @@ func routeToDoc(route *models.Route) *RouteDoc {
 	var features *FeaturesDoc
 	if route.Features.SupportRadar || route.Features.AntiCrawler {
 		features = &FeaturesDoc{
-			SupportRadar:   route.Features.SupportRadar,
-			AntiCrawler:    route.Features.AntiCrawler,
+			SupportRadar: route.Features.SupportRadar,
+			AntiCrawler:  route.Features.AntiCrawler,
 		}
 	}
 
@@ -192,18 +192,18 @@ func routeToDoc(route *models.Route) *RouteDoc {
 	curlExample := buildCurlExample(exampleURL)
 
 	return &RouteDoc{
-		Path:         route.Path,
-		Name:         route.Name,
-		Description:  route.Description,
-		Example:      route.Example,
-		ExampleURL:   exampleURL,
-		Categories:   categories,
-		Parameters:   params,
-		Features:     features,
-		Maintainers:  route.Maintainers,
-		CacheTTL:     cacheTTL,
-		CurlExample:  curlExample,
-		QueryParams:  standardQueryParams,
+		Path:        route.Path,
+		Name:        route.Name,
+		Description: route.Description,
+		Example:     route.Example,
+		ExampleURL:  exampleURL,
+		Categories:  categories,
+		Parameters:  params,
+		Features:    features,
+		Maintainers: route.Maintainers,
+		CacheTTL:    cacheTTL,
+		CurlExample: curlExample,
+		QueryParams: standardQueryParams,
 	}
 }
 
