@@ -5,7 +5,6 @@ rsshub-go provides two approaches for caching RSS feed responses:
 ## Table of Contents
 
 - [Overview](#overview)
-- [Middleware-Level Caching](#middleware-level-caching)
 - [Handler-Level Caching (Recommended)](#handler-level-caching-recommended)
 - [Comparison](#comparison)
 - [Migration Guide](#migration-guide)
@@ -26,66 +25,24 @@ Both caching approaches provide:
 
 ---
 
-## Middleware-Level Caching
-
-**Location**: `internal/middleware/cache.go`
-
-The middleware-level caching applies to all routes automatically.
-
-### Pros
-
-- ✅ Automatic - no code changes needed per route
-- ✅ Centralized configuration
-- ✅ Request deduplication (prevents cache stampede)
-
-### Cons
-
-- ❌ Response body interception issues with Gin
-- ❌ Limited per-route customization
-- ❌ Cache status headers may not be visible in all cases
-- ❌ All-or-nothing approach
-
-### Usage
-
-Already configured in `cmd/server.go`:
-
-```go
-engine.Use(
-    middleware.Recovery(),
-    middleware.Logger(),
-    middleware.Header(cfg.CacheTTL),
-    middleware.Cache(cacheInstance, cfg.CacheTTL),
-    middleware.Parameter(),
-)
-```
-
-### Known Limitations
-
-Due to Gin's internal handling of response writers, the middleware approach has limitations:
-- Cache status headers (X-Cache) may not propagate correctly
-- Response body buffering can cause issues
-- Less control over individual route behavior
-
----
-
 ## Handler-Level Caching (Recommended)
 
 **Location**: `internal/cache/handler.go`
 
-The handler-level caching wraps individual route handlers with caching logic.
+Handler-level caching wraps individual route handlers with caching logic.
 
 ### Pros
 
-- ✅ **No writer wrapping issues**
-- ✅ Full per-route customization
-- ✅ Cache headers always visible
-- ✅ Flexible TTL and key generation per route
-- ✅ Conditional caching based on response content
+-- ✅ **No writer wrapping issues**
+-- ✅ Full per-route customization
+-- ✅ Cache headers always visible
+-- ✅ Flexible TTL and key generation per route
+-- ✅ Conditional caching based on response content
 
 ### Cons
 
-- ❌ Requires explicit opt-in per route
-- ❌ More verbose configuration
+-- ❌ Requires explicit opt-in per route
+-- ❌ More verbose configuration
 
 ### Basic Usage
 
@@ -152,59 +109,41 @@ func RegisterRoutes(engine *gin.Engine, cacheInstance cache.Cache, registry *Rou
 
 ---
 
-## Comparison
+## Why Handler-Level
 
-| Feature | Middleware | Handler-Level |
-|---------|-----------|---------------|
-| **Ease of use** | ⭐⭐⭐⭐⭐ (automatic) | ⭐⭐⭐ (manual) |
-| **Per-route control** | ⭐⭐ (limited) | ⭐⭐⭐⭐⭐ (full) |
-| **Header visibility** | ⭐⭐ (issues) | ⭐⭐⭐⭐⭐ (always works) |
-| **Flexibility** | ⭐⭐⭐ (moderate) | ⭐⭐⭐⭐⭐ (high) |
-| **Request deduplication** | ⭐⭐⭐⭐⭐ (built-in) | ⭐⭐ (manual) |
-| **Production ready** | ⭐⭐⭐ (with caveats) | ⭐⭐⭐⭐⭐ (fully) |
+- Eliminates the response writer re-wrapping that caused Gin integration issues.
+- Keeps cache headers visible and configurable per route for accurate diagnostics.
+- Lets each handler define its own TTL, key-generation, and conditional caching rules.
+- Plays nicely with other middleware since it only wraps individual handlers.
 
 ---
 
 ## Migration Guide
 
-### From Middleware to Handler-Level
+### Cleanup the middleware stack
 
-**Before** (middleware approach):
-
-```go
-// In cmd/server.go
-engine.Use(middleware.Cache(cacheInstance, cfg.CacheTTL))
-
-engine.GET("/feed", myHandler)
-```
-
-**After** (handler-level approach):
+Remove the cache middleware from `cmd/server.go` so the setup now looks like:
 
 ```go
-// Remove middleware caching
 engine.Use(
     middleware.Recovery(),
     middleware.Logger(),
     middleware.Header(cfg.CacheTTL),
-    // middleware.Cache() - remove this
     middleware.Parameter(),
 )
+```
 
-// Wrap individual handlers
+### Wrap your handlers with cache helpers
+
+```go
 engine.GET("/feed", cache.NewCachedHandler(cacheInstance, myHandler))
 ```
 
-### Gradual Migration
+Use `cache.NewCachedHandlerWithTTL` or `cache.Cached` for more control as needed.
 
-You can use both approaches simultaneously:
+### Progressive adoption
 
-```go
-// Keep middleware for some routes
-engine.Use(middleware.Cache(cacheInstance, cfg.CacheTTL))
-
-// Override with handler-level for specific routes
-engine.GET("/important", cache.NewCachedHandler(cacheInstance, importantHandler, 1*time.Hour))
-```
+You don’t need to wrap every handler right away—add caching to the most critical routes first and keep monitoring hit/miss ratios as you expand coverage.
 
 ---
 

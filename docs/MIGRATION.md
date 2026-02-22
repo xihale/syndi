@@ -4,70 +4,31 @@ This guide shows how rsshub-go was migrated from middleware-level caching to han
 
 ## Overview of Changes
 
-### Before (Middleware Approach)
+### Legacy middleware pipeline
 
-```go
-// cmd/server.go - middleware stack
-engine.Use(
-    middleware.Recovery(),
-    middleware.Logger(),
-    middleware.Header(cfg.CacheTTL),
-    middleware.Cache(cacheInstance, cfg.CacheTTL), // ❌ Had issues
-    middleware.Parameter(),
-)
+- Previously, caching was injected between `middleware.Header` and `middleware.Parameter`, which caused writer wrapping issues and hid cache headers from clients.
+- The latest architecture removes that middleware entirely and applies caching explicitly at the handler level.
 
-// Routes - no caching logic
-engine.GET("/:namespace/:path", func(c *gin.Context) {
-    // Handler logic directly here
-})
-```
+### Current handler-level strategy
 
-**Problems with middleware approach:**
-- Response body interception issues with Gin
-- Cache status headers not propagating correctly
-- Limited per-route customization
-- All-or-nothing approach
-
-### After (Handler-Level Approach)
-
-```go
-// cmd/server.go - no cache middleware
-engine.Use(
-    middleware.Recovery(),
-    middleware.Logger(),
-    middleware.Header(cfg.CacheTTL),
-    middleware.Parameter(), // ✅ No cache middleware
-)
-
-// Routes - with handler-level caching
-engine.GET("/:namespace/:path", handlercache.NewCachedHandler(cacheInstance, func(c *gin.Context) (*models.Feed, error) {
-    // Handler logic returns (*models.Feed, error)
-    return feed, nil
-}))
-```
-
-**Benefits of handler-level approach:**
-- ✅ No response writer wrapping issues
-- ✅ Full header visibility
-- ✅ Per-route customization
-- ✅ Production-ready
+- Each route now uses the helpers in `internal/cache/handler.go` to wrap handlers with TTL, key, and condition controls.
+- Cache headers are emitted inside the helper, so hits, misses, and bypasses stay visible.
 
 ---
 
 ## Step-by-Step Migration
 
-### Step 1: Remove Middleware Caching
+### Step 1: Remove middleware-level caching
 
 **File**: `cmd/server.go`
 
-```diff
- engine.Use(
-     middleware.Recovery(),
-     middleware.Logger(),
-     middleware.Header(cfg.CacheTTL),
--    middleware.Cache(cacheInstance, cfg.CacheTTL),
-     middleware.Parameter(),
- )
+```go
+engine.Use(
+    middleware.Recovery(),
+    middleware.Logger(),
+    middleware.Header(cfg.CacheTTL),
+    middleware.Parameter(),
+)
 ```
 
 ### Step 2: Add Handler-Level Caching Import
@@ -262,15 +223,7 @@ X-Cache: HIT
 
 ## Rollback Plan
 
-If you need to rollback to middleware caching:
-
-```go
-// Re-add middleware caching
-engine.Use(middleware.Cache(cacheInstance, cfg.CacheTTL))
-
-// Remove handler-level caching
-engine.GET("/:namespace/:path", originalHandler) // No wrapper
-```
+If you truly need to roll back, reintroduce the middleware stack entry and rerun any handler migration after resolving the blocking issue. Keep this temporary and remove it once handler-level caching is restored.
 
 ---
 
