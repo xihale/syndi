@@ -2,26 +2,28 @@ package routes
 
 import (
 	"fmt"
+	"sort"
+	"strings"
 	"time"
 
+	"github.com/xihale/rsshub-go/internal/routeutils"
 	ctxpkg "github.com/xihale/rsshub-go/pkg/context"
 	"github.com/xihale/rsshub-go/pkg/models"
 	"github.com/xihale/rsshub-go/pkg/registry"
-	"github.com/xihale/rsshub-go/internal/routeutils"
 )
 
 func init() {
 	cacheTTL := 4 * time.Hour // npm package versions change infrequently
 
 	route := &models.Route{
-		Path:         "/npm/:package",
-		Name:         "npm Package Versions",
-		Example:      "npm/react",
-		Maintainers:  []string{"yourname"},
-		Description:  "Fetch versions from an npm package",
-		Categories:   []models.Category{{Name: "programming"}},
-		Features:     models.Features{SupportRadar: true},
-		Handler:      NPMPackageHandler,
+		Path:        "/npm/:package",
+		Name:        "npm Package Versions",
+		Example:     "npm/react",
+		Maintainers: []string{"yourname"},
+		Description: "Fetch versions from an npm package",
+		Categories:  []models.Category{{Name: "programming"}},
+		Features:    models.Features{SupportRadar: true},
+		Handler:     NPMPackageHandler,
 		Parameters: []models.Parameter{
 			{Name: "package", Required: true, Description: "npm package name"},
 		},
@@ -51,24 +53,17 @@ func NPMPackageHandler(c *ctxpkg.Context) (*models.Feed, error) {
 	)
 
 	// Set author if available
-	if response.Maintainers != nil && len(response.Maintainers) > 0 {
+	if len(response.Maintainers) > 0 {
 		routeutils.SetFeedAuthor(feed, response.Maintainers[0].Name)
 	}
 
-	// Get versions sorted by time
-	items := make([]NPMDistTag, 0, len(response.Versions))
-	for versionStr := range response.Versions {
-		items = append(items, NPMDistTag{
-			Version: versionStr,
-			Time:    response.Time[versionStr],
-		})
-	}
-
-	// Sort by time (newest first) and limit to 20
-	for i := len(items) - 1; i >= 0 && len(feed.Items) < 20; i-- {
-		v := items[i]
+	// Sort versions by publish time (newest first) and emit the first 20.
+	for _, v := range sortedVersionTags(response.Versions, response.Time) {
 		if v.Time.IsZero() {
 			continue
+		}
+		if len(feed.Items) >= 20 {
+			break
 		}
 
 		versionURL := fmt.Sprintf("https://www.npmjs.com/package/%s/v/%s", packageName, v.Version)
@@ -98,34 +93,66 @@ func NPMPackageHandler(c *ctxpkg.Context) (*models.Feed, error) {
 }
 
 // formatRepoURL converts git+https URLs to normal https URLs
-func formatRepoURL(url string) string {
-	if len(url) > 11 && url[:11] == "git+https://" {
-		return "https://" + url[11:]
+func formatRepoURL(repoURL string) string {
+	repoURL = strings.TrimSpace(repoURL)
+	repoURL = strings.TrimPrefix(repoURL, "git+")
+
+	if strings.HasPrefix(repoURL, "git://github.com/") {
+		repoURL = "https://github.com/" + strings.TrimPrefix(repoURL, "git://github.com/")
 	}
-	if len(url) > 10 && url[:10] == "git+ssh://" {
-		return url
+	if strings.HasPrefix(repoURL, "ssh://git@github.com/") {
+		repoURL = "https://github.com/" + strings.TrimPrefix(repoURL, "ssh://git@github.com/")
 	}
-	return url
+	if strings.HasPrefix(repoURL, "git@github.com:") {
+		repoURL = "https://github.com/" + strings.TrimPrefix(repoURL, "git@github.com:")
+	}
+
+	if strings.HasPrefix(repoURL, "https://github.com/") && strings.HasSuffix(repoURL, ".git") {
+		repoURL = strings.TrimSuffix(repoURL, ".git")
+	}
+	return repoURL
+}
+
+func sortedVersionTags(versions map[string]NPMVersion, versionTimes map[string]time.Time) []NPMDistTag {
+	items := make([]NPMDistTag, 0, len(versions))
+	for version := range versions {
+		publishedAt := versionTimes[version]
+		items = append(items, NPMDistTag{
+			Version: version,
+			Time:    publishedAt,
+		})
+	}
+
+	sort.Slice(items, func(i, j int) bool {
+		left := items[i]
+		right := items[j]
+		if left.Time.Equal(right.Time) {
+			return left.Version > right.Version
+		}
+		return left.Time.After(right.Time)
+	})
+
+	return items
 }
 
 type NPMResponse struct {
-	ID          string                   `json:"_id"`
-	Name        string                   `json:"name"`
-	Description string                   `json:"description"`
-	Homepage    string                   `json:"homepage"`
-	Keywords    []string                 `json:"keywords"`
-	Version     string                   `json:"dist-tags.latest"`
-	Versions    map[string]NPMVersion    `json:"versions"`
-	Time        map[string]time.Time     `json:"time"`
-	Maintainers []NPMMaintainer          `json:"maintainers"`
-	Repository  NPMRepository            `json:"repository"`
+	ID          string                `json:"_id"`
+	Name        string                `json:"name"`
+	Description string                `json:"description"`
+	Homepage    string                `json:"homepage"`
+	Keywords    []string              `json:"keywords"`
+	Version     string                `json:"dist-tags.latest"`
+	Versions    map[string]NPMVersion `json:"versions"`
+	Time        map[string]time.Time  `json:"time"`
+	Maintainers []NPMMaintainer       `json:"maintainers"`
+	Repository  NPMRepository         `json:"repository"`
 }
 
 type NPMVersion struct {
-	ID       string `json:"_id"`
-	Name     string `json:"name"`
-	Version  string `json:"version"`
-	Dist     NPMDist `json:"dist"`
+	ID      string  `json:"_id"`
+	Name    string  `json:"name"`
+	Version string  `json:"version"`
+	Dist    NPMDist `json:"dist"`
 }
 
 type NPMDist struct {

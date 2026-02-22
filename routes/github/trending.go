@@ -2,27 +2,28 @@ package routes
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
+	"github.com/xihale/rsshub-go/internal/parser"
+	"github.com/xihale/rsshub-go/internal/routeutils"
 	ctxpkg "github.com/xihale/rsshub-go/pkg/context"
 	"github.com/xihale/rsshub-go/pkg/models"
 	"github.com/xihale/rsshub-go/pkg/registry"
-	"github.com/xihale/rsshub-go/internal/parser"
-	"github.com/xihale/rsshub-go/internal/routeutils"
 )
 
 func init() {
 	cacheTTL := 30 * time.Minute // Trending changes moderately
 
 	route := &models.Route{
-		Path:         "/github/trending/:language",
-		Name:         "GitHub Trending",
-		Example:      "github/trending/go",
-		Maintainers:  []string{"yourname"},
-		Description:  "Fetch trending repositories on GitHub by language",
-		Categories:   []models.Category{{Name: "dev"}},
-		Features:     models.Features{},
-		Handler:      GitHubTrendingHandler,
+		Path:        "/github/trending/:language",
+		Name:        "GitHub Trending",
+		Example:     "github/trending/go",
+		Maintainers: []string{"yourname"},
+		Description: "Fetch trending repositories on GitHub by language",
+		Categories:  []models.Category{{Name: "dev"}},
+		Features:    models.Features{},
+		Handler:     GitHubTrendingHandler,
 		Parameters: []models.Parameter{
 			{Name: "language", Required: false, Description: "Programming language (use 'all' for any language)"},
 		},
@@ -58,56 +59,89 @@ func GitHubTrendingHandler(c *ctxpkg.Context) (*models.Feed, error) {
 
 	// Select repo articles
 	doc.Each("article.Box-row", func(i int, sel *parser.Selection) {
-		// Get title
-		titleSel := sel.Find("h2 a")
-		title := titleSel.Text()
-
-		// Get link
-		href, _ := titleSel.Attr("href")
-		link := "https://github.com" + href
-
-		// Get description
-		desc := sel.Find("p").First().Text()
-
-		// Get stars, forks, stars today
-		stats := make([]string, 0)
-		sel.Find("a[dhref]").Each(func(i int, statSel *parser.Selection) {
-			text := statSel.Text()
-			if text != "" {
-				stats = append(stats, text)
-			}
-		})
-
-		description := desc
-		if len(stats) > 0 {
-			description += "<br/>" + fmt.Sprintf("Stats: %s", stats)
-		}
-
-		// Get programming language
-		languageSpan := sel.Find("span[itemprop='programmingLanguage']").First()
-		languageName := languageSpan.Text()
-
-		// Get stars today from the special span
-		starsToday := sel.Find("span.d-inline-block+ span").Text()
-
-		item := routeutils.NewItem(
-			title,
-			link,
-			description,
-			time.Now(),
-		)
-		item.GUID = link
-
-		// Set categories
-		if languageName != "" {
-			routeutils.SetCategories(item, languageName)
-		}
-		if starsToday != "" {
-			routeutils.SetCategories(item, starsToday+" today")
-		}
-
+		item := parseGitHubTrendingItem(sel, time.Now())
 		routeutils.AddItem(feed, item)
 	})
 
 	return feed, nil
+}
+
+func parseGitHubTrendingItem(sel *parser.Selection, now time.Time) *models.Item {
+	if sel == nil {
+		return nil
+	}
+
+	titleSel := sel.Find("h2 a")
+	title := normalizeSpace(titleSel.Text())
+
+	href, _ := titleSel.Attr("href")
+	if href == "" || title == "" {
+		return nil
+	}
+	link := "https://github.com" + href
+
+	item := routeutils.NewItem(
+		title,
+		link,
+		buildTrendingDescription(sel),
+		now,
+	)
+	item.GUID = link
+
+	languageName := normalizeSpace(firstSelectionText(sel, "span[itemprop='programmingLanguage']"))
+	if languageName != "" {
+		routeutils.SetCategories(item, languageName)
+	}
+
+	starsToday := extractStarsToday(sel)
+	if starsToday != "" {
+		routeutils.SetCategories(item, starsToday)
+	}
+
+	return item
+}
+
+func buildTrendingDescription(sel *parser.Selection) string {
+	description := normalizeSpace(firstSelectionText(sel, "p"))
+	stats := extractTrendingStats(sel)
+	if len(stats) == 0 {
+		return description
+	}
+	if description == "" {
+		return "Stats: " + strings.Join(stats, " | ")
+	}
+	return description + "<br/>Stats: " + strings.Join(stats, " | ")
+}
+
+func extractTrendingStats(sel *parser.Selection) []string {
+	stats := make([]string, 0, 2)
+	sel.Find("a[href*='/stargazers'],a[href*='/forks']").Each(func(i int, statSel *parser.Selection) {
+		text := normalizeSpace(statSel.Text())
+		if text != "" {
+			stats = append(stats, text)
+		}
+	})
+	return stats
+}
+
+func extractStarsToday(sel *parser.Selection) string {
+	starsToday := ""
+	sel.Find("span").Each(func(i int, spanSel *parser.Selection) {
+		text := normalizeSpace(spanSel.Text())
+		if strings.Contains(text, "stars today") {
+			starsToday = text
+		}
+	})
+	return starsToday
+}
+
+func firstSelectionText(sel *parser.Selection, selector string) string {
+	if sel == nil || sel.Selection == nil {
+		return ""
+	}
+	return sel.Selection.Find(selector).First().Text()
+}
+
+func normalizeSpace(s string) string {
+	return strings.Join(strings.Fields(strings.TrimSpace(s)), " ")
 }

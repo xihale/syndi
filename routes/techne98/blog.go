@@ -1,9 +1,11 @@
 package routes
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/xihale/rsshub-go/internal/parser"
@@ -54,20 +56,11 @@ func Techne98BlogHandler(c *ctxpkg.Context) (*models.Feed, error) {
 		"Blog posts from techne98.com",
 	)
 
-	var items []*models.Item
-	var maxItems *int
+	maxItems := parsePositiveInt(c.QueryParam("limit"))
+	items := make([]*models.Item, 0)
 
-	limitStr := c.QueryParam("limit")
-	if limitStr != "" {
-		if parsed, err := strconv.Atoi(limitStr); err == nil && parsed > 0 {
-			maxItems = &parsed
-		}
-	}
-
-	postCount := 0
 	doc.Each("main .grid a.group", func(i int, sel *parser.Selection) {
-		if maxItems != nil && postCount >= *maxItems {
-			sel.Selection.End()
+		if maxItems != nil && len(items) >= *maxItems {
 			return
 		}
 
@@ -99,49 +92,10 @@ func Techne98BlogHandler(c *ctxpkg.Context) (*models.Feed, error) {
 		)
 		item.GUID = link
 
-		contentCacheKey := fmt.Sprintf("techne98:article:%s", link)
-		contentHTMLVal, err := c.CacheTryGet(contentCacheKey, 30*24*time.Hour, func() (interface{}, error) {
-			detailDoc, err := routeutils.GetHTML(ctx, c.Client(), link)
-			if err != nil {
-				return "", err
-			}
-			articleSel := detailDoc.Find("article.prose-content")
-			if articleSel.Length() == 0 {
-				return "", nil
-			}
-			html, _ := articleSel.Html()
-			return html, nil
-		})
-		if err == nil && contentHTMLVal != "" {
-			contentHTML := contentHTMLVal.(string)
-			if contentHTML != "" {
-				cleaned, err := routeutils.CleanDescription(contentHTML, rootURL, routeutils.DefaultCleanOptions())
-				if err == nil {
-					doc, parseErr := parser.LoadString(cleaned)
-					if parseErr == nil {
-						bodySel := doc.Find("body")
-						if bodySel.Length() > 0 {
-							bodyHTML, _ := bodySel.Html()
-							if bodyHTML != "" {
-								item.Description = bodyHTML
-							} else {
-								item.Description = cleaned
-							}
-						} else {
-							item.Description = cleaned
-						}
-					} else {
-						item.Description = cleaned
-					}
-				} else {
-					item.Description = contentHTML
-				}
-			}
-		}
-
 		items = append(items, item)
-		postCount++
 	})
+
+	populateTechne98Descriptions(ctx, c, rootURL, items)
 
 	for i, j := 0, len(items)-1; i < j; i, j = i+1, j-1 {
 		items[i], items[j] = items[j], items[i]
@@ -152,4 +106,103 @@ func Techne98BlogHandler(c *ctxpkg.Context) (*models.Feed, error) {
 	}
 
 	return feed, nil
+}
+
+func parsePositiveInt(s string) *int {
+	if s == "" {
+		return nil
+	}
+
+	parsed, err := strconv.Atoi(s)
+	if err != nil || parsed <= 0 {
+		return nil
+	}
+	return &parsed
+}
+
+func populateTechne98Descriptions(ctx context.Context, c *ctxpkg.Context, rootURL string, items []*models.Item) {
+	if len(items) == 0 {
+		return
+	}
+
+	workerCount := 4
+	if len(items) < workerCount {
+		workerCount = len(items)
+	}
+
+	jobs := make(chan *models.Item)
+	var wg sync.WaitGroup
+	for i := 0; i < workerCount; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for item := range jobs {
+				description, err := fetchTechne98Description(ctx, c, rootURL, item.Link)
+				if err != nil || description == "" {
+					continue
+				}
+				item.Description = description
+			}
+		}()
+	}
+
+enqueue:
+	for _, item := range items {
+		select {
+		case <-ctx.Done():
+			break enqueue
+		case jobs <- item:
+		}
+	}
+	close(jobs)
+	wg.Wait()
+}
+
+func fetchTechne98Description(ctx context.Context, c *ctxpkg.Context, rootURL, link string) (string, error) {
+	contentCacheKey := fmt.Sprintf("techne98:article:%s", link)
+	cachedValue, err := c.CacheTryGet(contentCacheKey, 30*24*time.Hour, func() (interface{}, error) {
+		detailDoc, err := routeutils.GetHTML(ctx, c.Client(), link)
+		if err != nil {
+			return "", err
+		}
+		articleSel := detailDoc.Find("article.prose-content")
+		if articleSel.Length() == 0 {
+			return "", nil
+		}
+		html, _ := articleSel.Html()
+		return html, nil
+	})
+	if err != nil {
+		return "", err
+	}
+
+	contentHTML, ok := cachedValue.(string)
+	if !ok || contentHTML == "" {
+		return "", nil
+	}
+
+	cleaned, err := routeutils.CleanDescription(contentHTML, rootURL, routeutils.DefaultCleanOptions())
+	if err != nil {
+		return contentHTML, nil
+	}
+
+	return extractBodyHTML(cleaned), nil
+}
+
+func extractBodyHTML(cleaned string) string {
+	doc, err := parser.LoadString(cleaned)
+	if err != nil {
+		return cleaned
+	}
+
+	bodySel := doc.Find("body")
+	if bodySel.Length() == 0 {
+		return cleaned
+	}
+
+	bodyHTML, _ := bodySel.Html()
+	if bodyHTML == "" {
+		return cleaned
+	}
+	return bodyHTML
 }

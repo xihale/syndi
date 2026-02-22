@@ -1,9 +1,11 @@
 package routes
 
 import (
-	"encoding/json"
+	"context"
+	"fmt"
 	"time"
 
+	"github.com/xihale/rsshub-go/internal/routeutils"
 	ctxpkg "github.com/xihale/rsshub-go/pkg/context"
 	"github.com/xihale/rsshub-go/pkg/models"
 	"github.com/xihale/rsshub-go/pkg/registry"
@@ -14,14 +16,14 @@ func init() {
 	cacheTTL := 1 * time.Hour // GitHub releases are infrequent
 
 	route := &models.Route{
-		Path:         "/github/repos/:owner/:repo",
-		Name:         "GitHub Repository Releases",
-		Example:      "github/repos/DIYgod/RSSHub",
-		Maintainers:  []string{"yourname"},
-		Description:  "Fetch releases from a GitHub repository",
-		Categories:   []models.Category{{Name: "dev"}},
-		Features:     models.Features{SupportRadar: true},
-		Handler:      GitHubReposHandler,
+		Path:        "/github/repos/:owner/:repo",
+		Name:        "GitHub Repository Releases",
+		Example:     "github/repos/DIYgod/RSSHub",
+		Maintainers: []string{"yourname"},
+		Description: "Fetch releases from a GitHub repository",
+		Categories:  []models.Category{{Name: "dev"}},
+		Features:    models.Features{SupportRadar: true},
+		Handler:     GitHubReposHandler,
 		Parameters: []models.Parameter{
 			{Name: "owner", Required: true, Description: "Repository owner"},
 			{Name: "repo", Required: true, Description: "Repository name"},
@@ -37,37 +39,45 @@ func init() {
 func GitHubReposHandler(c *ctxpkg.Context) (*models.Feed, error) {
 	owner := c.Param("owner")
 	repo := c.Param("repo")
+	limit := parsePositiveLimit(c.QueryParam("limit"), 20, 100)
+	includePrerelease := parseBoolDefault(c.QueryParam("include_prerelease"), true)
 
-	url := "https://api.github.com/repos/" + owner + "/" + repo + "/releases"
-	ctx := c.Parent()
+	ctx, cancel := context.WithTimeout(c.Parent(), 12*time.Second)
+	defer cancel()
 
-	resp, err := c.Client().Get(ctx, url)
-	if err != nil {
-		return nil, err
-	}
+	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/releases?per_page=%d", owner, repo, limit)
 
 	var releases []GitHubRelease
-	if err := json.Unmarshal(resp, &releases); err != nil {
+	if err := routeutils.GetJSON(ctx, c.Client(), url, &releases); err != nil {
 		return nil, err
 	}
 
-	feed := &models.Feed{
-		Title:       owner + "/" + repo + " Releases",
-		Link:        "https://github.com/" + owner + "/" + repo + "/releases",
-		Description: "Latest releases from " + owner + "/" + repo,
-	}
+	feed := routeutils.NewFeed(
+		owner+"/"+repo+" Releases",
+		"https://github.com/"+owner+"/"+repo+"/releases",
+		"Latest releases from "+owner+"/"+repo,
+	)
+	feed.Items = make([]models.Item, 0, limit)
 
 	for _, release := range releases {
-		if release.TagName != "" {
-			item := models.Item{
-				Title:       "Release " + release.TagName,
-				Link:        release.HTMLURL,
-				GUID:        release.HTMLURL,
-				Description: release.Body,
-				PubDate:     release.PublishedAt,
-			}
-			feed.Items = append(feed.Items, item)
+		if len(feed.Items) >= limit {
+			break
 		}
+		if release.TagName == "" || release.HTMLURL == "" {
+			continue
+		}
+		if !includePrerelease && release.Prerelease {
+			continue
+		}
+
+		item := models.Item{
+			Title:       "Release " + release.TagName,
+			Link:        release.HTMLURL,
+			GUID:        release.HTMLURL,
+			Description: release.Body,
+			PubDate:     release.PublishedAt,
+		}
+		feed.Items = append(feed.Items, item)
 	}
 
 	return feed, nil
@@ -76,6 +86,7 @@ func GitHubReposHandler(c *ctxpkg.Context) (*models.Feed, error) {
 type GitHubRelease struct {
 	TagName     string    `json:"tag_name"`
 	HTMLURL     string    `json:"html_url"`
+	Prerelease  bool      `json:"prerelease"`
 	Body        string    `json:"body"`
 	PublishedAt time.Time `json:"published_at"`
 }

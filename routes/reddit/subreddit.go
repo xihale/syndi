@@ -1,27 +1,31 @@
 package routes
 
 import (
+	"context"
 	"fmt"
+	"net/url"
+	"strconv"
+	"strings"
 	"time"
 
+	"github.com/xihale/rsshub-go/internal/routeutils"
 	ctxpkg "github.com/xihale/rsshub-go/pkg/context"
 	"github.com/xihale/rsshub-go/pkg/models"
 	"github.com/xihale/rsshub-go/pkg/registry"
-	"github.com/xihale/rsshub-go/internal/routeutils"
 )
 
 func init() {
 	cacheTTL := 10 * time.Minute // Reddit is very active, shorter cache
 
 	route := &models.Route{
-		Path:         "/reddit/:subreddit",
-		Name:         "Reddit Subreddit",
-		Example:      "reddit/golang",
-		Maintainers:  []string{"yourname"},
-		Description:  "Fetch posts from a Reddit subreddit",
-		Categories:   []models.Category{{Name: "social-media"}},
-		Features:     models.Features{SupportRadar: true},
-		Handler:      RedditSubredditHandler,
+		Path:        "/reddit/:subreddit",
+		Name:        "Reddit Subreddit",
+		Example:     "reddit/golang",
+		Maintainers: []string{"yourname"},
+		Description: "Fetch posts from a Reddit subreddit",
+		Categories:  []models.Category{{Name: "social-media"}},
+		Features:    models.Features{SupportRadar: true},
+		Handler:     RedditSubredditHandler,
 		Parameters: []models.Parameter{
 			{Name: "subreddit", Required: true, Description: "Subreddit name (without r/)"},
 		},
@@ -35,9 +39,14 @@ func init() {
 // RedditSubredditHandler handles /reddit/:subreddit
 func RedditSubredditHandler(c *ctxpkg.Context) (*models.Feed, error) {
 	subreddit := c.Param("subreddit")
-	ctx := c.Parent()
+	sortBy := parseRedditSort(c.QueryParam("sort"))
+	limit := parseRedditLimit(c.QueryParam("limit"))
+	timeRange := parseRedditTimeRange(c.QueryParam("t"))
 
-	url := fmt.Sprintf("https://www.reddit.com/r/%s/hot.json?limit=25", subreddit)
+	ctx, cancel := context.WithTimeout(c.Parent(), 10*time.Second)
+	defer cancel()
+
+	url := buildRedditListingURL(subreddit, sortBy, limit, timeRange)
 
 	var response RedditResponse
 	if err := routeutils.GetJSON(ctx, c.Client(), url, &response); err != nil {
@@ -47,47 +56,117 @@ func RedditSubredditHandler(c *ctxpkg.Context) (*models.Feed, error) {
 	feed := routeutils.NewFeed(
 		fmt.Sprintf("Reddit r/%s", subreddit),
 		fmt.Sprintf("https://www.reddit.com/r/%s", subreddit),
-		fmt.Sprintf("Hot posts from r/%s", subreddit),
+		fmt.Sprintf("%s posts from r/%s", sortDisplayName(sortBy), subreddit),
 	)
+	feed.Items = make([]models.Item, 0, limit)
 
 	for _, post := range response.Data.Children {
-		if post.Kind == "t3" {
-			// Skip stickied posts
-			if post.Data.Stickied {
-				continue
-			}
-
-			// Use external URL or permalink
-			link := post.Data.URL
-			if link == "" {
-				link = "https://www.reddit.com" + post.Data.Permalink
-			}
-
-			item := routeutils.NewItem(
-				post.Data.Title,
-				link,
-				post.Data.SelftextHTML,
-				time.Unix(int64(post.Data.CreatedUTC), 0),
-			)
-			item.GUID = "reddit-" + post.Data.ID
-
-			// Set author
-			if post.Data.Author != "" {
-				routeutils.SetAuthor(item, post.Data.Author,
-					routeutils.WithAuthorURI("https://www.reddit.com/user/"+post.Data.Author))
-			}
-
-			// Add categories (subreddit and flair)
-			routeutils.SetCategories(item, "r/"+subreddit)
-			if post.Data.LinkFlairText != "" {
-				routeutils.SetCategories(item, post.Data.LinkFlairText)
-			}
-
-			routeutils.AddItem(feed, item)
+		if post.Kind != "t3" || post.Data.Stickied {
+			continue
 		}
+		if len(feed.Items) >= limit {
+			break
+		}
+
+		link := resolveRedditPostLink(post.Data.URL, post.Data.Permalink)
+		item := routeutils.NewItem(
+			post.Data.Title,
+			link,
+			buildRedditDescription(post.Data),
+			time.Unix(int64(post.Data.CreatedUTC), 0),
+		)
+		item.GUID = "reddit-" + post.Data.ID
+
+		if post.Data.Author != "" {
+			routeutils.SetAuthor(item, post.Data.Author,
+				routeutils.WithAuthorURI("https://www.reddit.com/user/"+post.Data.Author))
+		}
+
+		routeutils.SetCategories(item, "r/"+subreddit)
+		if post.Data.LinkFlairText != "" {
+			routeutils.SetCategories(item, post.Data.LinkFlairText)
+		}
+		if post.Data.Over18 {
+			routeutils.SetCategories(item, "NSFW")
+		}
+
+		routeutils.AddItem(feed, item)
 	}
 
 	return feed, nil
+}
+
+func parseRedditSort(raw string) string {
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "new", "top", "rising":
+		return strings.ToLower(strings.TrimSpace(raw))
+	default:
+		return "hot"
+	}
+}
+
+func parseRedditLimit(raw string) int {
+	return clampPositive(raw, 25, 100)
+}
+
+func parseRedditTimeRange(raw string) string {
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "hour", "day", "week", "month", "year", "all":
+		return strings.ToLower(strings.TrimSpace(raw))
+	default:
+		return "day"
+	}
+}
+
+func buildRedditListingURL(subreddit, sortBy string, limit int, timeRange string) string {
+	endpoint := fmt.Sprintf(
+		"https://www.reddit.com/r/%s/%s.json?limit=%d",
+		url.PathEscape(subreddit),
+		sortBy,
+		limit,
+	)
+	if sortBy == "top" {
+		return endpoint + "&t=" + url.QueryEscape(timeRange)
+	}
+	return endpoint
+}
+
+func resolveRedditPostLink(postURL, permalink string) string {
+	postURL = strings.TrimSpace(postURL)
+	if postURL == "" {
+		return "https://www.reddit.com" + permalink
+	}
+	if strings.HasPrefix(postURL, "/") {
+		return "https://www.reddit.com" + postURL
+	}
+	return postURL
+}
+
+func buildRedditDescription(post RedditPost) string {
+	if post.SelftextHTML != "" {
+		return routeutils.DecodeHTMLEntities(post.SelftextHTML)
+	}
+	return post.Selftext
+}
+
+func sortDisplayName(sortBy string) string {
+	if sortBy == "" {
+		return "Hot"
+	}
+	return strings.ToUpper(sortBy[:1]) + sortBy[1:]
+}
+
+func clampPositive(raw string, defaultValue, maxValue int) int {
+	parsed := defaultValue
+	if raw != "" {
+		if v, err := strconv.Atoi(raw); err == nil && v > 0 {
+			parsed = v
+		}
+	}
+	if parsed > maxValue {
+		return maxValue
+	}
+	return parsed
 }
 
 type RedditResponse struct {
@@ -97,8 +176,8 @@ type RedditResponse struct {
 }
 
 type RedditChild struct {
-	Kind string       `json:"kind"`
-	Data RedditPost   `json:"data"`
+	Kind string     `json:"kind"`
+	Data RedditPost `json:"data"`
 }
 
 type RedditPost struct {

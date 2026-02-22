@@ -1,29 +1,31 @@
 package routes
 
 import (
+	"context"
 	"fmt"
 	"strconv"
+	"sync"
 	"time"
 
+	"github.com/xihale/rsshub-go/internal/routeutils"
 	ctxpkg "github.com/xihale/rsshub-go/pkg/context"
 	"github.com/xihale/rsshub-go/pkg/models"
 	"github.com/xihale/rsshub-go/pkg/registry"
-	"github.com/xihale/rsshub-go/internal/routeutils"
 )
 
 func init() {
 	cacheTTL := 1 * time.Hour // Hacker News updates infrequently
 
 	route := &models.Route{
-		Path:         "/hackernews/stories",
-		Name:         "Hacker News Top Stories",
-		Example:      "hackernews/stories",
-		Maintainers:  []string{"yourname"},
-		Description:  "Fetch top stories from Hacker News",
-		Categories:   []models.Category{{Name: "social-media"}, {Name: "it"}},
-		Features:     models.Features{},
-		Handler:      HackerNewsStoriesHandler,
-		CacheTTL:     &cacheTTL,
+		Path:        "/hackernews/stories",
+		Name:        "Hacker News Top Stories",
+		Example:     "hackernews/stories",
+		Maintainers: []string{"yourname"},
+		Description: "Fetch top stories from Hacker News",
+		Categories:  []models.Category{{Name: "social-media"}, {Name: "it"}},
+		Features:    models.Features{},
+		Handler:     HackerNewsStoriesHandler,
+		CacheTTL:    &cacheTTL,
 	}
 	if err := registry.GetRegistry().Register(route); err != nil {
 		panic(err)
@@ -51,39 +53,77 @@ func HackerNewsStoriesHandler(c *ctxpkg.Context) (*models.Feed, error) {
 		"Top stories from Hacker News",
 	)
 
-	// Fetch each story
-	for _, id := range storyIDs {
-		var story HNStory
-		url := fmt.Sprintf("https://hacker-news.firebaseio.com/v0/item/%d.json", id)
+	type storyJob struct {
+		index int
+		id    int
+	}
+	jobs := make(chan storyJob)
+	items := make([]*models.Item, len(storyIDs))
 
-		if err := routeutils.GetJSON(ctx, c.Client(), url, &story); err != nil {
-			continue
+	workerCount := 8
+	if len(storyIDs) < workerCount {
+		workerCount = len(storyIDs)
+	}
+
+	var wg sync.WaitGroup
+	for i := 0; i < workerCount; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for job := range jobs {
+				item, err := fetchHNStoryItem(ctx, c, job.id)
+				if err != nil || item == nil {
+					continue
+				}
+				items[job.index] = item
+			}
+		}()
+	}
+
+enqueue:
+	for i, id := range storyIDs {
+		select {
+		case <-ctx.Done():
+			break enqueue
+		case jobs <- storyJob{index: i, id: id}:
 		}
+	}
+	close(jobs)
+	wg.Wait()
 
-		if story.URL == "" {
-			story.URL = fmt.Sprintf("https://news.ycombinator.com/item?id=%d", story.ID)
-		}
-
-		item := routeutils.NewItem(
-			story.Title,
-			story.URL,
-			story.Text,
-			time.Unix(story.Time, 0),
-		)
-		item.GUID = fmt.Sprintf("hn-%d", story.ID)
-
-		// Set author if available
-		if story.By != "" {
-			routeutils.SetAuthor(item, story.By, routeutils.WithAuthorURI("https://news.ycombinator.com/user?id="+story.By))
-		}
-
-		// Add score as category
-		routeutils.SetCategories(item, "Score: "+strconv.Itoa(story.Score))
-
+	for _, item := range items {
 		routeutils.AddItem(feed, item)
 	}
 
 	return feed, nil
+}
+
+func fetchHNStoryItem(ctx context.Context, c *ctxpkg.Context, id int) (*models.Item, error) {
+	var story HNStory
+	url := fmt.Sprintf("https://hacker-news.firebaseio.com/v0/item/%d.json", id)
+
+	if err := routeutils.GetJSON(ctx, c.Client(), url, &story); err != nil {
+		return nil, err
+	}
+
+	if story.URL == "" {
+		story.URL = fmt.Sprintf("https://news.ycombinator.com/item?id=%d", story.ID)
+	}
+
+	item := routeutils.NewItem(
+		story.Title,
+		story.URL,
+		story.Text,
+		time.Unix(story.Time, 0),
+	)
+	item.GUID = fmt.Sprintf("hn-%d", story.ID)
+
+	if story.By != "" {
+		routeutils.SetAuthor(item, story.By, routeutils.WithAuthorURI("https://news.ycombinator.com/user?id="+story.By))
+	}
+
+	routeutils.SetCategories(item, "Score: "+strconv.Itoa(story.Score))
+	return item, nil
 }
 
 type HNStory struct {
