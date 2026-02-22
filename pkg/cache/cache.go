@@ -1,6 +1,8 @@
 package cache
 
 import (
+	"bytes"
+	"encoding/gob"
 	"sync"
 	"time"
 
@@ -14,6 +16,7 @@ type Cache interface {
 	Exists(key string) bool
 	Delete(key string)
 	Clear()
+	Close() error
 }
 
 // MemoryCache implements an in-memory LRU cache
@@ -23,8 +26,14 @@ type MemoryCache struct {
 }
 
 type cacheValue struct {
-	value interface{}
-	exp   time.Time
+	data []byte // gob-encoded data
+	exp  time.Time
+}
+
+// cacheEntry wraps the value for gob encoding
+type cacheEntry struct {
+	Value interface{}
+	Exp   time.Time
 }
 
 // NewMemoryCache creates a new LRU memory cache
@@ -44,22 +53,37 @@ func (c *MemoryCache) Get(key string) (interface{}, bool) {
 		return nil, false
 	}
 
+	// Check expiration
 	if time.Now().After(val.exp) {
-		c.cache.Remove(key)
 		return nil, false
 	}
 
-	return val.value, true
+	// Decode gob-encoded data into cacheEntry wrapper
+	var entry cacheEntry
+	if err := gob.NewDecoder(bytes.NewReader(val.data)).Decode(&entry); err != nil {
+		return nil, false
+	}
+
+	return entry.Value, true
 }
 
 func (c *MemoryCache) Set(key string, value interface{}, ttl time.Duration) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	exp := time.Now().Add(ttl)
+	// Encode value using gob - wrap in struct to preserve type information
+	entry := cacheEntry{
+		Value: value,
+		Exp:   time.Now().Add(ttl),
+	}
+	var buf bytes.Buffer
+	if err := gob.NewEncoder(&buf).Encode(entry); err != nil {
+		return
+	}
+
 	c.cache.Add(key, cacheValue{
-		value: value,
-		exp:   exp,
+		data: buf.Bytes(),
+		exp:  entry.Exp,
 	})
 }
 
@@ -81,6 +105,18 @@ func (c *MemoryCache) Clear() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.cache.Purge()
+}
+
+// Len returns the number of items in the cache
+func (c *MemoryCache) Len() int {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.cache.Len()
+}
+
+// Close implements the Cache interface - no-op for memory cache
+func (c *MemoryCache) Close() error {
+	return nil
 }
 
 // TryGet retrieves from cache or computes the value if missing

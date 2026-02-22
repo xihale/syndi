@@ -14,14 +14,13 @@ server:
 
 # Cache settings
 cache:
-  # Cache type: memory, redis, or badger
+  # Cache type: memory or badger (badger = two-tier cache with persistence)
   type: "badger"
-  # Redis configuration (only used if type is "redis")
-  redis:
-    url: "redis://localhost:6379"
   # BadgerDB configuration (only used if type is "badger")
   badger:
-    path: "./data/cache"
+     path: "./data/cache"
+  # Cleanup interval for expired cache entries in Badger (e.g., 5m, 1h)
+  cleanup_interval: 5m
   # Cache time-to-live for feeds
   ttl: 15m
   # Memory cache size (number of items, only used if type is "memory")

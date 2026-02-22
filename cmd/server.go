@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/gob"
 	"fmt"
 	"net/http"
 	"os"
@@ -30,6 +31,7 @@ import (
 	_ "github.com/xihale/rsshub-go/routes/npm"
 	_ "github.com/xihale/rsshub-go/routes/reddit"
 	_ "github.com/xihale/rsshub-go/routes/techne98"
+	_ "github.com/xihale/rsshub-go/routes/test"
 )
 
 func main() {
@@ -48,23 +50,31 @@ func main() {
 	}
 	defer logger.Sync()
 
+	// Register gob types for cache serialization
+	gob.Register(&models.Feed{})
+	gob.Register(&models.Item{})
+	gob.Register(&models.Author{})
+
+
 	logger.Info("Starting RSSHub Go", zap.String("port", cfg.GetPort()))
 
-	// Initialize cache
+	// Initialize cache (two-tier: memory + badger)
 	var cacheInstance cache.Cache
-	switch cfg.GetCacheType() {
-	case "badger":
-		bc, err := cache.NewBadgerCache(cfg.GetBadgerPath())
+	badgerPath := cfg.GetBadgerPath()
+
+	if cfg.GetCacheType() == "badger" {
+		badgerCache, err := cache.NewBadgerCache(cfg.GetMemoryCacheSize(), badgerPath, cfg.GetCacheTTL(), cfg.GetCacheCleanupInterval())
 		if err != nil {
-			logger.Fatal("Failed to initialize BadgerDB cache", zap.Error(err))
+			logger.Error("Failed to initialize badger cache, falling back to memory", zap.Error(err))
+			cacheInstance = cache.NewMemoryCache(cfg.GetMemoryCacheSize())
+			logger.Info("Using memory cache", zap.Int("size", cfg.GetMemoryCacheSize()))
+		} else {
+			cacheInstance = badgerCache
+			logger.Info("Using two-tier cache (memory + badger)",
+				zap.Int("memory_size", cfg.GetMemoryCacheSize()),
+				zap.String("badger_path", badgerPath))
 		}
-		cacheInstance = bc
-		defer bc.Close()
-		logger.Info("Using BadgerDB cache", zap.String("path", cfg.GetBadgerPath()))
-	case "redis":
-		logger.Warn("Redis cache not yet implemented, falling back to memory")
-		cacheInstance = cache.NewMemoryCache(cfg.GetMemoryCacheSize())
-	default:
+	} else {
 		cacheInstance = cache.NewMemoryCache(cfg.GetMemoryCacheSize())
 		logger.Info("Using memory cache", zap.Int("size", cfg.GetMemoryCacheSize()))
 	}
@@ -120,6 +130,11 @@ func main() {
 	<-quit
 
 	logger.Info("Shutting down server...")
+
+	// Close cache (badger needs to be closed properly)
+	if err := cacheInstance.Close(); err != nil {
+		logger.Error("Failed to close cache", zap.Error(err))
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
