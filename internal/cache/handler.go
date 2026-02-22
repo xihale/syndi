@@ -59,17 +59,17 @@ func Cached(cacheInstance rssubcache.Cache, handler HandlerFunc, opts *CachedHan
 
 		// Check if we have a cached full feed (*models.Feed) - the RAW feed without parameter processing
 		if cachedFeed, ok := cacheInstance.Get(cacheKey); ok {
-			var feed *models.Feed
-			// Handle both direct *models.Feed and map[string]interface{} from JSON deserialization
-			if f, ok := cachedFeed.(*models.Feed); ok {
-				feed = f
-			} else if m, ok := cachedFeed.(map[string]interface{}); ok {
-				// Convert map back to *models.Feed
-				data, _ := json.Marshal(m)
-				feed = &models.Feed{}
-				json.Unmarshal(data, feed)
-			}
-			if feed != nil {
+			// Since we use gob serialization, the cached value should already be *models.Feed
+			feed, ok := cachedFeed.(*models.Feed)
+			if !ok {
+				// Type assertion failed - treat as cache miss
+				if logger.Logger != nil && logger.Logger.Core() != nil && logger.Logger.Core().Enabled(zap.DebugLevel) {
+					logger.Logger.Debug("[CACHE] TYPE MISMATCH",
+						zap.String("key", cacheKey),
+						zap.String("expected", "*models.Feed"),
+						zap.Any("got", cachedFeed))
+				}
+			} else if feed != nil {
 				if logger.Logger != nil && logger.Logger.Core() != nil && logger.Logger.Core().Enabled(zap.DebugLevel) {
 					logger.Logger.Debug("[CACHE] HIT",
 						zap.String("key", cacheKey),

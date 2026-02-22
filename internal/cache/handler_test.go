@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"encoding/gob"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -14,6 +15,10 @@ import (
 
 func TestCached_CacheHit(t *testing.T) {
 	gin.SetMode(gin.TestMode)
+	gob.Register(&models.Feed{})
+	gob.Register(&models.Item{})
+	gob.Register(&models.Author{})
+
 
 	cacheInstance := cache.NewMemoryCache(100)
 	callCount := 0
@@ -68,6 +73,10 @@ func TestCached_CacheHit(t *testing.T) {
 
 func TestCached_ETagSupport(t *testing.T) {
 	gin.SetMode(gin.TestMode)
+	gob.Register(&models.Feed{})
+	gob.Register(&models.Item{})
+	gob.Register(&models.Author{})
+
 
 	cacheInstance := cache.NewMemoryCache(100)
 

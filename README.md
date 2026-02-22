@@ -51,9 +51,7 @@ server:
 
 # Cache settings
 cache:
-  type: "memory"  # or "redis"
-  redis:
-    url: "redis://localhost:6379"
+  type: "memory"
   ttl: 15m
   memory_size: 10000
 

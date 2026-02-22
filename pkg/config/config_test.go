@@ -57,9 +57,7 @@ server:
   idle_timeout: 300s
 
 cache:
-  type: "redis"
-  redis:
-    url: "redis://redis.example.com:6380"
+  type: "memory"
   ttl: 30m
   memory_size: 5000
 
@@ -102,13 +100,11 @@ middleware:
 	}
 
 	// Verify cache settings
-	if cfg.Cache.Type != "redis" {
-		t.Errorf("expected cache type 'redis', got %s", cfg.Cache.Type)
+	if cfg.Cache.Type != "memory" {
+		t.Errorf("expected cache type 'memory', got %s", cfg.Cache.Type)
 	}
 
-	if cfg.Cache.Redis.URL != "redis://redis.example.com:6380" {
-		t.Errorf("expected redis URL 'redis://redis.example.com:6380', got %s", cfg.Cache.Redis.URL)
-	}
+
 
 	if cfg.Cache.TTL != 30*time.Minute {
 		t.Errorf("expected cache TTL 30m, got %v", cfg.Cache.TTL)

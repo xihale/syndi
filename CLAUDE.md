@@ -189,9 +189,7 @@ server:
   idle_timeout: 120s        # Idle timeout
 
 cache:
-  type: "memory"            # Cache type: memory or redis
-  redis:
-    url: "redis://localhost:6379"
+  type: "memory"            # Cache type: memory
   ttl: 15m                  # Cache TTL
   memory_size: 10000        # Memory cache size (if type is memory)
 
