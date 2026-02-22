@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/gob"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -55,7 +56,6 @@ func main() {
 	gob.Register(&models.Item{})
 	gob.Register(&models.Author{})
 
-
 	logger.Info("Starting RSSHub Go", zap.String("port", cfg.GetPort()))
 
 	// Initialize cache (two-tier: memory + badger)
@@ -90,9 +90,9 @@ func main() {
 
 	// Apply middleware in order (outermost first)
 	engine.Use(
-		middleware.Recovery(),                // 1. Panic recovery (OUTERMOST)
-		middleware.Logger(),                  // 2. Request logging
-		middleware.Header(cfg.GetCacheTTL()), // 3. HTTP headers (CORS, ETag, Cache-Control)
+		middleware.Recovery(), // 1. Panic recovery (OUTERMOST)
+		middleware.Logger(),   // 2. Request logging
+		middleware.Header(cfg.GetCacheTTL(), cfg.GetAllowOrigin()), // 3. HTTP headers (CORS, ETag, Cache-Control)
 		// Note: Parameter handling moved into handler-level caching
 	)
 
@@ -229,8 +229,55 @@ func setupGinRoutes(engine *gin.Engine, routeRegistry *registry.Registry, cacheI
 			return feed, nil
 		}
 
-		// Register RSS route with caching
-		engine.GET(ginPath, handlercache.Cached(cacheInstance, handler, cachedHandlerOpts))
+		if cfg.GetEnableCache() {
+			// Register route with handler-level caching.
+			engine.GET(ginPath, handlercache.Cached(cacheInstance, handler, cachedHandlerOpts))
+			continue
+		}
+
+		// Register route without caching.
+		engine.GET(ginPath, func(c *gin.Context) {
+			feed, err := handler(c)
+			if err != nil {
+				if errorCode, exists := c.Get("error_code"); exists {
+					if code, ok := errorCode.(int); ok {
+						c.JSON(code, gin.H{"error": err.Error()})
+						return
+					}
+				}
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+
+			c.Header("X-Cache", "BYPASS")
+			outputFeed(c, feed)
+		})
+	}
+}
+
+func outputFeed(c *gin.Context, feed *models.Feed) {
+	processedFeed := &models.Feed{
+		Title:       feed.Title,
+		Link:        feed.Link,
+		Description: feed.Description,
+		Items:       middleware.ProcessFeed(c, feed.Items),
+	}
+
+	format := c.DefaultQuery("format", "rss")
+	switch format {
+	case "atom":
+		outputAtom(c, processedFeed)
+	case "json":
+		data, err := json.MarshalIndent(processedFeed, "", "  ")
+		if err != nil {
+			logger.Error("Failed to generate JSON", zap.Error(err))
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.Header("Content-Type", "application/json; charset=utf-8")
+		c.Data(http.StatusOK, "application/json; charset=utf-8", data)
+	default:
+		outputRSS(c, processedFeed)
 	}
 }
 

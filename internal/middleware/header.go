@@ -26,12 +26,16 @@ const (
 	headerRSSHubCacheStatus = "RSSHub-Cache-Status"
 )
 
-// Header returns a middleware that sets HTTP headers
-func Header(cacheTTL time.Duration) gin.HandlerFunc {
+// Header returns a middleware that sets HTTP headers.
+func Header(cacheTTL time.Duration, allowOrigin string) gin.HandlerFunc {
+	if allowOrigin == "" {
+		allowOrigin = "*"
+	}
+
 	return func(c *gin.Context) {
 		// Handle OPTIONS requests for CORS preflight
 		if c.Request.Method == http.MethodOptions {
-			c.Header(headerAccessControlAllowOrigin, "*")
+			c.Header(headerAccessControlAllowOrigin, allowOrigin)
 			c.Header(headerAccessControlAllowMethods, "GET, POST, PUT, DELETE, OPTIONS")
 			c.Header(headerAccessControlAllowHeaders, "Content-Type, Authorization")
 			c.Header(headerAccessControlMaxAge, "86400")
@@ -40,7 +44,7 @@ func Header(cacheTTL time.Duration) gin.HandlerFunc {
 		}
 
 		// Set CORS headers
-		c.Header(headerAccessControlAllowOrigin, "*")
+		c.Header(headerAccessControlAllowOrigin, allowOrigin)
 
 		// Set security headers
 		c.Header(headerXContentTypeOpts, "nosniff")

@@ -10,11 +10,12 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
+	"github.com/xihale/rsshub-go/internal/middleware"
 	rssubcache "github.com/xihale/rsshub-go/pkg/cache"
 	"github.com/xihale/rsshub-go/pkg/logger"
 	"github.com/xihale/rsshub-go/pkg/models"
-	"github.com/xihale/rsshub-go/internal/middleware"
+	"github.com/xihale/rsshub-go/pkg/rss"
+	"go.uber.org/zap"
 )
 
 // HandlerFunc is the function signature for cached handlers
@@ -22,10 +23,10 @@ type HandlerFunc func(*gin.Context) (*models.Feed, error)
 
 // CachedHandlerOptions configures caching behavior
 type CachedHandlerOptions struct {
-	TTL           time.Duration
-	KeyGenerator  func(*gin.Context) string
-	ShouldCache   func(*gin.Context, *models.Feed) bool
-	ETagEnabled   bool
+	TTL          time.Duration
+	KeyGenerator func(*gin.Context) string
+	ShouldCache  func(*gin.Context, *models.Feed) bool
+	ETagEnabled  bool
 }
 
 // DefaultCachedOptions returns default caching options
@@ -90,14 +91,12 @@ func Cached(cacheInstance rssubcache.Cache, handler HandlerFunc, opts *CachedHan
 				format := c.DefaultQuery("format", "rss")
 				var contentType string
 				var body []byte
+				var err error
 
-				switch format {
-				case "atom":
-					body, contentType = serializeAtom(responseFeed)
-				case "json":
-					body, contentType = serializeJSON(responseFeed)
-				default:
-					body, contentType = serializeRSS(responseFeed)
+				body, contentType, err = serializeFeed(responseFeed, format)
+				if err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+					return
 				}
 
 				// Set cache status header
@@ -176,13 +175,10 @@ func Cached(cacheInstance rssubcache.Cache, handler HandlerFunc, opts *CachedHan
 		var contentType string
 		var body []byte
 
-		switch format {
-		case "atom":
-			body, contentType = serializeAtom(responseFeed)
-		case "json":
-			body, contentType = serializeJSON(responseFeed)
-		default:
-			body, contentType = serializeRSS(responseFeed)
+		body, contentType, err = serializeFeed(responseFeed, format)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
 		}
 
 		// Set cache status header
@@ -286,73 +282,33 @@ func generateETag(body []byte) string {
 	return `"` + hex.EncodeToString(hash[:]) + `"`
 }
 
-// serializeRSS converts a feed to RSS format
-func serializeRSS(feed *models.Feed) ([]byte, string) {
-	// This would use the actual RSS generation code
-	// For now, return a placeholder
-	xml := fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0">
-  <channel>
-    <title>%s</title>
-    <description>%s</description>
-    <link>%s</link>
-    %s
-  </channel>
-</rss>`, feed.Title, feed.Description, feed.Link, serializeItems(feed.Items))
-
-	return []byte(xml), "application/rss+xml; charset=utf-8"
+// serializeFeed serializes feed output by requested format.
+func serializeFeed(feed *models.Feed, format string) ([]byte, string, error) {
+	switch format {
+	case "atom":
+		body, err := rss.GenerateAtom(feed)
+		if err != nil {
+			return nil, "", err
+		}
+		return body, "application/atom+xml; charset=utf-8", nil
+	case "json":
+		return serializeJSON(feed)
+	default:
+		body, err := rss.GenerateRSS(feed)
+		if err != nil {
+			return nil, "", err
+		}
+		return body, "application/rss+xml; charset=utf-8", nil
+	}
 }
 
-// serializeAtom converts a feed to Atom format
-func serializeAtom(feed *models.Feed) ([]byte, string) {
-	xml := fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom">
-  <title>%s</title>
-  <subtitle>%s</subtitle>
-  <link href="%s"/>
-  %s
-</feed>`, feed.Title, feed.Description, feed.Link, serializeItemsAtom(feed.Items))
-
-	return []byte(xml), "application/atom+xml; charset=utf-8"
-}
-
-// serializeJSON converts a feed to JSON format
-func serializeJSON(feed *models.Feed) ([]byte, string) {
+// serializeJSON converts a feed to JSON format.
+func serializeJSON(feed *models.Feed) ([]byte, string, error) {
 	json, err := json.MarshalIndent(feed, "", "  ")
 	if err != nil {
-		return []byte("{}"), "application/json; charset=utf-8"
+		return nil, "", err
 	}
-	return json, "application/json; charset=utf-8"
-}
-
-// serializeItems converts feed items to RSS item format
-func serializeItems(items []models.Item) string {
-	var result string
-	for _, item := range items {
-		result += fmt.Sprintf(`
-    <item>
-      <title>%s</title>
-      <description>%s</description>
-      <link>%s</link>
-      <guid>%s</guid>
-    </item>`, item.Title, item.Description, item.Link, item.GUID)
-	}
-	return result
-}
-
-// serializeItemsAtom converts feed items to Atom entry format
-func serializeItemsAtom(items []models.Item) string {
-	var result string
-	for _, item := range items {
-		result += fmt.Sprintf(`
-  <entry>
-    <title>%s</title>
-    <content>%s</content>
-    <link href="%s"/>
-    <id>%s</id>
-  </entry>`, item.Title, item.Description, item.Link, item.GUID)
-	}
-	return result
+	return json, "application/json; charset=utf-8", nil
 }
 
 // NewCachedHandler creates a cached handler with default options

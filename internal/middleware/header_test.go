@@ -14,7 +14,7 @@ func TestHeader_SetsCORS(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	router := gin.New()
-	router.Use(Header(5 * time.Minute))
+	router.Use(Header(5*time.Minute, "*"))
 	router.GET("/test", func(c *gin.Context) {
 		c.String(http.StatusOK, "ok")
 	})
@@ -26,11 +26,27 @@ func TestHeader_SetsCORS(t *testing.T) {
 	assert.Equal(t, "*", w.Header().Get(headerAccessControlAllowOrigin))
 }
 
+func TestHeader_UsesConfiguredOrigin(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	router := gin.New()
+	router.Use(Header(5*time.Minute, "https://example.com"))
+	router.GET("/test", func(c *gin.Context) {
+		c.String(http.StatusOK, "ok")
+	})
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/test", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, "https://example.com", w.Header().Get(headerAccessControlAllowOrigin))
+}
+
 func TestHeader_SetsSecurityHeaders(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	router := gin.New()
-	router.Use(Header(5 * time.Minute))
+	router.Use(Header(5*time.Minute, "*"))
 	router.GET("/test", func(c *gin.Context) {
 		c.String(http.StatusOK, "ok")
 	})
@@ -47,7 +63,7 @@ func TestHeader_SetsCacheControl(t *testing.T) {
 
 	ttl := 5 * time.Minute
 	router := gin.New()
-	router.Use(Header(ttl))
+	router.Use(Header(ttl, "*"))
 	router.GET("/test", func(c *gin.Context) {
 		c.String(http.StatusOK, "ok")
 	})
@@ -63,7 +79,7 @@ func TestHeader_DisablesCacheWhenTTLIsZero(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	router := gin.New()
-	router.Use(Header(0))
+	router.Use(Header(0, "*"))
 	router.GET("/test", func(c *gin.Context) {
 		c.String(http.StatusOK, "ok")
 	})
@@ -79,7 +95,7 @@ func TestHeader_SetsRSSHubRouteHeader(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	router := gin.New()
-	router.Use(Header(5 * time.Minute))
+	router.Use(Header(5*time.Minute, "*"))
 	router.GET("/api/test", func(c *gin.Context) {
 		c.String(http.StatusOK, "ok")
 	})
@@ -95,7 +111,7 @@ func TestHeader_OptionsRequest(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	router := gin.New()
-	router.Use(Header(5 * time.Minute))
+	router.Use(Header(5*time.Minute, "*"))
 	router.GET("/test", func(c *gin.Context) {
 		c.String(http.StatusOK, "ok")
 	})
@@ -115,7 +131,7 @@ func TestHeader_StoresIfNoneMatch(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	router := gin.New()
-	router.Use(Header(5 * time.Minute))
+	router.Use(Header(5*time.Minute, "*"))
 	router.GET("/test", func(c *gin.Context) {
 		etag := c.GetHeader("If-None-Match")
 		c.String(http.StatusOK, etag)
@@ -182,11 +198,11 @@ func TestSetETag(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	tests := []struct {
-		name          string
-		body          []byte
-		ifNoneMatch   string
-		expectMatch   bool
-		expect304     bool
+		name        string
+		body        []byte
+		ifNoneMatch string
+		expectMatch bool
+		expect304   bool
 	}{
 		{
 			name:        "empty body",
