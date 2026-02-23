@@ -12,14 +12,15 @@ This document describes the recommended route pattern for this repository.
 
 Each route file under `routes/<namespace>/` should follow this structure:
 
-1. A package-level `routeutils.RouteSpec` variable holding metadata.
-2. A package-level `RegisterRoutes()` that calls `routeutils.MustRegisterRoute(...)` for all specs in the package.
+1. A package-level `routeutils.RouteSpec` variable holding metadata (path is relative to the namespace).
+2. A package-level `Routes` slice listing all specs in the package (auto-registered by generated code).
 3. A handler function implementing the route logic.
 4. Optional pure helper functions near the handler for parsing/mapping.
 
 ## Core Helpers
 
-- `routeutils.MustRegisterRoute` and `routeutils.RouteSpec`: route metadata registration primitives.
+- `routeutils.RouteSpec`: route metadata primitive (paths are relative to the namespace folder).
+- `routeutils.MustRegisterRoutesWithBase`: used by generated bootstrap to register all specs.
 - `routeutils.RequiredParam` / `routeutils.OptionalParam`: standardize param metadata.
 - `routeutils.ParsePositiveInt`, `routeutils.ParseBool`, `routeutils.ParseEnum`: normalize query parsing.
 - `routeutils.AppendMappedItems`: map source payloads to feed items with optional limit handling.
@@ -39,7 +40,11 @@ This keeps handlers easy to scan and test.
 ## Route Import Generation
 
 Route package imports are generated into `cmd/routes_gen.go`.
-The generated `registerRoutePackages()` function calls each route package's `RegisterRoutes()`.
+The generated `registerRoutePackages()` function registers each package's `Routes` slice via
+`routeutils.MustRegisterRoutesWithBase`, using the package folder name as the base path
+(e.g., `routes/github` -> `/github`).
+Only directories containing `routes.go` are treated as route packages, so helper-only folders
+won't be registered.
 
 - Generate manually: `go run scripts/generate-routes.go`
 - Auto-generate during build/run: `make build`, `make run`
@@ -80,9 +85,9 @@ Use the scaffold command to create new route files quickly:
 make new-route \
   NS=github \
   FILE=stars \
-  ROUTE_PATH=/github/stars/:owner \
+  ROUTE_PATH=stars/:owner \
   ROUTE_NAME="GitHub Stars" \
   EXAMPLE=github/stars/octocat
 ```
 
-The scaffold also updates `routes/<namespace>/register.go` and regenerates `cmd/routes_gen.go`.
+The scaffold also updates `routes/<namespace>/routes.go` and regenerates `cmd/routes_gen.go`.

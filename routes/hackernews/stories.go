@@ -13,7 +13,7 @@ import (
 )
 
 var hackerNewsStoriesRoute = routeutils.RouteSpec{
-	Path:        "/hackernews/stories",
+	Path:        "stories",
 	Name:        "Hacker News Top Stories",
 	Example:     "hackernews/stories",
 	Maintainers: []string{"xihale"},

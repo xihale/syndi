@@ -12,7 +12,7 @@ import (
 )
 
 var npmPackageRoute = routeutils.RouteSpec{
-	Path:        "/npm/:package",
+	Path:        ":package",
 	Name:        "npm Package Versions",
 	Example:     "npm/react",
 	Maintainers: []string{"xihale"},

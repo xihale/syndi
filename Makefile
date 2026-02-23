@@ -15,11 +15,11 @@ gen-routes-imports:
 
 # Scaffold a new route.
 # Usage:
-# make new-route NS=github FILE=stars ROUTE_PATH=/github/stars/:owner ROUTE_NAME="GitHub Stars" EXAMPLE=github/stars/octocat
+# make new-route NS=github FILE=stars ROUTE_PATH=stars/:owner ROUTE_NAME="GitHub Stars" EXAMPLE=github/stars/octocat
 new-route:
 	@if [ -z "$(NS)" ] || [ -z "$(FILE)" ] || [ -z "$(ROUTE_PATH)" ] || [ -z "$(ROUTE_NAME)" ] || [ -z "$(EXAMPLE)" ]; then \
 		echo "Usage: make new-route NS=<namespace> FILE=<file> ROUTE_PATH=<path> ROUTE_NAME=<name> EXAMPLE=<example>"; \
-		echo "Example: make new-route NS=github FILE=stars ROUTE_PATH=/github/stars/:owner ROUTE_NAME=\"GitHub Stars\" EXAMPLE=github/stars/octocat"; \
+		echo "Example: make new-route NS=github FILE=stars ROUTE_PATH=stars/:owner ROUTE_NAME=\"GitHub Stars\" EXAMPLE=github/stars/octocat"; \
 		exit 1; \
 	fi
 	@./scripts/new-route.sh "$(NS)" "$(FILE)" "$(ROUTE_PATH)" "$(ROUTE_NAME)" "$(EXAMPLE)"

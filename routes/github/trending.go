@@ -12,7 +12,7 @@ import (
 )
 
 var gitHubTrendingRoute = routeutils.RouteSpec{
-	Path:        "/github/trending/:language",
+	Path:        "trending/:language",
 	Name:        "GitHub Trending",
 	Example:     "github/trending/go",
 	Maintainers: []string{"xihale"},

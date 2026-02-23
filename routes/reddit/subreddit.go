@@ -13,7 +13,7 @@ import (
 )
 
 var redditSubredditRoute = routeutils.RouteSpec{
-	Path:        "/reddit/:subreddit",
+	Path:        ":subreddit",
 	Name:        "Reddit Subreddit",
 	Example:     "reddit/golang",
 	Maintainers: []string{"xihale"},

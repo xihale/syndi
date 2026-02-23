@@ -131,8 +131,10 @@ rsshub-go/
 
 ## Adding Routes
 
-Routes are registered explicitly via per-package `RegisterRoutes()` functions.
-The generated bootstrap in `cmd/routes_gen.go` calls each package registrar at startup.
+Routes are registered automatically from each package's `Routes` slice.
+A directory is treated as a route package only when it contains `routes.go`.
+The generated bootstrap in `cmd/routes_gen.go` registers every package using its folder
+name as the base path.
 
 Create a new route scaffold:
 
@@ -140,7 +142,7 @@ Create a new route scaffold:
 make new-route \
   NS=github \
   FILE=stars \
-  ROUTE_PATH=/github/stars/:owner \
+  ROUTE_PATH=stars/:owner \
   ROUTE_NAME="GitHub Stars" \
   EXAMPLE=github/stars/octocat
 ```
@@ -148,12 +150,13 @@ make new-route \
 This creates:
 - `routes/<namespace>/<file>.go`
 - `routes/<namespace>/<file>_test.go`
-- updates `routes/<namespace>/register.go`
+- updates `routes/<namespace>/routes.go`
 - and regenerates `cmd/routes_gen.go`
 
 Recommended route structure:
 - Declare metadata once with `routeutils.RouteSpec` in a package-level variable.
-- Expose package-level `RegisterRoutes()` and register specs there.
+- Keep `RouteSpec.Path` relative to the namespace folder (omit `/github/` prefix).
+- Expose a package-level `Routes` slice listing all specs for auto-registration.
 - Keep handler logic focused on `fetch -> map -> build feed`.
 - Prefer shared helpers like `routeutils.ParsePositiveInt`, `routeutils.ParseEnum`, and `routeutils.AppendMappedItems`.
 - Run `make verify-routes` before commit to catch metadata/path-parameter mismatches.

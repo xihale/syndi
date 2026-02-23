@@ -7,13 +7,13 @@ Usage:
   ./scripts/new-route.sh <namespace> <file> <route_path> <route_name> <example>
 
 Example:
-  ./scripts/new-route.sh github stars /github/stars/:owner "GitHub Stars" "github/stars/octocat"
+  ./scripts/new-route.sh github stars stars/:owner "GitHub Stars" "github/stars/octocat"
 
 Notes:
   - <namespace> maps to routes/<namespace>/
   - <file> is the route file name without .go (supports letters, numbers, _ and -)
-  - <route_path> should start with /
-  - The script updates routes/<namespace>/register.go for explicit registration
+  - <route_path> is relative to the namespace (omit the leading /namespace/)
+  - The script updates routes/<namespace>/routes.go for automatic registration
 EOF
 }
 
@@ -28,9 +28,15 @@ route_path="$3"
 route_name="$4"
 example="$5"
 
-if [[ ! "$route_path" =~ ^/ ]]; then
-	echo "Error: route_path must start with '/': $route_path" >&2
-	exit 1
+if [[ "$route_path" =~ ^/ ]]; then
+	normalized="${route_path#/}"
+	if [[ "$normalized" == "$namespace" ]]; then
+		route_path=""
+	elif [[ "$normalized" == "$namespace/"* ]]; then
+		route_path="${normalized#${namespace}/}"
+	else
+		route_path="$normalized"
+	fi
 fi
 
 if [[ ! "$namespace" =~ ^[a-z0-9_]+$ ]]; then
@@ -67,7 +73,7 @@ safe_file="${file_name//-/_}"
 route_dir="routes/$namespace"
 route_file="$route_dir/$safe_file.go"
 test_file="$route_dir/${safe_file}_test.go"
-register_file="$route_dir/register.go"
+routes_file="$route_dir/routes.go"
 
 if [[ -f "$route_file" ]]; then
 	echo "Error: route file already exists: $route_file" >&2
@@ -129,32 +135,24 @@ func Test${handler_base}RouteSpec(t *testing.T) {
 }
 EOF
 
-if [[ ! -f "$register_file" ]]; then
-	cat >"$register_file" <<EOF
+if [[ ! -f "$routes_file" ]]; then
+	cat >"$routes_file" <<EOF
 package $package_name
 
-import (
-	"sync"
+import "github.com/xihale/rsshub-go/internal/routeutils"
 
-	"github.com/xihale/rsshub-go/internal/routeutils"
-)
-
-var registerOnce sync.Once
-
-// RegisterRoutes registers all $namespace routes explicitly.
-func RegisterRoutes() {
-	registerOnce.Do(func() {
-		routeutils.MustRegisterRoute($route_var_name)
-	})
+// Routes lists all $namespace route specs in this package.
+var Routes = []routeutils.RouteSpec{
+	$route_var_name,
 }
 EOF
 else
-	if ! grep -Fq "routeutils.MustRegisterRoute($route_var_name)" "$register_file"; then
+	if ! grep -Fq "$route_var_name" "$routes_file"; then
 		tmp_file="$(mktemp)"
-		if ! awk -v line="\t\trouteutils.MustRegisterRoute($route_var_name)" '
-			BEGIN { in_register = 0; inserted = 0 }
-			/^func RegisterRoutes\(\)/ { in_register = 1 }
-			in_register && !inserted && /^[[:space:]]*\}\)[[:space:]]*$/ {
+		if ! awk -v line="\t$route_var_name," '
+			BEGIN { in_routes = 0; inserted = 0 }
+			/^var Routes =/ { in_routes = 1 }
+			in_routes && !inserted && /^[[:space:]]*\}/ {
 				print line
 				inserted = 1
 			}
@@ -164,23 +162,23 @@ else
 					exit 2
 				}
 			}
-		' "$register_file" >"$tmp_file"; then
+		' "$routes_file" >"$tmp_file"; then
 			rm -f "$tmp_file"
-			echo "Error: failed to update $register_file. Please add routeutils.MustRegisterRoute($route_var_name) to RegisterRoutes manually." >&2
+			echo "Error: failed to update $routes_file. Please add $route_var_name to Routes manually." >&2
 			exit 1
 		fi
-		mv "$tmp_file" "$register_file"
+		mv "$tmp_file" "$routes_file"
 	fi
 fi
 
-gofmt -w "$route_file" "$test_file" "$register_file"
+gofmt -w "$route_file" "$test_file" "$routes_file"
 go run scripts/generate-routes.go >/dev/null
 
 echo "Created:"
 echo "  - $route_file"
 echo "  - $test_file"
-if [[ -f "$register_file" ]]; then
-	echo "  - $register_file (updated)"
+if [[ -f "$routes_file" ]]; then
+	echo "  - $routes_file (updated)"
 fi
 echo
 echo "Next:"

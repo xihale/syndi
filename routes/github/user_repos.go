@@ -11,7 +11,7 @@ import (
 )
 
 var gitHubUserReposRoute = routeutils.RouteSpec{
-	Path:        "/github/users/:username/repos",
+	Path:        "users/:username/repos",
 	Name:        "GitHub User Repositories",
 	Example:     "github/users/torvalds/repos",
 	Maintainers: []string{"xihale"},

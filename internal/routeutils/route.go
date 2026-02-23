@@ -24,7 +24,7 @@ type RouteSpec struct {
 	Handler     models.HandlerFunc
 }
 
-// RegisterRoute validates and registers a route.
+// RegisterRoute validates and registers a route with an explicit path.
 func RegisterRoute(spec RouteSpec) error {
 	if strings.TrimSpace(spec.Path) == "" {
 		return fmt.Errorf("route path is required")
@@ -53,9 +53,37 @@ func RegisterRoute(spec RouteSpec) error {
 	return registry.GetRegistry().Register(route)
 }
 
+// RegisterRouteWithBase resolves the spec path against a base and registers it.
+// If spec.Path is absolute (starts with '/'), the base is ignored.
+func RegisterRouteWithBase(spec RouteSpec, basePath string) error {
+	resolved, err := resolveRoutePath(basePath, spec.Path)
+	if err != nil {
+		return err
+	}
+	spec.Path = resolved
+	return RegisterRoute(spec)
+}
+
+// RegisterRoutesWithBase resolves and registers all specs against a base path.
+func RegisterRoutesWithBase(basePath string, specs []RouteSpec) error {
+	for i, spec := range specs {
+		if err := RegisterRouteWithBase(spec, basePath); err != nil {
+			return fmt.Errorf("route[%d]: %w", i, err)
+		}
+	}
+	return nil
+}
+
 // MustRegisterRoute registers a route and panics on error.
 func MustRegisterRoute(spec RouteSpec) {
 	if err := RegisterRoute(spec); err != nil {
+		panic(err)
+	}
+}
+
+// MustRegisterRoutesWithBase registers routes and panics on error.
+func MustRegisterRoutesWithBase(basePath string, specs []RouteSpec) {
+	if err := RegisterRoutesWithBase(basePath, specs); err != nil {
 		panic(err)
 	}
 }
@@ -76,4 +104,25 @@ func OptionalParam(name, description string) models.Parameter {
 		Required:    false,
 		Description: description,
 	}
+}
+
+func resolveRoutePath(basePath, path string) (string, error) {
+	path = strings.TrimSpace(path)
+	if strings.HasPrefix(path, "/") {
+		return path, nil
+	}
+
+	base := strings.Trim(strings.TrimSpace(basePath), "/")
+	if base == "" {
+		if path == "" {
+			return "", fmt.Errorf("route path is required")
+		}
+		return "/" + strings.Trim(path, "/"), nil
+	}
+
+	path = strings.Trim(path, "/")
+	if path == "" {
+		return "/" + base, nil
+	}
+	return "/" + base + "/" + path, nil
 }

@@ -11,7 +11,7 @@ import (
 )
 
 var gitHubReposRoute = routeutils.RouteSpec{
-	Path:        "/github/repos/:owner/:repo",
+	Path:        "repos/:owner/:repo",
 	Name:        "GitHub Repository Releases",
 	Example:     "github/repos/DIYgod/RSSHub",
 	Maintainers: []string{"xihale"},

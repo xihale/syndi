@@ -15,7 +15,7 @@ import (
 )
 
 var techne98BlogRoute = routeutils.RouteSpec{
-	Path:        "/techne98/blog",
+	Path:        "blog",
 	Name:        "techne98 - blog",
 	Example:     "techne98/blog",
 	Maintainers: []string{"xihale"},

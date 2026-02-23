@@ -10,7 +10,7 @@ import (
 )
 
 var cacheTestRoute = routeutils.RouteSpec{
-	Path:        "/test/cache",
+	Path:        "cache",
 	Name:        "Cache Test",
 	Example:     "test/cache",
 	Maintainers: []string{"xihale"},

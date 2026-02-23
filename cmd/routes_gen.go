@@ -3,6 +3,7 @@
 package main
 
 import (
+	"github.com/xihale/rsshub-go/internal/routeutils"
 	routepkg0 "github.com/xihale/rsshub-go/routes/github"
 	routepkg1 "github.com/xihale/rsshub-go/routes/hackernews"
 	routepkg2 "github.com/xihale/rsshub-go/routes/npm"
@@ -12,10 +13,10 @@ import (
 )
 
 func registerRoutePackages() {
-	routepkg0.RegisterRoutes()
-	routepkg1.RegisterRoutes()
-	routepkg2.RegisterRoutes()
-	routepkg3.RegisterRoutes()
-	routepkg4.RegisterRoutes()
-	routepkg5.RegisterRoutes()
+	routeutils.MustRegisterRoutesWithBase("github", routepkg0.Routes)
+	routeutils.MustRegisterRoutesWithBase("hackernews", routepkg1.Routes)
+	routeutils.MustRegisterRoutesWithBase("npm", routepkg2.Routes)
+	routeutils.MustRegisterRoutesWithBase("reddit", routepkg3.Routes)
+	routeutils.MustRegisterRoutesWithBase("techne98", routepkg4.Routes)
+	routeutils.MustRegisterRoutesWithBase("test", routepkg5.Routes)
 }
