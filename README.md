@@ -83,6 +83,12 @@ For proxy and redirect behavior details (including precedence), see `docs/CLIENT
 # Run tests
 make test
 
+# Verify route metadata
+make verify-routes
+
+# Verify route metadata strictly (warnings fail)
+make verify-routes-strict
+
 # Run with coverage
 make test-coverage
 
@@ -101,7 +107,8 @@ make run
 ```
 rsshub-go/
 ├── cmd/
-│   └── server.go           # Main entry point
+│   ├── server.go           # Main entry point
+│   └── routes_gen.go       # Auto-generated route imports
 ├── internal/
 │   ├── cache/              # Handler-level caching
 │   ├── client/             # HTTP client with retry, proxy
@@ -124,13 +131,39 @@ rsshub-go/
 
 ## Adding Routes
 
-Routes are auto-registered via `init()` functions. See `routes/` directory for examples.
+Routes are registered explicitly via per-package `RegisterRoutes()` functions.
+The generated bootstrap in `cmd/routes_gen.go` calls each package registrar at startup.
+
+Create a new route scaffold:
+
+```bash
+make new-route \
+  NS=github \
+  FILE=stars \
+  ROUTE_PATH=/github/stars/:owner \
+  ROUTE_NAME="GitHub Stars" \
+  EXAMPLE=github/stars/octocat
+```
+
+This creates:
+- `routes/<namespace>/<file>.go`
+- `routes/<namespace>/<file>_test.go`
+- updates `routes/<namespace>/register.go`
+- and regenerates `cmd/routes_gen.go`
+
+Recommended route structure:
+- Declare metadata once with `routeutils.RouteSpec` in a package-level variable.
+- Expose package-level `RegisterRoutes()` and register specs there.
+- Keep handler logic focused on `fetch -> map -> build feed`.
+- Prefer shared helpers like `routeutils.ParsePositiveInt`, `routeutils.ParseEnum`, and `routeutils.AppendMappedItems`.
+- Run `make verify-routes` before commit to catch metadata/path-parameter mismatches.
 
 ## Documentation
 
 - `/docs` - Interactive route documentation (when server is running)
 - `docs/CACHING.md` - Comprehensive caching guide
 - `docs/CLIENT_CONFIG.md` - HTTP client config behavior and precedence
+- `docs/ROUTES.md` - Route architecture and scaffolding workflow
 - `CLAUDE.md` - Developer guide
 
 ## License

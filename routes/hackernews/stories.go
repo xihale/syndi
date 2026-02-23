@@ -10,26 +10,18 @@ import (
 	"github.com/xihale/rsshub-go/internal/routeutils"
 	ctxpkg "github.com/xihale/rsshub-go/pkg/context"
 	"github.com/xihale/rsshub-go/pkg/models"
-	"github.com/xihale/rsshub-go/pkg/registry"
 )
 
-func init() {
-	cacheTTL := 1 * time.Hour // Hacker News updates infrequently
-
-	route := &models.Route{
-		Path:        "/hackernews/stories",
-		Name:        "Hacker News Top Stories",
-		Example:     "hackernews/stories",
-		Maintainers: []string{"yourname"},
-		Description: "Fetch top stories from Hacker News",
-		Categories:  []models.Category{{Name: "social-media"}, {Name: "it"}},
-		Features:    models.Features{},
-		Handler:     HackerNewsStoriesHandler,
-		CacheTTL:    &cacheTTL,
-	}
-	if err := registry.GetRegistry().Register(route); err != nil {
-		panic(err)
-	}
+var hackerNewsStoriesRoute = routeutils.RouteSpec{
+	Path:        "/hackernews/stories",
+	Name:        "Hacker News Top Stories",
+	Example:     "hackernews/stories",
+	Maintainers: []string{"xihale"},
+	Description: "Fetch top stories from Hacker News",
+	Categories:  []models.Category{{Name: "social-media"}, {Name: "it"}},
+	Features:    models.Features{},
+	CacheTTL:    1 * time.Hour, // Hacker News updates infrequently
+	Handler:     HackerNewsStoriesHandler,
 }
 
 // HackerNewsStoriesHandler handles /hackernews/stories

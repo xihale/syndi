@@ -1,4 +1,4 @@
-.PHONY: all build test run clean fmt lint install-config gen-routes-imports
+.PHONY: all build test run clean fmt lint install-config gen-routes-imports new-route verify-routes verify-routes-strict ci-local
 
 # Build variables
 BINARY_NAME=rsshub-go
@@ -12,6 +12,17 @@ all: build
 gen-routes-imports:
 	@echo "Generating route imports..."
 	@go run scripts/generate-routes.go
+
+# Scaffold a new route.
+# Usage:
+# make new-route NS=github FILE=stars ROUTE_PATH=/github/stars/:owner ROUTE_NAME="GitHub Stars" EXAMPLE=github/stars/octocat
+new-route:
+	@if [ -z "$(NS)" ] || [ -z "$(FILE)" ] || [ -z "$(ROUTE_PATH)" ] || [ -z "$(ROUTE_NAME)" ] || [ -z "$(EXAMPLE)" ]; then \
+		echo "Usage: make new-route NS=<namespace> FILE=<file> ROUTE_PATH=<path> ROUTE_NAME=<name> EXAMPLE=<example>"; \
+		echo "Example: make new-route NS=github FILE=stars ROUTE_PATH=/github/stars/:owner ROUTE_NAME=\"GitHub Stars\" EXAMPLE=github/stars/octocat"; \
+		exit 1; \
+	fi
+	@./scripts/new-route.sh "$(NS)" "$(FILE)" "$(ROUTE_PATH)" "$(ROUTE_NAME)" "$(EXAMPLE)"
 
 # Build the server binary
 build: gen-routes-imports
@@ -27,6 +38,23 @@ run: gen-routes-imports
 # Run tests
 test:
 	go test -v ./...
+
+# Verify route metadata consistency
+verify-routes: gen-routes-imports
+	go run ./scripts/verify-routes
+
+# Verify route metadata consistency (warnings are treated as errors)
+verify-routes-strict: gen-routes-imports
+	go run ./scripts/verify-routes --strict
+
+# Run local checks equivalent to CI workflow
+ci-local:
+	@echo "Running local CI checks..."
+	$(MAKE) gen-routes-imports
+	git diff --exit-code -- cmd/routes_gen.go scripts/verify-routes/register_gen.go
+	$(MAKE) verify-routes-strict
+	go test ./...
+	$(MAKE) build
 
 # Run tests with coverage
 test-coverage:
@@ -80,6 +108,10 @@ help:
 	@echo "Available targets:"
 	@echo "  build         - Build the server binary"
 	@echo "  run           - Run the server directly"
+	@echo "  new-route     - Scaffold a new route file and test skeleton"
+	@echo "  verify-routes - Verify route metadata consistency"
+	@echo "  verify-routes-strict - Verify routes and fail on warnings"
+	@echo "  ci-local      - Run the same checks as CI locally"
 	@echo "  test          - Run all tests"
 	@echo "  test-coverage - Run tests and generate coverage report"
 	@echo "  fmt           - Format source code"

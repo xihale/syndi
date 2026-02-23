@@ -4,30 +4,23 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/xihale/rsshub-go/internal/routeutils"
 	ctxpkg "github.com/xihale/rsshub-go/pkg/context"
 	"github.com/xihale/rsshub-go/pkg/models"
-	"github.com/xihale/rsshub-go/pkg/registry"
 )
 
-func init() {
-	cacheTTL := 10 * time.Second
-
-	route := &models.Route{
-		Path:        "/test/cache",
-		Name:        "Cache Test",
-		Description: "Test route to verify cache behavior (HIT/MISS)",
-		Handler:     CacheTestHandler,
-		Parameters:  []models.Parameter{},
-		CacheTTL:    &cacheTTL,
-		Categories: []models.Category{
-			{Name: "Test", Description: "Test routes"},
-		},
-		Features: models.Features{},
-	}
-
-	if err := registry.GetRegistry().Register(route); err != nil {
-		panic(err)
-	}
+var cacheTestRoute = routeutils.RouteSpec{
+	Path:        "/test/cache",
+	Name:        "Cache Test",
+	Example:     "test/cache",
+	Maintainers: []string{"xihale"},
+	Description: "Test route to verify cache behavior (HIT/MISS)",
+	Categories: []models.Category{
+		{Name: "Test", Description: "Test routes"},
+	},
+	Features: models.Features{},
+	CacheTTL: 10 * time.Second,
+	Handler:  CacheTestHandler,
 }
 
 // CacheTestHandler generates a test feed with timestamp to demonstrate caching

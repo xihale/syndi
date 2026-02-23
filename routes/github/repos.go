@@ -8,39 +8,30 @@ import (
 	"github.com/xihale/rsshub-go/internal/routeutils"
 	ctxpkg "github.com/xihale/rsshub-go/pkg/context"
 	"github.com/xihale/rsshub-go/pkg/models"
-	"github.com/xihale/rsshub-go/pkg/registry"
 )
 
-// GitHub repos route
-func init() {
-	cacheTTL := 1 * time.Hour // GitHub releases are infrequent
-
-	route := &models.Route{
-		Path:        "/github/repos/:owner/:repo",
-		Name:        "GitHub Repository Releases",
-		Example:     "github/repos/DIYgod/RSSHub",
-		Maintainers: []string{"yourname"},
-		Description: "Fetch releases from a GitHub repository",
-		Categories:  []models.Category{{Name: "dev"}},
-		Features:    models.Features{SupportRadar: true},
-		Handler:     GitHubReposHandler,
-		Parameters: []models.Parameter{
-			{Name: "owner", Required: true, Description: "Repository owner"},
-			{Name: "repo", Required: true, Description: "Repository name"},
-		},
-		CacheTTL: &cacheTTL,
-	}
-	if err := registry.GetRegistry().Register(route); err != nil {
-		panic(err)
-	}
+var gitHubReposRoute = routeutils.RouteSpec{
+	Path:        "/github/repos/:owner/:repo",
+	Name:        "GitHub Repository Releases",
+	Example:     "github/repos/DIYgod/RSSHub",
+	Maintainers: []string{"xihale"},
+	Description: "Fetch releases from a GitHub repository",
+	Categories:  []models.Category{{Name: "dev"}},
+	Features:    models.Features{SupportRadar: true},
+	Parameters: []models.Parameter{
+		routeutils.RequiredParam("owner", "Repository owner"),
+		routeutils.RequiredParam("repo", "Repository name"),
+	},
+	CacheTTL: 1 * time.Hour, // GitHub releases are infrequent
+	Handler:  GitHubReposHandler,
 }
 
 // GitHubReposHandler handles /github/repos/:owner/:repo
 func GitHubReposHandler(c *ctxpkg.Context) (*models.Feed, error) {
 	owner := c.Param("owner")
 	repo := c.Param("repo")
-	limit := parsePositiveLimit(c.QueryParam("limit"), 20, 100)
-	includePrerelease := parseBoolDefault(c.QueryParam("include_prerelease"), true)
+	limit := routeutils.ParsePositiveInt(c.QueryParam("limit"), 20, 100)
+	includePrerelease := routeutils.ParseBool(c.QueryParam("include_prerelease"), true)
 
 	ctx, cancel := context.WithTimeout(c.Parent(), 12*time.Second)
 	defer cancel()
@@ -57,28 +48,21 @@ func GitHubReposHandler(c *ctxpkg.Context) (*models.Feed, error) {
 		"https://github.com/"+owner+"/"+repo+"/releases",
 		"Latest releases from "+owner+"/"+repo,
 	)
-	feed.Items = make([]models.Item, 0, limit)
-
-	for _, release := range releases {
-		if len(feed.Items) >= limit {
-			break
-		}
+	routeutils.AppendMappedItems(feed, releases, limit, func(release GitHubRelease) *models.Item {
 		if release.TagName == "" || release.HTMLURL == "" {
-			continue
+			return nil
 		}
 		if !includePrerelease && release.Prerelease {
-			continue
+			return nil
 		}
-
-		item := models.Item{
+		return &models.Item{
 			Title:       "Release " + release.TagName,
 			Link:        release.HTMLURL,
 			GUID:        release.HTMLURL,
 			Description: release.Body,
 			PubDate:     release.PublishedAt,
 		}
-		feed.Items = append(feed.Items, item)
-	}
+	})
 
 	return feed, nil
 }

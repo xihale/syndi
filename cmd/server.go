@@ -25,14 +25,6 @@ import (
 	"github.com/xihale/rsshub-go/pkg/models"
 	"github.com/xihale/rsshub-go/pkg/registry"
 	"github.com/xihale/rsshub-go/pkg/rss"
-
-	// Import route packages to trigger init() registration
-	_ "github.com/xihale/rsshub-go/routes/github"
-	_ "github.com/xihale/rsshub-go/routes/hackernews"
-	_ "github.com/xihale/rsshub-go/routes/npm"
-	_ "github.com/xihale/rsshub-go/routes/reddit"
-	_ "github.com/xihale/rsshub-go/routes/techne98"
-	_ "github.com/xihale/rsshub-go/routes/test"
 )
 
 func main() {
@@ -103,7 +95,9 @@ func main() {
 		// Note: Parameter handling moved into handler-level caching
 	)
 
-	// Register routes (auto-registered via init() in route packages)
+	// Register routes explicitly via generated route package bootstrap.
+	registerRoutePackages()
+
 	routeRegistry := registry.GetRegistry()
 
 	// Log registered routes for debugging
@@ -212,10 +206,10 @@ func setupGinRoutes(engine *gin.Engine, routeRegistry *registry.Registry, cacheI
 
 		// Create handler wrapper
 		handler := func(c *gin.Context) (*models.Feed, error) {
-			// Extract path parameters into context
-			params := make(map[string]string)
-			for _, param := range route.Parameters {
-				params[param.Name] = c.Param(param.Name)
+			// Extract all Gin path parameters into the route context.
+			params := make(map[string]string, len(c.Params))
+			for _, param := range c.Params {
+				params[param.Key] = param.Value
 			}
 
 			// Create custom context

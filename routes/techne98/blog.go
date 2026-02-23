@@ -3,7 +3,6 @@ package routes
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -12,31 +11,22 @@ import (
 	"github.com/xihale/rsshub-go/internal/routeutils"
 	ctxpkg "github.com/xihale/rsshub-go/pkg/context"
 	"github.com/xihale/rsshub-go/pkg/models"
-	"github.com/xihale/rsshub-go/pkg/registry"
 	"github.com/xihale/rsshub-go/pkg/utils/date"
 )
 
-func init() {
-	cacheTTL := 5 * 24 * time.Hour // Blog list cache: 5 days
-
-	route := &models.Route{
-		Path:        "/techne98/blog",
-		Name:        "techne98 - blog",
-		Example:     "techne98/blog",
-		Maintainers: []string{"xihale"},
-		Description: "Fetch blog posts from techne98.com",
-		Categories:  []models.Category{{Name: "blog"}},
-		Features:    models.Features{},
-		Handler:     Techne98BlogHandler,
-		Parameters: []models.Parameter{
-			{Name: "limit", Required: false, Description: "Maximum number of articles to return (default: all)"},
-		},
-		CacheTTL: &cacheTTL,
-	}
-
-	if err := registry.GetRegistry().Register(route); err != nil {
-		panic(err)
-	}
+var techne98BlogRoute = routeutils.RouteSpec{
+	Path:        "/techne98/blog",
+	Name:        "techne98 - blog",
+	Example:     "techne98/blog",
+	Maintainers: []string{"xihale"},
+	Description: "Fetch blog posts from techne98.com",
+	Categories:  []models.Category{{Name: "blog"}},
+	Features:    models.Features{},
+	Parameters: []models.Parameter{
+		routeutils.OptionalParam("limit", "Maximum number of articles to return (default: all)"),
+	},
+	CacheTTL: 5 * 24 * time.Hour, // Blog list cache: 5 days
+	Handler:  Techne98BlogHandler,
 }
 
 // Techne98BlogHandler handles /techne98/blog
@@ -56,7 +46,7 @@ func Techne98BlogHandler(c *ctxpkg.Context) (*models.Feed, error) {
 		"Blog posts from techne98.com",
 	)
 
-	maxItems := parsePositiveInt(c.QueryParam("limit"))
+	maxItems := routeutils.ParseOptionalPositiveInt(c.QueryParam("limit"))
 	items := make([]*models.Item, 0)
 
 	doc.Each("main .grid a.group", func(i int, sel *parser.Selection) {
@@ -106,18 +96,6 @@ func Techne98BlogHandler(c *ctxpkg.Context) (*models.Feed, error) {
 	}
 
 	return feed, nil
-}
-
-func parsePositiveInt(s string) *int {
-	if s == "" {
-		return nil
-	}
-
-	parsed, err := strconv.Atoi(s)
-	if err != nil || parsed <= 0 {
-		return nil
-	}
-	return &parsed
 }
 
 func populateTechne98Descriptions(ctx context.Context, c *ctxpkg.Context, rootURL string, items []*models.Item) {

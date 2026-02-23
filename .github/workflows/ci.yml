@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  verify-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Verify Generated Route Bootstrap
+        run: |
+          make gen-routes-imports
+          git diff --exit-code -- cmd/routes_gen.go scripts/verify-routes/register_gen.go
+
+      - name: Verify Route Metadata (Strict)
+        run: make verify-routes-strict
+
+      - name: Run Tests
+        run: go test ./...
+
+      - name: Build
+        run: make build

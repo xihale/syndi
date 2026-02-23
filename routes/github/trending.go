@@ -9,29 +9,21 @@ import (
 	"github.com/xihale/rsshub-go/internal/routeutils"
 	ctxpkg "github.com/xihale/rsshub-go/pkg/context"
 	"github.com/xihale/rsshub-go/pkg/models"
-	"github.com/xihale/rsshub-go/pkg/registry"
 )
 
-func init() {
-	cacheTTL := 30 * time.Minute // Trending changes moderately
-
-	route := &models.Route{
-		Path:        "/github/trending/:language",
-		Name:        "GitHub Trending",
-		Example:     "github/trending/go",
-		Maintainers: []string{"yourname"},
-		Description: "Fetch trending repositories on GitHub by language",
-		Categories:  []models.Category{{Name: "dev"}},
-		Features:    models.Features{},
-		Handler:     GitHubTrendingHandler,
-		Parameters: []models.Parameter{
-			{Name: "language", Required: false, Description: "Programming language (use 'all' for any language)"},
-		},
-		CacheTTL: &cacheTTL,
-	}
-	if err := registry.GetRegistry().Register(route); err != nil {
-		panic(err)
-	}
+var gitHubTrendingRoute = routeutils.RouteSpec{
+	Path:        "/github/trending/:language",
+	Name:        "GitHub Trending",
+	Example:     "github/trending/go",
+	Maintainers: []string{"xihale"},
+	Description: "Fetch trending repositories on GitHub by language",
+	Categories:  []models.Category{{Name: "dev"}},
+	Features:    models.Features{},
+	Parameters: []models.Parameter{
+		routeutils.RequiredParam("language", "Programming language (use 'all' for any language)"),
+	},
+	CacheTTL: 30 * time.Minute, // Trending changes moderately
+	Handler:  GitHubTrendingHandler,
 }
 
 // GitHubTrendingHandler handles /github/trending/:language

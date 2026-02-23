@@ -9,29 +9,21 @@ import (
 	"github.com/xihale/rsshub-go/internal/routeutils"
 	ctxpkg "github.com/xihale/rsshub-go/pkg/context"
 	"github.com/xihale/rsshub-go/pkg/models"
-	"github.com/xihale/rsshub-go/pkg/registry"
 )
 
-func init() {
-	cacheTTL := 4 * time.Hour // npm package versions change infrequently
-
-	route := &models.Route{
-		Path:        "/npm/:package",
-		Name:        "npm Package Versions",
-		Example:     "npm/react",
-		Maintainers: []string{"yourname"},
-		Description: "Fetch versions from an npm package",
-		Categories:  []models.Category{{Name: "programming"}},
-		Features:    models.Features{SupportRadar: true},
-		Handler:     NPMPackageHandler,
-		Parameters: []models.Parameter{
-			{Name: "package", Required: true, Description: "npm package name"},
-		},
-		CacheTTL: &cacheTTL,
-	}
-	if err := registry.GetRegistry().Register(route); err != nil {
-		panic(err)
-	}
+var npmPackageRoute = routeutils.RouteSpec{
+	Path:        "/npm/:package",
+	Name:        "npm Package Versions",
+	Example:     "npm/react",
+	Maintainers: []string{"xihale"},
+	Description: "Fetch versions from an npm package",
+	Categories:  []models.Category{{Name: "programming"}},
+	Features:    models.Features{SupportRadar: true},
+	Parameters: []models.Parameter{
+		routeutils.RequiredParam("package", "npm package name"),
+	},
+	CacheTTL: 4 * time.Hour, // npm package versions change infrequently
+	Handler:  NPMPackageHandler,
 }
 
 // NPMPackageHandler handles /npm/:package
@@ -58,12 +50,9 @@ func NPMPackageHandler(c *ctxpkg.Context) (*models.Feed, error) {
 	}
 
 	// Sort versions by publish time (newest first) and emit the first 20.
-	for _, v := range sortedVersionTags(response.Versions, response.Time) {
+	routeutils.AppendMappedItems(feed, sortedVersionTags(response.Versions, response.Time), 20, func(v NPMDistTag) *models.Item {
 		if v.Time.IsZero() {
-			continue
-		}
-		if len(feed.Items) >= 20 {
-			break
+			return nil
 		}
 
 		versionURL := fmt.Sprintf("https://www.npmjs.com/package/%s/v/%s", packageName, v.Version)
@@ -85,9 +74,8 @@ func NPMPackageHandler(c *ctxpkg.Context) (*models.Feed, error) {
 		item.GUID = fmt.Sprintf("npm-%s-%s", packageName, v.Version)
 
 		routeutils.SetCategories(item, "version", v.Version)
-
-		routeutils.AddItem(feed, item)
-	}
+		return item
+	})
 
 	return feed, nil
 }

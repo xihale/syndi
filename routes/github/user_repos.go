@@ -8,36 +8,27 @@ import (
 	"github.com/xihale/rsshub-go/internal/routeutils"
 	ctxpkg "github.com/xihale/rsshub-go/pkg/context"
 	"github.com/xihale/rsshub-go/pkg/models"
-	"github.com/xihale/rsshub-go/pkg/registry"
 )
 
-// GitHub user repositories route
-func init() {
-	cacheTTL := 2 * time.Hour // User repositories change slowly
-
-	route := &models.Route{
-		Path:        "/github/users/:username/repos",
-		Name:        "GitHub User Repositories",
-		Example:     "github/users/torvalds/repos",
-		Maintainers: []string{"yourname"},
-		Description: "Fetches all public repositories for a GitHub user",
-		Categories:  []models.Category{{Name: "dev"}},
-		Features:    models.Features{SupportRadar: true},
-		Handler:     GitHubUserReposHandler,
-		Parameters: []models.Parameter{
-			{Name: "username", Required: true, Description: "GitHub username"},
-		},
-		CacheTTL: &cacheTTL,
-	}
-	if err := registry.GetRegistry().Register(route); err != nil {
-		panic(err)
-	}
+var gitHubUserReposRoute = routeutils.RouteSpec{
+	Path:        "/github/users/:username/repos",
+	Name:        "GitHub User Repositories",
+	Example:     "github/users/torvalds/repos",
+	Maintainers: []string{"xihale"},
+	Description: "Fetches all public repositories for a GitHub user",
+	Categories:  []models.Category{{Name: "dev"}},
+	Features:    models.Features{SupportRadar: true},
+	Parameters: []models.Parameter{
+		routeutils.RequiredParam("username", "GitHub username"),
+	},
+	CacheTTL: 2 * time.Hour, // User repositories change slowly
+	Handler:  GitHubUserReposHandler,
 }
 
 // GitHubUserReposHandler handles /github/users/:username/repos
 func GitHubUserReposHandler(c *ctxpkg.Context) (*models.Feed, error) {
 	username := c.Param("username")
-	limit := parsePositiveLimit(c.QueryParam("limit"), 30, 100)
+	limit := routeutils.ParsePositiveInt(c.QueryParam("limit"), 30, 100)
 
 	// Build GitHub API URL - fetch public repos sorted by updated desc
 	url := fmt.Sprintf(
@@ -59,17 +50,12 @@ func GitHubUserReposHandler(c *ctxpkg.Context) (*models.Feed, error) {
 		fmt.Sprintf("https://github.com/%s?tab=repos", username),
 		fmt.Sprintf("Public repositories for GitHub user %s", username),
 	)
-	feed.Items = make([]models.Item, 0, limit)
-
-	for _, repo := range repos {
-		if len(feed.Items) >= limit {
-			break
-		}
+	routeutils.AppendMappedItems(feed, repos, limit, func(repo GitHubRepo) *models.Item {
 		if repo.FullName == "" || repo.HTMLURL == "" {
-			continue
+			return nil
 		}
 
-		item := models.Item{
+		item := &models.Item{
 			Title:       repo.FullName,
 			Link:        repo.HTMLURL,
 			GUID:        repo.HTMLURL,
@@ -81,7 +67,6 @@ func GitHubUserReposHandler(c *ctxpkg.Context) (*models.Feed, error) {
 			item.Categories = []string{repo.Language}
 		}
 
-		// Add author info
 		if repo.Owner.Login != "" {
 			item.Author = &models.Author{
 				Name: repo.Owner.Login,
@@ -89,8 +74,8 @@ func GitHubUserReposHandler(c *ctxpkg.Context) (*models.Feed, error) {
 			}
 		}
 
-		feed.Items = append(feed.Items, item)
-	}
+		return item
+	})
 
 	return feed, nil
 }
