@@ -61,12 +61,14 @@ type ItemContent struct {
 
 // NewItem creates an Item with required fields
 func NewItem(title, link, description string, pubDate time.Time) *models.Item {
-	return &models.Item{
+	item := &models.Item{
 		Title:       title,
 		Link:        link,
 		Description: description,
 		PubDate:     pubDate,
 	}
+	applyItemDefaults(item)
+	return item
 }
 
 // NewItemWithOptions creates Item with all optional fields
@@ -91,10 +93,7 @@ func NewItemWithOptions(opts ItemOptions) *models.Item {
 		}
 	}
 
-	// Default GUID to link if not set
-	if item.GUID == "" && item.Link != "" {
-		item.GUID = item.Link
-	}
+	applyItemDefaults(item)
 
 	return item
 }
@@ -107,6 +106,7 @@ func AddItem(feed *models.Feed, item *models.Item) {
 	if feed.Items == nil {
 		feed.Items = make([]models.Item, 0, 10)
 	}
+	applyItemDefaults(item)
 	feed.Items = append(feed.Items, *item)
 }
 
@@ -120,8 +120,18 @@ func AddItems(feed *models.Feed, items ...*models.Item) {
 	}
 	for _, item := range items {
 		if item != nil {
+			applyItemDefaults(item)
 			feed.Items = append(feed.Items, *item)
 		}
+	}
+}
+
+func applyItemDefaults(item *models.Item) {
+	if item == nil {
+		return
+	}
+	if item.GUID == "" && item.Link != "" {
+		item.GUID = item.Link
 	}
 }
 

@@ -159,6 +159,7 @@ Recommended route structure:
 - Expose a package-level `Routes` slice listing all specs for auto-registration.
 - Keep handler logic focused on `fetch -> map -> build feed`.
 - Prefer shared helpers like `routeutils.ParsePositiveInt`, `routeutils.ParseEnum`, and `routeutils.AppendMappedItems`.
+- Route utils will auto-fill `Item.GUID` from `Item.Link` when `GUID` is empty.
 - Run `make verify-routes` before commit to catch metadata/path-parameter mismatches.
 
 ## Documentation

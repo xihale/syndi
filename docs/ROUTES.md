@@ -24,6 +24,7 @@ Each route file under `routes/<namespace>/` should follow this structure:
 - `routeutils.RequiredParam` / `routeutils.OptionalParam`: standardize param metadata.
 - `routeutils.ParsePositiveInt`, `routeutils.ParseBool`, `routeutils.ParseEnum`: normalize query parsing.
 - `routeutils.AppendMappedItems`: map source payloads to feed items with optional limit handling.
+- Item defaults: `routeutils.NewItem`, `NewItemWithOptions`, `AddItem/AddItems`, and `AppendMappedItems` will fill `GUID` from `Link` when `GUID` is empty.
 
 ## Handler Pipeline Style
 

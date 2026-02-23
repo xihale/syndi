@@ -21,6 +21,7 @@ func AppendMappedItems[T any](feed *models.Feed, source []T, limit int, mapper f
 			continue
 		}
 
+		applyItemDefaults(item)
 		feed.Items = append(feed.Items, *item)
 		appended++
 	}

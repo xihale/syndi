@@ -83,6 +83,9 @@ func TestNewItem(t *testing.T) {
 	if item.Link != "https://example.com/item" {
 		t.Errorf("NewItem() Link = %v, want %v", item.Link, "https://example.com/item")
 	}
+	if item.GUID != "https://example.com/item" {
+		t.Errorf("NewItem() GUID = %v, want %v", item.GUID, "https://example.com/item")
+	}
 	if item.PubDate != pubDate {
 		t.Errorf("NewItem() PubDate = %v, want %v", item.PubDate, pubDate)
 	}
