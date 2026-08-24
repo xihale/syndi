@@ -58,8 +58,6 @@ const baseTemplate = `
     --hover-bg: #fafafa;
     --path: #0b57d0;
 
-    --cat-social_media: #9333ea; --cat-picture: #db2777; --cat-game: #ea580c;
-    --cat-dev: #6d28d9; --cat-blog: #57534e;
 }
 @media (prefers-color-scheme: dark) {
     :root {
@@ -77,7 +75,6 @@ const baseTemplate = `
 
     }
 }
-        .cat-default { color: var(--muted); }
         body {
             font-family: "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
             color: var(--fg);
