@@ -175,14 +175,14 @@ const baseTemplate = `
         .no { color: var(--accent); }
         .st { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; }
         .kv dd code { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 13px; color: var(--accent); }
-        .try-row { display: flex; gap: 16px; align-items: stretch; }
+        .try-row { display: flex; gap: 28px; align-items: flex-end; }
         .try-row input {
             flex: 1;
             border: none;
             border-bottom: 1px solid var(--rule);
             border-radius: 0;
             background: transparent;
-            font-family: "SF Mono", ui-monospace, Menlo, monospace;
+            font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
             font-size: 13px;
             padding: 10px 0;
             outline: none;
@@ -190,19 +190,39 @@ const baseTemplate = `
         }
         .try-row input:focus { border-bottom-color: var(--accent); }
         button.run {
-            background: var(--fg);
-            color: var(--bg);
-            border: none;
-            padding: 10px 20px;
+            background: transparent;
+            color: var(--fg);
+            border: 1px solid var(--fg);
+            padding: 9px 26px;
             font: inherit;
             font-size: 11px;
             font-weight: 700;
             letter-spacing: 0.16em;
             cursor: pointer;
-            transition: background .12s;
+            transition: all .12s;
         }
-        button.run:hover { background: var(--accent); }
-        #tryOut { margin-top: 18px; max-height: 420px; overflow: auto; }
+        button.run:hover { border-color: var(--accent); color: var(--accent); }
+        #tryStatus {
+            margin-top: 22px;
+            font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+            font-size: 11px;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+        }
+        #tryStatus.yes { color: var(--ok); }
+        #tryStatus.no { color: var(--accent); }
+        #tryOut {
+            margin-top: 8px;
+            padding: 16px 0 4px;
+            border-top: 1px solid var(--hairline);
+            font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+            font-size: 12px;
+            line-height: 1.8;
+            max-height: 65vh;
+            overflow: auto;
+            white-space: pre;
+            tab-size: 2;
+        }
         ul.plain { list-style: none; }
         ul.plain li { padding: 10px 0; border-bottom: 1px solid var(--hairline); cursor: pointer; }
         ul.plain li:last-child { border-bottom: none; }
@@ -337,7 +357,8 @@ const routeContent = `
         <input id="tryPath" value="{{.Route.ExampleURL}}" spellcheck="false">
         <button class="run" type="submit">RUN</button>
     </form>
-    <pre id="tryOut" class="example" hidden></pre>
+    <div id="tryStatus" hidden></div>
+    <pre id="tryOut" hidden></pre>
 </section>
 {{end}}
 
@@ -367,15 +388,39 @@ const routeContent = `
 {{end}}
 
 <script>
+function fmtXML(t) {
+    t = t.replace(/^\s*<\?xml[^>]*\?>/, '').trimStart();
+    if (!t.startsWith('<')) return t;
+    const lines = t.replace(/></g, '>\n<').split('\n');
+    let depth = 0;
+    return lines.map(raw => {
+        const l = raw.trim();
+        if (/^<\//.test(l)) depth = Math.max(depth - 1, 0);
+        const out = '  '.repeat(depth) + l;
+        if (/^<[a-zA-Z]/.test(l) && !/<\/[a-zA-Z][\w:-]*>$/.test(l) && !/\/>$/.test(l)) depth++;
+        return out;
+    }).join('\n');
+}
 function runTry() {
     const out = document.getElementById('tryOut');
+    const st = document.getElementById('tryStatus');
     const path = document.getElementById('tryPath').value.trim();
     out.hidden = false;
-    out.textContent = 'loading…';
+    st.hidden = false;
+    st.className = '';
+    st.textContent = 'LOADING';
+    out.textContent = '';
+    const started = performance.now();
     fetch(path).then(async r => {
-        const t = await r.text();
-        out.textContent = r.status + ' ' + r.statusText + '\n\n' + t.slice(0, 8000);
-    }).catch(e => { out.textContent = 'error: ' + e; });
+        const ms = Math.round(performance.now() - started);
+        st.className = r.ok ? 'yes' : 'no';
+        st.textContent = r.status + ' ' + r.statusText + ' · ' + ms + 'MS';
+        out.textContent = fmtXML(await r.text());
+    }).catch(e => {
+        st.className = 'no';
+        st.textContent = 'FETCH FAILED';
+        out.textContent = String(e);
+    });
 }
 </script>
 {{end}}
