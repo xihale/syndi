@@ -4,19 +4,23 @@ package main
 
 import (
 	"github.com/xihale/rsshub-go/internal/routeutils"
-	routepkg0 "github.com/xihale/rsshub-go/routes/github"
-	routepkg1 "github.com/xihale/rsshub-go/routes/hackernews"
-	routepkg2 "github.com/xihale/rsshub-go/routes/npm"
-	routepkg3 "github.com/xihale/rsshub-go/routes/reddit"
-	routepkg4 "github.com/xihale/rsshub-go/routes/techne98"
-	routepkg5 "github.com/xihale/rsshub-go/routes/test"
+	routepkg0 "github.com/xihale/rsshub-go/routes/arxiv"
+	routepkg1 "github.com/xihale/rsshub-go/routes/github"
+	routepkg2 "github.com/xihale/rsshub-go/routes/hackernews"
+	routepkg3 "github.com/xihale/rsshub-go/routes/lwn"
+	routepkg4 "github.com/xihale/rsshub-go/routes/npm"
+	routepkg5 "github.com/xihale/rsshub-go/routes/reddit"
+	routepkg6 "github.com/xihale/rsshub-go/routes/techne98"
+	routepkg7 "github.com/xihale/rsshub-go/routes/test"
 )
 
 func registerRoutePackages() {
-	routeutils.MustRegisterRoutesWithBase("github", routepkg0.Routes)
-	routeutils.MustRegisterRoutesWithBase("hackernews", routepkg1.Routes)
-	routeutils.MustRegisterRoutesWithBase("npm", routepkg2.Routes)
-	routeutils.MustRegisterRoutesWithBase("reddit", routepkg3.Routes)
-	routeutils.MustRegisterRoutesWithBase("techne98", routepkg4.Routes)
-	routeutils.MustRegisterRoutesWithBase("test", routepkg5.Routes)
+	routeutils.MustRegisterRoutesWithBase("arxiv", routepkg0.Routes)
+	routeutils.MustRegisterRoutesWithBase("github", routepkg1.Routes)
+	routeutils.MustRegisterRoutesWithBase("hackernews", routepkg2.Routes)
+	routeutils.MustRegisterRoutesWithBase("lwn", routepkg3.Routes)
+	routeutils.MustRegisterRoutesWithBase("npm", routepkg4.Routes)
+	routeutils.MustRegisterRoutesWithBase("reddit", routepkg5.Routes)
+	routeutils.MustRegisterRoutesWithBase("techne98", routepkg6.Routes)
+	routeutils.MustRegisterRoutesWithBase("test", routepkg7.Routes)
 }
