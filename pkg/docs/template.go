@@ -114,7 +114,7 @@ const baseTemplate = `
         .ns-header {
             display: flex; justify-content: space-between; align-items: baseline;
         }
-        #routesContainer .namespace { margin-top: 72px; }
+        #routesContainer .namespace { margin-top: 48px; }
         #routesContainer .namespace:first-child { margin-top: 44px; }
         .ns-header h2 { font-size: 24px; font-weight: 700; letter-spacing: -0.01em; }
         .count { font-size: 13px; color: var(--muted); }
