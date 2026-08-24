@@ -40,7 +40,7 @@ var zhihuCollectionRoute = routeutils.RouteSpec{
 	Name:        "知乎收藏夹",
 	Example:     "zhihu/collection/26444956",
 	Maintainers: []string{"xihale"},
-	Description: "公开收藏夹的内容（需 ZHIHU_COOKIES）",
+	Description: "公开收藏夹的内容",
 	Categories:  []models.Category{{Name: "social-media"}},
 	Features:    models.Features{SupportRadar: true},
 	Parameters: []models.Parameter{
@@ -201,7 +201,7 @@ var zhihuWeeklyRoute = routeutils.RouteSpec{
 	Name:        "知乎周刊",
 	Example:     "zhihu/weekly",
 	Maintainers: []string{"xihale"},
-	Description: "知乎书店免费周刊列表（匿名可用）",
+	Description: "知乎书店免费周刊列表",
 	Categories:  []models.Category{{Name: "study"}},
 	CacheTTL:    24 * time.Hour,
 	Handler:     ZhihuWeeklyHandler,

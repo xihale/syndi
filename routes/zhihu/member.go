@@ -21,7 +21,7 @@ var zhihuPeopleAnswersRoute = routeutils.RouteSpec{
 	Name:        "知乎用户回答",
 	Example:     "zhihu/people/answers/diygod",
 	Maintainers: []string{"xihale"},
-	Description: "指定用户的最新回答（需 ZHIHU_COOKIES）",
+	Description: "指定用户的最新回答",
 	Categories:  []models.Category{{Name: "social-media"}},
 	Features:    models.Features{SupportRadar: true},
 	Parameters: []models.Parameter{
@@ -109,7 +109,7 @@ var zhihuPostsRoute = routeutils.RouteSpec{
 	Name:        "知乎用户文章",
 	Example:     "zhihu/posts/people/frederchen",
 	Maintainers: []string{"xihale"},
-	Description: "用户发布的专栏文章（需 ZHIHU_COOKIES）",
+	Description: "用户发布的专栏文章",
 	Categories:  []models.Category{{Name: "social-media"}},
 	Features:    models.Features{SupportRadar: true},
 	Parameters: []models.Parameter{
@@ -242,7 +242,7 @@ var zhihuActivitiesRoute = routeutils.RouteSpec{
 	Name:        "知乎用户动态",
 	Example:     "zhihu/people/activities/diygod",
 	Maintainers: []string{"xihale"},
-	Description: "用户的回答、文章、想法等公开动态（需 ZHIHU_COOKIES）",
+	Description: "用户的回答、文章、想法等公开动态",
 	Categories:  []models.Category{{Name: "social-media"}},
 	Features:    models.Features{SupportRadar: true},
 	Parameters: []models.Parameter{

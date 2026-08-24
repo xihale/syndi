@@ -13,7 +13,6 @@ type PageData struct {
 	Namespaces  []*NamespaceDoc
 	TotalRoutes int
 	Categories  []string
-	EnvStatuses map[string][]registry.EnvStatus
 }
 
 // RoutePageData represents a single route page data
@@ -34,7 +33,24 @@ const baseTemplate = `
     <title>{{.Title}} — RSSHub Go</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        :root { --accent: #e00000; --hairline: #e8e8e8; --muted: #8a8a8a; }
+        :root {
+            --accent: #e00000;
+            --hairline: #e8e8e8;
+            --muted: #8a8a8a;
+        }
+        /* category hues */
+        .cat-programming { color: #1d4ed8; }
+        .cat-technology { color: #0f766e; }
+        .cat-science { color: #15803d; }
+        .cat-social-media { color: #9333ea; }
+        .cat-picture { color: #db2777; }
+        .cat-game { color: #ea580c; }
+        .cat-finance { color: #b45309; }
+        .cat-new-media { color: #dc2626; }
+        .cat-study { color: #0369a1; }
+        .cat-dev { color: #6d28d9; }
+        .cat-blog { color: #57534e; }
+        .cat-default { color: var(--muted); }
         body {
             font-family: "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
             color: #111;
@@ -108,9 +124,9 @@ const baseTemplate = `
             font-size: 11px;
             letter-spacing: 0.08em;
             text-transform: uppercase;
-            color: var(--muted);
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
+        .r-meta .ttl { color: var(--muted); }
 
         /* ---- detail page ---- */
         .back { display: inline-block; margin: 40px 0 24px; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
@@ -118,7 +134,15 @@ const baseTemplate = `
         .d-title { font-size: 42px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; }
         .d-path { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 15px; color: var(--accent); margin-top: 10px; word-break: break-all; }
         .d-desc { margin-top: 20px; font-size: 16px; color: #333; max-width: 640px; }
-        .d-cats { margin-top: 14px; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+        .d-cats { margin-top: 14px; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; }
+        .d-cats .ttl { color: var(--muted); }
+        .cred-box { border-left: 3px solid var(--accent); padding: 4px 0 4px 20px; margin-top: 16px; }
+        .cred-head { display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap; }
+        .cred-fields { display: grid; grid-template-columns: 120px 1fr; gap: 6px 24px; margin-top: 14px; font-size: 13px; }
+        .cred-fields dt { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-weight: 600; color: var(--accent); }
+        .cred-fields dd { color: #444; }
+        .cred-hint { margin-top: 14px; font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 12px; background: #f5f5f5; padding: 10px 14px; display: inline-block; }
+        .cred-hint b { color: var(--accent); font-weight: 600; }
         section { padding: 30px 0; border-bottom: 1px solid var(--hairline); }
         section .label { display: block; margin-bottom: 14px; }
         pre.example {
@@ -196,24 +220,8 @@ const indexContent = `
     <div class="stat"><b>{{len .Categories}}</b><span class="label">categories</span></div>
 </div>
 
-{{if .EnvStatuses}}
-<div class="env-section">
-    <span class="label">Credentials</span>
-    {{range $ns, $statuses := .EnvStatuses}}
-    {{range $statuses}}
-    <div class="env-row">
-        <span class="env-key">{{.Key}}</span>
-        {{if .Configured}}<span class="yes">已配置</span>{{else}}<span class="no">未设置</span>{{end}}
-        <span class="env-scope">{{$ns}} · {{.Scope}}</span>
-        {{if not .Configured}}<span class="env-desc">{{.Description}}</span>{{end}}
-    </div>
-    {{end}}
-    {{end}}
-</div>
-{{end}}
-
 <div class="search-box">
-    <input type="text" id="q" placeholder="搜索路由" autocomplete="off" oninput="filterRoutes()">
+    <input type="text" id="q" placeholder="搜索路由，按 / 聚焦" autocomplete="off" oninput="filterRoutes()">
 </div>
 
 <div id="routesContainer">
@@ -227,7 +235,7 @@ const indexContent = `
     <div class="route" data-k="{{lower .Name}} {{lower .Description}} {{lower .Path}}" onclick="location.href='/docs/route?path={{.Path}}'">
         <span class="r-path">{{.Path}}</span>
         <span class="r-name">{{.Name}}</span>
-        <span class="r-meta">{{range .Categories}}{{.}} {{end}}· {{.CacheTTL}}</span>
+        <span class="r-meta">{{range .Categories}}<span class="cat-{{catclass .}}">{{.}}</span>&ensp;{{end}}<span class="ttl">{{.CacheTTL}}</span></span>
     </div>
     {{end}}
 </div>
@@ -235,6 +243,15 @@ const indexContent = `
 </div>
 
 <script>
+document.addEventListener('keydown', e => {
+    const tag = (document.activeElement || {}).tagName;
+    if (e.key === '/' && tag !== 'INPUT' && tag !== 'TEXTAREA') {
+        e.preventDefault();
+        document.getElementById('q').focus();
+    } else if (e.key === 'Escape' && tag === 'INPUT') {
+        document.getElementById('q').blur();
+    }
+});
 function filterRoutes() {
     const q = document.getElementById('q').value.trim().toLowerCase();
     document.querySelectorAll('.namespace').forEach(ns => {
@@ -258,17 +275,28 @@ const routeContent = `
 <h1 class="d-title">{{.Route.Name}}</h1>
 <div class="d-path">{{.Route.Path}}</div>
 <p class="d-desc">{{.Route.Description}}</p>
-<div class="d-cats">{{range .Route.Categories}}{{.}}&ensp;{{end}}· 缓存 {{.Route.CacheTTL}}</div>
+<div class="d-cats">{{range .Route.Categories}}<span class="cat-{{catclass .}}">{{.}}</span>&ensp;{{end}}<span class="ttl">缓存 {{.Route.CacheTTL}}</span></div>
 
 {{if .RouteEnvStatuses}}
-<section>
-    <span class="label">Credentials</span>
+<section style="border-bottom: none; padding-bottom: 6px;">
     {{range .RouteEnvStatuses}}
-    <div class="env-row">
-        <span class="env-key">{{.Key}}</span>
-        {{if .Configured}}<span class="yes">已配置</span>{{else}}<span class="no">未设置</span>{{end}}
-        <span class="env-scope">{{.Scope}}</span>
-        <span class="env-desc">{{.Description}}</span>
+    <div class="cred-box">
+        <div class="cred-head">
+            <span class="env-key">{{.Key}}</span>
+            {{if .Configured}}<span class="yes">已配置</span>{{else}}<span class="no">未设置</span>{{end}}
+            <span class="env-scope">{{.Scope}} · {{.Description}}</span>
+        </div>
+        {{if .Fields}}
+        <dl class="cred-fields">
+            {{range .Fields}}
+            <dt>{{.Name}}</dt>
+            <dd>{{.Note}}</dd>
+            {{end}}
+        </dl>
+        {{end}}
+        {{if not .Configured}}
+        <div class="cred-hint"><b>export</b> {{.Key}}='{{range $i, $f := .Fields}}{{if $i}}, {{end}}{{$f.Name}}=&lt;值&gt;{{end}}'</div>
+        {{end}}
     </div>
     {{end}}
 </section>
@@ -323,11 +351,17 @@ func join(strs []string, sep string) string {
 	return strings.Join(strs, sep)
 }
 
+// catclass maps a category name to its CSS hue class.
+func catclass(cat string) string {
+	return strings.ToLower(strings.ReplaceAll(cat, " ", "_"))
+}
+
 // ParseTemplates parses and returns the HTML templates
 func ParseTemplates() (*template.Template, *template.Template) {
 	funcMap := template.FuncMap{
-		"lower": strings.ToLower,
-		"join":  join,
+		"lower":    strings.ToLower,
+		"join":     join,
+		"catclass": catclass,
 	}
 
 	// Index template

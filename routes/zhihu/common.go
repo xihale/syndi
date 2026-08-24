@@ -31,8 +31,11 @@ func init() {
 	// see at a glance whether this deployment can serve login-gated routes.
 	registry.RegisterNamespaceEnv("zhihu", registry.EnvRequirement{
 		Key:         zhihuCookiesEnv,
-		Description: "知乎登录 Cookie（至少包含 z_c0）。配置后解锁专栏、问题回答、用户动态、收藏夹等需登录路由；热榜与日报匿名可用。",
+		Description: "配置后解锁需登录的知乎路由",
 		Scope:       "部分路由（登录类）",
+		Fields: []registry.EnvField{
+			{Name: "z_c0", Note: "知乎登录凭证。浏览器登录知乎后，开发者工具 → 应用 → Cookie 中复制其值"},
+		},
 	})
 }
 

@@ -15,11 +15,20 @@ import (
 type EnvRequirement struct {
 	// Key is the exact environment variable name, e.g. "ZHIHU_COOKIES".
 	Key string
-	// Description explains what the variable unlocks and where to get it.
+	// Description explains what the variable unlocks.
 	Description string
 	// Scope describes coverage within the namespace,
 	// e.g. "all routes" or "some routes (login-required ones)".
 	Scope string
+	// Fields names the concrete cookies/tokens the value must contain,
+	// rendered as a formatted list on route detail pages.
+	Fields []EnvField
+}
+
+// EnvField describes one named credential inside an env var's value.
+type EnvField struct {
+	Name string // e.g. "z_c0"
+	Note string // where to obtain it / what it does
 }
 
 var (
@@ -46,11 +55,12 @@ func NamespaceEnvReqs(namespace string) []EnvRequirement {
 
 // EnvStatus is an EnvRequirement plus its live configured state.
 type EnvStatus struct {
-	Namespace   string `json:"namespace"`
-	Key         string `json:"key"`
-	Description string `json:"description"`
-	Scope       string `json:"scope"`
-	Configured  bool   `json:"configured"`
+	Namespace   string     `json:"namespace"`
+	Key         string     `json:"key"`
+	Description string     `json:"description"`
+	Scope       string     `json:"scope"`
+	Configured  bool       `json:"configured"`
+	Fields      []EnvField `json:"fields,omitempty"`
 }
 
 // AllEnvStatuses resolves every declared requirement against the current
@@ -75,6 +85,7 @@ func AllEnvStatuses() map[string][]EnvStatus {
 				Description: r.Description,
 				Scope:       r.Scope,
 				Configured:  envNonEmpty(r.Key),
+				Fields:      r.Fields,
 			})
 		}
 		result[ns] = statuses

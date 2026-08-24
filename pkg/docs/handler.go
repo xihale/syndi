@@ -77,7 +77,6 @@ func (h *Handler) IndexHandler(c *gin.Context) {
 		Namespaces:  h.docData.Namespaces,
 		TotalRoutes: h.docData.Total,
 		Categories:  h.docData.Categories,
-		EnvStatuses: registry.AllEnvStatuses(),
 	}
 
 	c.Header("Content-Type", "text/html; charset=utf-8")
@@ -119,6 +118,7 @@ func (h *Handler) RouteHandler(c *gin.Context) {
 			Description: st.Description,
 			Scope:       st.Scope,
 			Configured:  envConfigured(st.Key),
+			Fields:      st.Fields,
 		})
 	}
 
@@ -214,6 +214,7 @@ func (h *Handler) ConfigJSONHandler(c *gin.Context) {
 				"description": st.Description,
 				"scope":       st.Scope,
 				"configured":  st.Configured,
+				"fields":      st.Fields,
 			})
 		}
 		groups = append(groups, gin.H{"namespace": ns, "env": items})

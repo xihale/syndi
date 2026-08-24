@@ -51,7 +51,7 @@ var zhihuZhuanlanRoute = routeutils.RouteSpec{
 	Name:        "知乎专栏",
 	Example:     "zhihu/zhuanlan/googledevelopers",
 	Maintainers: []string{"xihale"},
-	Description: "知乎专栏最新文章，支持新旧两种专栏 id（需 ZHIHU_COOKIES）",
+	Description: "知乎专栏最新文章，支持新旧两种专栏 id",
 	Categories:  []models.Category{{Name: "social-media"}},
 	Features:    models.Features{SupportRadar: true},
 	Parameters: []models.Parameter{
@@ -175,7 +175,7 @@ var zhihuQuestionRoute = routeutils.RouteSpec{
 	Name:        "知乎问题",
 	Example:     "zhihu/question/59895982",
 	Maintainers: []string{"xihale"},
-	Description: "知乎问题的全部回答（需 ZHIHU_COOKIES）",
+	Description: "知乎问题的全部回答",
 	Categories:  []models.Category{{Name: "social-media"}},
 	Features:    models.Features{SupportRadar: true},
 	Parameters: []models.Parameter{
