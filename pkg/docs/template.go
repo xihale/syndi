@@ -95,19 +95,6 @@ const baseTemplate = `
 
         .label { font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
 
-        .stats { display: flex; gap: 72px; padding: 36px 0; border-bottom: 1px solid var(--hairline); }
-        .stat b { display: block; font-size: 34px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; }
-
-        .env-section { padding: 28px 0; border-bottom: 1px solid var(--hairline); }
-        .env-section .label { display: block; margin-bottom: 12px; }
-        .env-row { display: flex; align-items: baseline; gap: 20px; padding: 5px 0; font-size: 14px; flex-wrap: wrap; }
-        .env-key { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 13px; font-weight: 600; min-width: 160px; }
-        .yes { color: var(--ok); }
-        .st { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; padding-top: 2px; }
-        .no { color: var(--accent); }
-        .env-scope { font-size: 12px; color: var(--muted); }
-        .env-desc { width: 100%; font-size: 13px; color: var(--muted); padding-left: 180px; }
-
         .search-box { padding: 40px 0 4px; }
         .search-box input {
             width: 100%;
@@ -183,7 +170,39 @@ const baseTemplate = `
         .kv { display: grid; grid-template-columns: 170px 1fr; gap: 10px 28px; font-size: 14px; }
         .kv dt { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 13px; font-weight: 600; }
         .kv dd { color: var(--fg-soft); }
+        .kv dd.yes { color: var(--ok); font-weight: 600; }
+        .kv dd.no { color: var(--accent); font-weight: 600; }
+        .no { color: var(--accent); }
+        .st { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; }
         .kv dd code { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 13px; color: var(--accent); }
+        .try-row { display: flex; gap: 16px; align-items: stretch; }
+        .try-row input {
+            flex: 1;
+            border: none;
+            border-bottom: 1px solid var(--rule);
+            border-radius: 0;
+            background: transparent;
+            font-family: "SF Mono", ui-monospace, Menlo, monospace;
+            font-size: 13px;
+            padding: 10px 0;
+            outline: none;
+            color: var(--fg);
+        }
+        .try-row input:focus { border-bottom-color: var(--accent); }
+        button.run {
+            background: var(--fg);
+            color: var(--bg);
+            border: none;
+            padding: 10px 20px;
+            font: inherit;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.16em;
+            cursor: pointer;
+            transition: background .12s;
+        }
+        button.run:hover { background: var(--accent); }
+        #tryOut { margin-top: 18px; max-height: 420px; overflow: auto; }
         ul.plain { list-style: none; }
         ul.plain li { padding: 10px 0; border-bottom: 1px solid var(--hairline); cursor: pointer; }
         ul.plain li:last-child { border-bottom: none; }
@@ -201,10 +220,8 @@ const baseTemplate = `
             .container { padding: 0 20px; }
             header { padding: 40px 0 28px; }
             header h1 { font-size: 40px; }
-            .stats { gap: 36px; }
             .route { grid-template-columns: 1fr; gap: 4px; }
             .r-meta { text-align: left; }
-            .env-desc { padding-left: 0; }
             .kv { grid-template-columns: 1fr; gap: 2px 0; }
             .kv dd { margin-bottom: 10px; }
         }
@@ -239,12 +256,6 @@ const baseTemplate = `
 
 const indexContent = `
 {{define "content"}}
-<div class="stats">
-    <div class="stat"><b>{{.TotalRoutes}}</b><span class="label">routes</span></div>
-    <div class="stat"><b>{{len .Namespaces}}</b><span class="label">namespaces</span></div>
-    <div class="stat"><b>{{len .Categories}}</b><span class="label">categories</span></div>
-</div>
-
 <div class="search-box">
     <input type="text" id="q" placeholder="搜索路由，按 / 聚焦" autocomplete="off" oninput="filterRoutes()">
 </div>
@@ -260,7 +271,7 @@ const indexContent = `
     <div class="route{{if .Unavailable}} off{{end}}" data-k="{{lower .Name}} {{lower .Description}} {{lower .Path}}"{{if .Unavailable}} title="缺少 {{range .MissingDeps}}{{.}} {{end}}配置"{{end}} onclick="location.href='/docs/route?path={{.Path}}'">
         <span class="r-path">{{pathHTML .Path}}</span>
         <span class="r-name">{{.Name}}</span>
-        <span class="r-meta">{{range .Categories}}{{.}}&ensp;{{end}}<span class="ttl">{{.CacheTTL}}</span></span>
+        <span class="r-meta"><span class="ttl">{{.CacheTTL}}</span></span>
     </div>
     {{end}}
 </div>
@@ -300,7 +311,7 @@ const routeContent = `
 <h1 class="d-title">{{.Route.Name}}</h1>
 <div class="d-path">{{pathHTML .Route.Path}}</div>
 <p class="d-desc">{{.Route.Description}}</p>
-<div class="d-cats"><span>{{range .Route.Categories}}{{.}}&ensp;{{end}}</span><span class="ttl">缓存 {{.Route.CacheTTL}}</span></div>
+<div class="d-cats"><span class="ttl">缓存 {{.Route.CacheTTL}}</span></div>
 
 {{if .RouteEnvStatuses}}
 <section>
@@ -316,6 +327,17 @@ const routeContent = `
         </dl>
     </div>
     {{end}}
+</section>
+{{end}}
+
+{{if .Route.ExampleURL}}
+<section>
+    <span class="label">Try</span>
+    <form class="try-row" onsubmit="event.preventDefault();runTry()">
+        <input id="tryPath" value="{{.Route.ExampleURL}}" spellcheck="false">
+        <button class="run" type="submit">RUN</button>
+    </form>
+    <pre id="tryOut" class="example" hidden></pre>
 </section>
 {{end}}
 
@@ -343,6 +365,19 @@ const routeContent = `
     </ul>
 </section>
 {{end}}
+
+<script>
+function runTry() {
+    const out = document.getElementById('tryOut');
+    const path = document.getElementById('tryPath').value.trim();
+    out.hidden = false;
+    out.textContent = 'loading…';
+    fetch(path).then(async r => {
+        const t = await r.text();
+        out.textContent = r.status + ' ' + r.statusText + '\n\n' + t.slice(0, 8000);
+    }).catch(e => { out.textContent = 'error: ' + e; });
+}
+</script>
 {{end}}
 `
 
