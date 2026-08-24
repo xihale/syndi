@@ -144,11 +144,6 @@ var huxiuMomentRoute = routeutils.RouteSpec{
 }
 
 // Routes lists all huxiu route specs in this package.
-var Routes = []routeutils.RouteSpec{
-	huxiuArticleRoute,
-	huxiuChannelRoute,
-	huxiuMomentRoute,
-}
 
 // --- Handlers ---
 

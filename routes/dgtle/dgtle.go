@@ -130,11 +130,6 @@ var dgtleFeedRoute = routeutils.RouteSpec{
 }
 
 // Routes lists all dgtle route specs in this package.
-var Routes = []routeutils.RouteSpec{
-	dgtleNewsRoute,
-	dgtleNewsCategoryRoute,
-	dgtleFeedRoute,
-}
 
 // --- Handlers ---
 

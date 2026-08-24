@@ -20,10 +20,6 @@ const (
 )
 
 // Routes lists all LeetCode route specs in this package.
-var Routes = []routeutils.RouteSpec{
-	leetCodeDailyCNRoute,
-	leetCodeDailyENRoute,
-}
 
 var leetCodeDailyCNRoute = routeutils.RouteSpec{
 	Path:        "dailyquestion/cn",

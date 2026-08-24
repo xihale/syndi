@@ -58,10 +58,6 @@ var jiemianListsRoute = routeutils.RouteSpec{
 }
 
 // Routes lists all jiemian route specs in this package.
-var Routes = []routeutils.RouteSpec{
-	jiemianHomeRoute,
-	jiemianListsRoute,
-}
 
 // --- Handlers ---
 

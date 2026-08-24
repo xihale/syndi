@@ -37,11 +37,6 @@ func jikeProfile(pageURL string) *disguise.Profile {
 }
 
 // Routes lists all Jike route specs in this package.
-var Routes = []routeutils.RouteSpec{
-	jikeTopicRoute,
-	jikeTopicTextRoute,
-	jikeUserRoute,
-}
 
 var jikeTopicRoute = routeutils.RouteSpec{
 	Path:        "topic/:id",

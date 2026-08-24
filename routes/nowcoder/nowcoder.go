@@ -20,14 +20,6 @@ func nowCoderProfile() *disguise.Profile {
 }
 
 // Routes lists all NowCoder route specs in this package.
-var Routes = []routeutils.RouteSpec{
-	nowCoderHotsRoute,
-	nowCoderHotsTypeRoute,
-	nowCoderScheduleRoute,
-	nowCoderSchedulePropertyRoute,
-	nowCoderSchedulePropertyTypeRoute,
-	nowCoderInterviewRoute,
-}
 
 var nowCoderHotsRoute = routeutils.RouteSpec{
 	Path:        "hots",
