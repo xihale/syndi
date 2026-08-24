@@ -69,13 +69,11 @@ func (h *Handler) RegisterRoutes(engine *gin.Engine) {
 	engine.GET("/api/config", h.ConfigJSONHandler)
 }
 
-// RobotsHandler serves /robots.txt. Feeds are the public product, so crawlers
-// may fetch everything except internal JSON APIs.
+// RobotsHandler serves /robots.txt. All crawlers are disallowed.
 func (h *Handler) RobotsHandler(c *gin.Context) {
 	body := "# Syndi\n" +
 		"User-agent: *\n" +
-		"Allow: /\n" +
-		"Disallow: /api/\n"
+		"Disallow: /\n"
 	c.Header("Content-Type", "text/plain; charset=utf-8")
 	c.String(http.StatusOK, body)
 }
