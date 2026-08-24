@@ -1,10 +1,10 @@
 .PHONY: all build test run clean fmt lint install-config gen-routes-imports new-route verify-routes verify-routes-strict ci-local
 
 # Build variables
-BINARY_NAME=rsshub-go
+BINARY_NAME=syndi
 CMD_DIR=cmd
 BUILD_DIR=build
-CONFIG_DIR=/etc/rsshub-go
+CONFIG_DIR=/etc/syndi
 
 all: build
 
@@ -34,6 +34,16 @@ build: gen-routes-imports
 # Run the server
 run: gen-routes-imports
 	go run ./$(CMD_DIR)
+
+# Run the server with hot reload on file changes (requires air: go install github.com/air-verse/air@latest)
+dev: gen-routes-imports
+	@if command -v air > /dev/null; then \
+		air; \
+	else \
+		echo "air not installed, falling back to 'go run' (no hot reload)"; \
+		echo "install with: go install github.com/air-verse/air@latest"; \
+		go run ./$(CMD_DIR); \
+	fi
 
 # Run tests
 test:
@@ -91,7 +101,7 @@ deps:
 	go mod download
 	go mod tidy
 
-# Install configuration file to /etc/rsshub-go/
+# Install configuration file to /etc/syndi/
 install-config:
 	@echo "Installing configuration file to $(CONFIG_DIR)/..."
 	@mkdir -p $(CONFIG_DIR)
@@ -112,6 +122,7 @@ help:
 	@echo "Available targets:"
 	@echo "  build         - Build the server binary"
 	@echo "  run           - Run the server directly"
+	@echo "  dev           - Run with hot reload (air)"
 	@echo "  new-route     - Scaffold a new route file and test skeleton"
 	@echo "  verify-routes - Verify route metadata consistency"
 	@echo "  verify-routes-strict - Verify routes and fail on warnings"
@@ -122,5 +133,5 @@ help:
 	@echo "  lint          - Lint source code"
 	@echo "  clean         - Remove build artifacts"
 	@echo "  deps          - Download and tidy dependencies"
-	@echo "  install-config - Install configuration file to /etc/rsshub-go/"
+	@echo "  install-config - Install configuration file to /etc/syndi/"
 	@echo "  help          - Show this help message"
