@@ -68,7 +68,7 @@ const baseTemplate = `
         --fg-soft: #c9c9c9;
         --muted: #8a8a8a;
         --hairline: #2a2a2a;
-        --rule: #ececec;
+        --rule: #3f3f3f;
         --code-bg: #1c1c1c;
         --hover-bg: #1a1a1a;
         --path: #7aa7ff;
