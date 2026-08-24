@@ -14,6 +14,15 @@
 - 🔐 凭据声明机制：命名空间声明所需环境变量，文档站自动展示配置状态
 - 📄 内置瑞士极简风文档站（暗色自适应），feed 挂载在 `/rss/<route>`
 
+## 项目状态
+
+已移植 **112 条路由 / 83 个命名空间**，全部经 `make verify-all` 实测验证（结果见 [`docs/ROUTES_CATALOG.md`](docs/ROUTES_CATALOG.md)）。
+
+已知限制：
+
+- `steam/news` 部分网络下被上游 403 拦截；`techne98.com` 域名已失效
+- Reddit 对未认证 `.json` API 限流严重，路由改用伪装请求走原生 `.rss`
+
 ## 快速开始
 
 ```bash
@@ -31,6 +40,17 @@ make build
 ```bash
 ZHIHU_COOKIES='z_c0=xxx; d_c0=yyy' ./build/syndi
 ```
+
+## 文档
+
+| 文档 | 内容 |
+|---|---|
+| [`docs/PORTING_GUIDE.md`](docs/PORTING_GUIDE.md) | 新增/移植路由完整指南 |
+| [`docs/TESTING.md`](docs/TESTING.md) | 测试命令与上线检查清单 |
+| [`docs/CACHING.md`](docs/CACHING.md) | 缓存架构与配置 |
+| [`docs/DISGUISE.md`](docs/DISGUISE.md) | 请求伪装 API |
+| [`docs/CLIENT_CONFIG.md`](docs/CLIENT_CONFIG.md) | HTTP 客户端配置项 |
+| [`docs/ROUTES_CATALOG.md`](docs/ROUTES_CATALOG.md) | 全部路由目录与验证状态 |
 
 ## 与 RSSHub 的关系
 
