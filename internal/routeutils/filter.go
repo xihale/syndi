@@ -157,33 +157,6 @@ func CompileRegex(pattern string, caseSensitive bool) (*regexp.Regexp, error) {
 	return regexp.Compile(pattern)
 }
 
-// matchesFilter checks if an item matches the filter pattern (all fields)
-func matchesFilter(re *regexp.Regexp, item models.Item) bool {
-	// Check title
-	if re.MatchString(item.Title) {
-		return true
-	}
-
-	// Check description
-	if re.MatchString(item.Description) {
-		return true
-	}
-
-	// Check author
-	if item.Author != nil && re.MatchString(item.Author.Name) {
-		return true
-	}
-
-	// Check categories
-	for _, category := range item.Categories {
-		if re.MatchString(category) {
-			return true
-		}
-	}
-
-	return false
-}
-
 // matchesFilterInFields checks if an item matches in specific fields only
 func matchesFilterInFields(re *regexp.Regexp, item models.Item, fields ...string) bool {
 	for _, field := range fields {

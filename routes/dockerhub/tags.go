@@ -58,13 +58,13 @@ func DockerHubTagsHandler(c *ctxpkg.Context) (*models.Feed, error) {
 			if len(short) > 12 {
 				short = short[:12]
 			}
-			desc.WriteString(fmt.Sprintf("Digest: <code>sha256:%s</code>", html.EscapeString(short)))
+			fmt.Fprintf(&desc, "Digest: <code>sha256:%s</code>", html.EscapeString(short))
 		}
 		if len(tag.Images) > 0 {
 			if desc.Len() > 0 {
 				desc.WriteString("<br/>")
 			}
-			desc.WriteString(fmt.Sprintf("%d platform images", len(tag.Images)))
+			fmt.Fprintf(&desc, "%d platform images", len(tag.Images))
 		}
 
 		item := routeutils.NewItem(

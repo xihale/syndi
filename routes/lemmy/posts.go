@@ -124,7 +124,7 @@ func urlEscape(s string) string {
 			sb.WriteRune(r)
 		default:
 			for _, b := range []byte(string(r)) {
-				sb.WriteString(fmt.Sprintf("%%%02X", b))
+				fmt.Fprintf(&sb, "%%%02X", b)
 			}
 		}
 	}

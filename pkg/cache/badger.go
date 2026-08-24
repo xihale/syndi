@@ -124,11 +124,6 @@ func (c *BadgerCache) Get(key string) (interface{}, bool) {
 	return result, true
 }
 
-type entryHolder struct {
-	Value interface{}
-	Exp   time.Time
-}
-
 // promoteToMemory promotes a value from Badger to Memory cache
 func (c *BadgerCache) promoteToMemory(key string, value interface{}, remainingTTL time.Duration) {
 	if remainingTTL <= 0 {
@@ -255,7 +250,8 @@ func (c *BadgerCache) Clear() {
 
 		batch := &badger.WriteBatch{}
 		for iter.Seek(nil); iter.Valid(); iter.Next() {
-			batch.Delete(iter.Item().Key())
+			// Best-effort bulk delete; Flush below reports the real error.
+			_ = batch.Delete(iter.Item().Key())
 		}
 		return batch.Flush()
 	})
@@ -312,7 +308,9 @@ func (c *BadgerCache) cleanupBadger() {
 	if len(keysToDelete) > 0 {
 		_ = c.badger.Update(func(txn *badger.Txn) error {
 			for _, key := range keysToDelete {
-				txn.Delete(key)
+				// Best-effort cleanup of expired entries; skipped keys are
+				// simply retried on the next cleanup cycle.
+				_ = txn.Delete(key)
 			}
 			return nil
 		})

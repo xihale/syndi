@@ -53,9 +53,7 @@ func (r *Registry) Register(route *models.Route) error {
 	// Extract namespace from path (first path segment)
 	namespace := route.Path
 	// Skip leading slash
-	if strings.HasPrefix(namespace, "/") {
-		namespace = namespace[1:]
-	}
+	namespace = strings.TrimPrefix(namespace, "/")
 	// Get first path segment (before second slash)
 	if slash := strings.Index(namespace, "/"); slash > 0 {
 		namespace = namespace[:slash]

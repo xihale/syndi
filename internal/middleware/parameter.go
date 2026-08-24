@@ -218,31 +218,3 @@ func sortItemsByPubDate(items []models.Item) []models.Item {
 
 	return sorted
 }
-
-// getFeedFromContext retrieves the feed from the Gin context
-func getFeedFromContext(c *gin.Context) (*models.Feed, bool) {
-	if val, exists := c.Get(contextFeedKey); exists {
-		if feed, ok := val.(*models.Feed); ok {
-			return feed, true
-		}
-	}
-	return nil, false
-}
-
-// setFeedInContext stores the feed in the Gin context
-func setFeedInContext(c *gin.Context, feed *models.Feed) {
-	c.Set(contextFeedKey, feed)
-}
-
-// itemsSatisfyLimit checks if the number of items satisfies the limit
-func itemsSatisfyLimit(items []models.Item, limit int) bool {
-	return len(items) <= limit
-}
-
-// truncateItems truncates items to the specified limit
-func truncateItems(items []models.Item, limit int) []models.Item {
-	if limit <= 0 || limit >= len(items) {
-		return items
-	}
-	return items[:limit]
-}

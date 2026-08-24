@@ -19,7 +19,6 @@ import (
 	"hash/fnv"
 	"math/rand"
 	"net/url"
-	"sync"
 	"sync/atomic"
 	"time"
 )
@@ -50,7 +49,6 @@ type Profile struct {
 	delayMax  time.Duration
 	acceptSet bool
 
-	mu      sync.Mutex
 	counter atomic.Uint64
 }
 

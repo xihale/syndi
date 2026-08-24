@@ -56,7 +56,7 @@ func TestClient_Get(t *testing.T) {
 		}
 
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("response body"))
+		_, _ = w.Write([]byte("response body"))
 	}))
 	defer server.Close()
 
@@ -115,7 +115,7 @@ func TestClient_Post(t *testing.T) {
 		}
 
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("posted"))
+		_, _ = w.Write([]byte("posted"))
 	}))
 	defer server.Close()
 
@@ -145,7 +145,7 @@ func TestClient_GetWithHeaders(t *testing.T) {
 		}
 
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("ok"))
+		_, _ = w.Write([]byte("ok"))
 	}))
 	defer server.Close()
 
@@ -225,7 +225,7 @@ func TestClient_WithProxy(t *testing.T) {
 func TestClient_FollowRedirects(t *testing.T) {
 	redirectServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("final destination"))
+		_, _ = w.Write([]byte("final destination"))
 	}))
 	defer redirectServer.Close()
 
@@ -321,7 +321,7 @@ func TestClient_Put_RetryForIdempotentReplayableBody(t *testing.T) {
 			t.Fatalf("expected payload on retry, got %q", string(body))
 		}
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("ok"))
+		_, _ = w.Write([]byte("ok"))
 	}))
 	defer server.Close()
 
@@ -360,7 +360,7 @@ func TestClient_RetryAfterDelay(t *testing.T) {
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("ok"))
+		_, _ = w.Write([]byte("ok"))
 	}))
 	defer server.Close()
 
@@ -388,7 +388,7 @@ func TestClient_RetryAfterDelay(t *testing.T) {
 func TestClient_Post_BodyReading(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body := make([]byte, r.ContentLength)
-		r.Body.Read(body)
+		_, _ = r.Body.Read(body)
 
 		if string(body) != "test data" {
 			t.Errorf("expected 'test data', got %s", string(body))
@@ -435,7 +435,7 @@ func TestClient_GetJSON(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"message": "hello", "count": 42}`))
+		_, _ = w.Write([]byte(`{"message": "hello", "count": 42}`))
 	}))
 	defer server.Close()
 
@@ -465,7 +465,7 @@ func TestClient_GetJSON_InvalidJSON(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{invalid json}`))
+		_, _ = w.Write([]byte(`{invalid json}`))
 	}))
 	defer server.Close()
 
@@ -483,7 +483,7 @@ func TestClient_GetXML(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/xml")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`<?xml version="1.0" encoding="UTF-8"?><root><message>hello</message><count>42</count></root>`))
+		_, _ = w.Write([]byte(`<?xml version="1.0" encoding="UTF-8"?><root><message>hello</message><count>42</count></root>`))
 	}))
 	defer server.Close()
 
@@ -514,7 +514,7 @@ func TestClient_GetHTML(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`<html><body><h1>Hello World</h1></body></html>`))
+		_, _ = w.Write([]byte(`<html><body><h1>Hello World</h1></body></html>`))
 	}))
 	defer server.Close()
 
@@ -546,7 +546,7 @@ func TestClient_GetJSONWithHeaders(t *testing.T) {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"success": true}`))
+		_, _ = w.Write([]byte(`{"success": true}`))
 	}))
 	defer server.Close()
 
@@ -641,7 +641,7 @@ func TestRequestBuilder_BasicGet(t *testing.T) {
 		}
 
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"result": "success"}`))
+		_, _ = w.Write([]byte(`{"result": "success"}`))
 	}))
 	defer server.Close()
 
@@ -741,7 +741,7 @@ func TestRequestBuilder_DoJSON(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"value": 123}`))
+		_, _ = w.Write([]byte(`{"value": 123}`))
 	}))
 	defer server.Close()
 
@@ -777,7 +777,7 @@ func TestRequestBuilder_WithJSON(t *testing.T) {
 		}
 
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"received": true}`))
+		_, _ = w.Write([]byte(`{"received": true}`))
 	}))
 	defer server.Close()
 
@@ -804,7 +804,7 @@ func TestRequestBuilder_DoHTML(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`<div class="content">Test Content</div>`))
+		_, _ = w.Write([]byte(`<div class="content">Test Content</div>`))
 	}))
 	defer server.Close()
 

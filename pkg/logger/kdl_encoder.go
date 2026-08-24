@@ -310,83 +310,83 @@ func (e *kdlArrayEncoder) AppendBool(v bool) {
 }
 
 func (e *kdlArrayEncoder) AppendByteString(v []byte) {
-	e.w.WriteString(fmt.Sprintf("%s", string(v)))
+	e.w.Write(v)
 }
 
 func (e *kdlArrayEncoder) AppendComplex128(v complex128) {
-	e.w.WriteString(fmt.Sprintf("%v", v))
+	fmt.Fprintf(e.w, "%v", v)
 }
 
 func (e *kdlArrayEncoder) AppendComplex64(v complex64) {
-	e.w.WriteString(fmt.Sprintf("%v", v))
+	fmt.Fprintf(e.w, "%v", v)
 }
 
 func (e *kdlArrayEncoder) AppendDuration(v time.Duration) {
-	e.w.WriteString(fmt.Sprintf("%s", v.String()))
+	e.w.WriteString(v.String())
 }
 
 func (e *kdlArrayEncoder) AppendFloat64(v float64) {
-	e.w.WriteString(fmt.Sprintf("%f", v))
+	fmt.Fprintf(e.w, "%f", v)
 }
 
 func (e *kdlArrayEncoder) AppendFloat32(v float32) {
-	e.w.WriteString(fmt.Sprintf("%f", v))
+	fmt.Fprintf(e.w, "%f", v)
 }
 
 func (e *kdlArrayEncoder) AppendInt(v int) {
-	e.w.WriteString(fmt.Sprintf("%d", v))
+	fmt.Fprintf(e.w, "%d", v)
 }
 
 func (e *kdlArrayEncoder) AppendInt64(v int64) {
-	e.w.WriteString(fmt.Sprintf("%d", v))
+	fmt.Fprintf(e.w, "%d", v)
 }
 
 func (e *kdlArrayEncoder) AppendInt32(v int32) {
-	e.w.WriteString(fmt.Sprintf("%d", v))
+	fmt.Fprintf(e.w, "%d", v)
 }
 
 func (e *kdlArrayEncoder) AppendInt16(v int16) {
-	e.w.WriteString(fmt.Sprintf("%d", v))
+	fmt.Fprintf(e.w, "%d", v)
 }
 
 func (e *kdlArrayEncoder) AppendInt8(v int8) {
-	e.w.WriteString(fmt.Sprintf("%d", v))
+	fmt.Fprintf(e.w, "%d", v)
 }
 
 func (e *kdlArrayEncoder) AppendString(v string) {
-	e.w.WriteString(fmt.Sprintf("%q", v))
+	fmt.Fprintf(e.w, "%q", v)
 }
 
 func (e *kdlArrayEncoder) AppendTime(v time.Time) {
-	e.w.WriteString(fmt.Sprintf("%q", v.Format(time.RFC3339)))
+	fmt.Fprintf(e.w, "%q", v.Format(time.RFC3339))
 }
 
 func (e *kdlArrayEncoder) AppendUint(v uint) {
-	e.w.WriteString(fmt.Sprintf("%d", v))
+	fmt.Fprintf(e.w, "%d", v)
 }
 
 func (e *kdlArrayEncoder) AppendUint64(v uint64) {
-	e.w.WriteString(fmt.Sprintf("%d", v))
+	fmt.Fprintf(e.w, "%d", v)
 }
 
 func (e *kdlArrayEncoder) AppendUint32(v uint32) {
-	e.w.WriteString(fmt.Sprintf("%d", v))
+	fmt.Fprintf(e.w, "%d", v)
 }
 
 func (e *kdlArrayEncoder) AppendUint16(v uint16) {
-	e.w.WriteString(fmt.Sprintf("%d", v))
+	fmt.Fprintf(e.w, "%d", v)
 }
 
 func (e *kdlArrayEncoder) AppendUint8(v uint8) {
-	e.w.WriteString(fmt.Sprintf("%d", v))
+	fmt.Fprintf(e.w, "%d", v)
 }
 
 func (e *kdlArrayEncoder) AppendUintptr(v uintptr) {
-	e.w.WriteString(fmt.Sprintf("%x", v))
+	fmt.Fprintf(e.w, "%x", v)
 }
 
 func (e *kdlArrayEncoder) AppendReflected(v interface{}) error {
-	e.w.WriteString(fmt.Sprintf("%v", v))
+	fmt.Fprintf(e.w, "%v", v)
 	return nil
 }
 
@@ -395,105 +395,105 @@ type kdlObjectEncoder struct {
 }
 
 func (e *kdlObjectEncoder) AddArray(key string, marshaler zapcore.ArrayMarshaler) error {
-	e.w.WriteString(fmt.Sprintf("%s=[", key))
+	fmt.Fprintf(e.w, "%s=[", key)
 	err := marshaler.MarshalLogArray(&kdlArrayEncoder{w: e.w})
 	e.w.WriteString("]")
 	return err
 }
 
 func (e *kdlObjectEncoder) AddObject(key string, marshaler zapcore.ObjectMarshaler) error {
-	e.w.WriteString(fmt.Sprintf("%s={", key))
+	fmt.Fprintf(e.w, "%s={", key)
 	err := marshaler.MarshalLogObject(&kdlObjectEncoder{w: e.w})
 	e.w.WriteString("}")
 	return err
 }
 
 func (e *kdlObjectEncoder) AddBool(key string, v bool) {
-	e.w.WriteString(fmt.Sprintf("%s=%v", key, v))
+	fmt.Fprintf(e.w, "%s=%v", key, v)
 }
 
 func (e *kdlObjectEncoder) AddBinary(key string, v []byte) {
-	e.w.WriteString(fmt.Sprintf("%s=%x", key, v))
+	fmt.Fprintf(e.w, "%s=%x", key, v)
 }
 
 func (e *kdlObjectEncoder) AddByteString(key string, v []byte) {
-	e.w.WriteString(fmt.Sprintf("%s=%s", key, string(v)))
+	fmt.Fprintf(e.w, "%s=%s", key, string(v))
 }
 
 func (e *kdlObjectEncoder) AddComplex128(key string, v complex128) {
-	e.w.WriteString(fmt.Sprintf("%s=%v", key, v))
+	fmt.Fprintf(e.w, "%s=%v", key, v)
 }
 
 func (e *kdlObjectEncoder) AddComplex64(key string, v complex64) {
-	e.w.WriteString(fmt.Sprintf("%s=%v", key, v))
+	fmt.Fprintf(e.w, "%s=%v", key, v)
 }
 
 func (e *kdlObjectEncoder) AddDuration(key string, v time.Duration) {
-	e.w.WriteString(fmt.Sprintf("%s=%s", key, v.String()))
+	fmt.Fprintf(e.w, "%s=%s", key, v.String())
 }
 
 func (e *kdlObjectEncoder) AddFloat64(key string, v float64) {
-	e.w.WriteString(fmt.Sprintf("%s=%f", key, v))
+	fmt.Fprintf(e.w, "%s=%f", key, v)
 }
 
 func (e *kdlObjectEncoder) AddFloat32(key string, v float32) {
-	e.w.WriteString(fmt.Sprintf("%s=%f", key, v))
+	fmt.Fprintf(e.w, "%s=%f", key, v)
 }
 
 func (e *kdlObjectEncoder) AddInt(key string, v int) {
-	e.w.WriteString(fmt.Sprintf("%s=%d", key, v))
+	fmt.Fprintf(e.w, "%s=%d", key, v)
 }
 
 func (e *kdlObjectEncoder) AddInt64(key string, v int64) {
-	e.w.WriteString(fmt.Sprintf("%s=%d", key, v))
+	fmt.Fprintf(e.w, "%s=%d", key, v)
 }
 
 func (e *kdlObjectEncoder) AddInt32(key string, v int32) {
-	e.w.WriteString(fmt.Sprintf("%s=%d", key, v))
+	fmt.Fprintf(e.w, "%s=%d", key, v)
 }
 
 func (e *kdlObjectEncoder) AddInt16(key string, v int16) {
-	e.w.WriteString(fmt.Sprintf("%s=%d", key, v))
+	fmt.Fprintf(e.w, "%s=%d", key, v)
 }
 
 func (e *kdlObjectEncoder) AddInt8(key string, v int8) {
-	e.w.WriteString(fmt.Sprintf("%s=%d", key, v))
+	fmt.Fprintf(e.w, "%s=%d", key, v)
 }
 
 func (e *kdlObjectEncoder) AddString(key, v string) {
-	e.w.WriteString(fmt.Sprintf("%s=%q", key, v))
+	fmt.Fprintf(e.w, "%s=%q", key, v)
 }
 
 func (e *kdlObjectEncoder) AddTime(key string, v time.Time) {
-	e.w.WriteString(fmt.Sprintf("%s=%q", key, v.Format(time.RFC3339)))
+	fmt.Fprintf(e.w, "%s=%q", key, v.Format(time.RFC3339))
 }
 
 func (e *kdlObjectEncoder) AddUint(key string, v uint) {
-	e.w.WriteString(fmt.Sprintf("%s=%d", key, v))
+	fmt.Fprintf(e.w, "%s=%d", key, v)
 }
 
 func (e *kdlObjectEncoder) AddUint64(key string, v uint64) {
-	e.w.WriteString(fmt.Sprintf("%s=%d", key, v))
+	fmt.Fprintf(e.w, "%s=%d", key, v)
 }
 
 func (e *kdlObjectEncoder) AddUint32(key string, v uint32) {
-	e.w.WriteString(fmt.Sprintf("%s=%d", key, v))
+	fmt.Fprintf(e.w, "%s=%d", key, v)
 }
 
 func (e *kdlObjectEncoder) AddUint16(key string, v uint16) {
-	e.w.WriteString(fmt.Sprintf("%s=%d", key, v))
+	fmt.Fprintf(e.w, "%s=%d", key, v)
 }
 
 func (e *kdlObjectEncoder) AddUint8(key string, v uint8) {
-	e.w.WriteString(fmt.Sprintf("%s=%d", key, v))
+	fmt.Fprintf(e.w, "%s=%d", key, v)
 }
 
 func (e *kdlObjectEncoder) AddUintptr(key string, v uintptr) {
-	e.w.WriteString(fmt.Sprintf("%s=%x", key, v))
+	fmt.Fprintf(e.w, "%s=%x", key, v)
 }
 
 func (e *kdlObjectEncoder) AddReflected(key string, v interface{}) error {
-	e.w.WriteString(fmt.Sprintf("%s=%v", key, v))
+	fmt.Fprintf(e.w, "%s=%v", key, v)
 	return nil
 }
 

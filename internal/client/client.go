@@ -569,7 +569,7 @@ func (c *Client) GetResponseInfo(ctx context.Context, urlStr string) (*ResponseI
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch %s: %w", urlStr, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }() // Nothing to do if closing fails
 
 	info := &ResponseInfo{
 		StatusCode:    resp.StatusCode,

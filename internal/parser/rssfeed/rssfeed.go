@@ -93,11 +93,15 @@ func Parse(data []byte) (*models.Feed, error) {
 	case "rss":
 		return buildFeed(doc.Channel, doc.Channel.Items), nil
 	case "RDF":
+		//nolint:staticcheck // embedded rawChannel (not the Channel field) captures RDF top-level <item> elements
 		return buildFeed(doc.Channel, append(doc.Channel.Items, doc.rawChannel.Items...)), nil
 	case "feed":
+		//nolint:staticcheck // embedded rawChannel catches Atom root-level fields; the Channel field is empty here
 		return buildFeed(doc.rawChannel, doc.rawChannel.Entries), nil
 	default:
+		//nolint:staticcheck // embedded rawChannel maps to root-level XML elements, not the Channel child
 		if len(doc.rawChannel.Entries) > 0 {
+			//nolint:staticcheck // embedded rawChannel maps to root-level XML elements, not the Channel child
 			return buildFeed(doc.rawChannel, doc.rawChannel.Entries), nil
 		}
 		if len(doc.Channel.Items) > 0 {

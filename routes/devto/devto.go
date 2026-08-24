@@ -88,7 +88,7 @@ func buildDevtoDescription(a devtoArticle) string {
 	if desc != "" {
 		sb.WriteString(html.EscapeString(desc))
 	}
-	sb.WriteString(fmt.Sprintf("<br/>Reactions: %d | Comments: %d", a.PositiveReactionsCount, a.CommentsCount))
+	fmt.Fprintf(&sb, "<br/>Reactions: %d | Comments: %d", a.PositiveReactionsCount, a.CommentsCount)
 	if len(a.TagList) > 0 {
 		sb.WriteString("<br/>Tags: " + html.EscapeString(strings.Join(a.TagList, ", ")))
 	}

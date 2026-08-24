@@ -103,7 +103,7 @@ func sanitizeNode(n *htmlnode.Node, buf *bytes.Buffer, allowed map[string]bool) 
 			buf.WriteString("<" + n.Data)
 			// Write attributes (could filter by allowedAttrs here)
 			for _, attr := range n.Attr {
-				buf.WriteString(fmt.Sprintf(` %s="%s"`, attr.Key, htmlentity.EscapeString(attr.Val)))
+				fmt.Fprintf(buf, ` %s="%s"`, attr.Key, htmlentity.EscapeString(attr.Val))
 			}
 			buf.WriteString(">")
 

@@ -101,10 +101,10 @@ type eolFlexible string
 // UnmarshalJSON accepts strings, booleans and null for flexible fields.
 func (v *eolFlexible) UnmarshalJSON(data []byte) error {
 	s := strings.TrimSpace(string(data))
-	switch {
-	case s == "" || s == "null":
+	switch s {
+	case "", "null":
 		*v = ""
-	case s == "true" || s == "false":
+	case "true", "false":
 		*v = eolFlexible(s)
 	default:
 		*v = eolFlexible(strings.Trim(s, `"`))

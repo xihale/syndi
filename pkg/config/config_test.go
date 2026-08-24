@@ -172,8 +172,8 @@ func TestLoad_FileNotFound(t *testing.T) {
 	// Create a temp directory with no config files
 	tmpDir := t.TempDir()
 	origWd, _ := os.Getwd()
-	os.Chdir(tmpDir)
-	defer os.Chdir(origWd)
+	_ = os.Chdir(tmpDir) // ignore error: temp dir always exists
+	defer func() { _ = os.Chdir(origWd) }()
 
 	cfg, err := Load("")
 	if err != nil {
@@ -209,7 +209,7 @@ server:
 func TestLoad_EnvVariableOverride(t *testing.T) {
 	// Test that SYNDI_CONFIG environment variable works
 	origConfig := os.Getenv("SYNDI_CONFIG")
-	defer os.Setenv("SYNDI_CONFIG", origConfig)
+	defer func() { _ = os.Setenv("SYNDI_CONFIG", origConfig) }()
 
 	tmpDir := t.TempDir()
 	configFile := filepath.Join(tmpDir, "custom-config.yaml")
@@ -223,7 +223,7 @@ server:
 		t.Fatalf("failed to write config file: %v", err)
 	}
 
-	os.Setenv("SYNDI_CONFIG", configFile)
+	_ = os.Setenv("SYNDI_CONFIG", configFile)
 
 	cfg, err := Load("")
 	if err != nil {
@@ -246,9 +246,9 @@ func TestConfig_Get(t *testing.T) {
 
 	// Test with environment variable
 	origVal := os.Getenv("TEST_KEY")
-	defer os.Setenv("TEST_KEY", origVal)
+	defer func() { _ = os.Setenv("TEST_KEY", origVal) }()
 
-	os.Setenv("TEST_KEY", "test_value")
+	_ = os.Setenv("TEST_KEY", "test_value")
 	val = cfg.Get("TEST_KEY", "default")
 	if val != "test_value" {
 		t.Errorf("expected 'test_value', got %s", val)
