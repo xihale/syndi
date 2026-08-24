@@ -54,10 +54,8 @@ func NewHandler() (*Handler, error) {
 func (h *Handler) RegisterRoutes(engine *gin.Engine) {
 	// HTML documentation; root serves the index like upstream RSSHub.
 	engine.GET("/", h.IndexHandler)
-	engine.GET("/rss", func(c *gin.Context) {
-		c.Header("Content-Type", "text/plain; charset=utf-8")
-		c.String(http.StatusOK, "Feeds are mounted at /rss<route>. See / for the catalog.\n")
-	})
+	// /rss lists every available feed route (JSON catalog).
+	engine.GET("/rss", h.RoutesJSONHandler)
 	engine.NoRoute(h.DocsHandler)
 
 	// Plain-text endpoints
@@ -128,6 +126,7 @@ func (h *Handler) renderIndex(c *gin.Context, onlyNS string) {
 		Namespaces:  namespaces,
 		TotalRoutes: h.docData.Total,
 		Categories:  h.docData.Categories,
+		CrumbNS:     onlyNS,
 	}
 
 	renderHTML(c, http.StatusOK, h.indexTmpl, pageData)

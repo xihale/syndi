@@ -10,6 +10,7 @@ type PageData struct {
 	Title       string
 	Namespaces  []*NamespaceDoc
 	TotalRoutes int
+	CrumbNS     string
 	Categories  []string
 }
 
@@ -264,7 +265,9 @@ const baseTemplate = `
 
 const indexContent = `
 {{define "content"}}
-<div class="search-box">
+{{if .CrumbNS}}<nav class="crumbs"><a href="/">index</a><span class="sep">/</span><span class="cur">{{.CrumbNS}}</span></nav>
+{{end}}
+<div class="search-box"{{if .CrumbNS}} style="padding-top:36px"{{end}}>
     <input type="text" id="q" placeholder="搜索路由，按 / 聚焦" autocomplete="off" oninput="filterRoutes()">
 </div>
 
