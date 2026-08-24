@@ -5,10 +5,10 @@ import (
 	"html"
 	"time"
 
-	"github.com/xihale/rsshub-go/internal/disguise"
-	"github.com/xihale/rsshub-go/internal/routeutils"
-	ctxpkg "github.com/xihale/rsshub-go/pkg/context"
-	"github.com/xihale/rsshub-go/pkg/models"
+	"github.com/xihale/syndi/internal/disguise"
+	"github.com/xihale/syndi/internal/routeutils"
+	ctxpkg "github.com/xihale/syndi/pkg/context"
+	"github.com/xihale/syndi/pkg/models"
 )
 
 var cratesCrateRoute = routeutils.RouteSpec{
@@ -35,7 +35,7 @@ func CratesCrateHandler(c *ctxpkg.Context) (*models.Feed, error) {
 
 	// crates.io rejects empty User-Agent; a polite custom identity is required.
 	var response CratesVersionsResponse
-	if err := disguise.Custom("rsshub-go/0.1 (+https://github.com/xihale/rsshub-go)").Fetch(url).GetJSON(ctx, c.Client(), &response); err != nil {
+	if err := disguise.Custom("rsshub-go/0.1 (+https://github.com/xihale/syndi)").Fetch(url).GetJSON(ctx, c.Client(), &response); err != nil {
 		return nil, err
 	}
 

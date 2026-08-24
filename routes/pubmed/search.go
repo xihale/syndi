@@ -8,14 +8,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/xihale/rsshub-go/internal/routeutils"
-	ctxpkg "github.com/xihale/rsshub-go/pkg/context"
-	"github.com/xihale/rsshub-go/pkg/models"
-	dateutil "github.com/xihale/rsshub-go/pkg/utils/date"
+	"github.com/xihale/syndi/internal/routeutils"
+	ctxpkg "github.com/xihale/syndi/pkg/context"
+	"github.com/xihale/syndi/pkg/models"
+	dateutil "github.com/xihale/syndi/pkg/utils/date"
 )
 
 // eutilsUA is the Tooling User-Agent NCBI asks automated clients to send.
-const eutilsUA = "rsshub-go/1.0 (https://github.com/xihale/rsshub-go; Tooling)"
+const eutilsUA = "rsshub-go/1.0 (https://github.com/xihale/syndi; Tooling)"
 
 const eutilsBaseURL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
 

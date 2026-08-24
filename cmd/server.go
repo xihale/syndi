@@ -14,17 +14,17 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	handlercache "github.com/xihale/rsshub-go/internal/cache"
-	"github.com/xihale/rsshub-go/internal/client"
-	"github.com/xihale/rsshub-go/internal/middleware"
-	"github.com/xihale/rsshub-go/pkg/cache"
-	"github.com/xihale/rsshub-go/pkg/config"
-	ctxpkg "github.com/xihale/rsshub-go/pkg/context"
-	"github.com/xihale/rsshub-go/pkg/docs"
-	"github.com/xihale/rsshub-go/pkg/logger"
-	"github.com/xihale/rsshub-go/pkg/models"
-	"github.com/xihale/rsshub-go/pkg/registry"
-	"github.com/xihale/rsshub-go/pkg/rss"
+	handlercache "github.com/xihale/syndi/internal/cache"
+	"github.com/xihale/syndi/internal/client"
+	"github.com/xihale/syndi/internal/middleware"
+	"github.com/xihale/syndi/pkg/cache"
+	"github.com/xihale/syndi/pkg/config"
+	ctxpkg "github.com/xihale/syndi/pkg/context"
+	"github.com/xihale/syndi/pkg/docs"
+	"github.com/xihale/syndi/pkg/logger"
+	"github.com/xihale/syndi/pkg/models"
+	"github.com/xihale/syndi/pkg/registry"
+	"github.com/xihale/syndi/pkg/rss"
 )
 
 func main() {
@@ -48,7 +48,7 @@ func main() {
 	gob.Register(&models.Item{})
 	gob.Register(&models.Author{})
 
-	logger.Info("Starting RSSHub Go", zap.String("port", cfg.GetPort()))
+	logger.Info("Starting Syndi", zap.String("port", cfg.GetPort()))
 
 	// Initialize cache (two-tier: memory + badger)
 	var cacheInstance cache.Cache
@@ -161,7 +161,7 @@ func setupGinRoutes(engine *gin.Engine, routeRegistry *registry.Registry, cacheI
 	// Health check - no caching (always fresh status)
 	engine.GET("/status", func(c *gin.Context) {
 		feed := &models.Feed{
-			Title:       "RSSHub Go",
+			Title:       "Syndi",
 			Link:        c.Request.URL.String(),
 			Description: "RSS feed generation in Go",
 			Items: []models.Item{

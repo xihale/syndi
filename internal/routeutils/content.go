@@ -8,7 +8,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/xihale/rsshub-go/internal/parser"
+	"github.com/xihale/syndi/internal/parser"
 	htmlnode "golang.org/x/net/html"
 )
 

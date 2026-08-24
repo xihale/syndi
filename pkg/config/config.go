@@ -64,7 +64,7 @@ func DefaultConfig() *Config {
 	cfg.Cache.CleanupInterval = 5 * time.Minute
 	cfg.Cache.MemorySize = 10000
 	// Client defaults
-	cfg.Client.UserAgent = "RSSHub-Go/1.0 (+https://github.com/xihale/rsshub-go)"
+	cfg.Client.UserAgent = "Syndi/0.0.1 (+https://github.com/xihale/syndi)"
 	cfg.Client.Timeout = 30 * time.Second
 	cfg.Client.MaxRedirects = 10
 	cfg.Client.Proxy = ""

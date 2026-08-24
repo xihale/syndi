@@ -4,10 +4,10 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/xihale/rsshub-go/internal/cache"
-	rsshubcache "github.com/xihale/rsshub-go/pkg/cache"
-	"github.com/xihale/rsshub-go/pkg/models"
-	ctxpkg "github.com/xihale/rsshub-go/pkg/context"
+	"github.com/xihale/syndi/internal/cache"
+	rsshubcache "github.com/xihale/syndi/pkg/cache"
+	ctxpkg "github.com/xihale/syndi/pkg/context"
+	"github.com/xihale/syndi/pkg/models"
 )
 
 // Example demonstrates handler-level caching with route handlers
@@ -62,7 +62,7 @@ registerCachedRoute(engine, "/:namespace/:path", func(ctx *ctxpkg.Context) (*mod
 // Advanced example with custom key generator
 func registerCachedRouteWithKeyGenerator(engine *gin.Engine, routePath string, routeHandler func(*ctxpkg.Context) (*models.Feed, error), cacheInstance rsshubcache.Cache) {
 	opts := &cache.CachedHandlerOptions{
-		TTL:     30 * time.Minute,
+		TTL:         30 * time.Minute,
 		ETagEnabled: true,
 		KeyGenerator: func(c *gin.Context) string {
 			// Custom key generation that includes user ID if present
@@ -147,8 +147,8 @@ var cacheConfigs = map[string]RouteCacheConfig{
 	},
 	// User-specific data - custom key
 	"user": {
-		Enabled: true,
-		TTL:     30 * time.Minute,
+		Enabled:   true,
+		TTL:       30 * time.Minute,
 		KeyPrefix: "user",
 	},
 }
@@ -168,9 +168,9 @@ func setupRoutesWithCacheConfigs(engine *gin.Engine, cacheInstance rsshubcache.C
 
 	// User-specific route with custom key
 	opts := &cache.CachedHandlerOptions{
-		TTL:     30 * time.Minute,
+		TTL:          30 * time.Minute,
 		KeyGenerator: multiTenantKeyGenerator,
-		ShouldCache: conditionalCacheExample,
+		ShouldCache:  conditionalCacheExample,
 	}
 
 	engine.GET("/user/:id/feed", cache.Cached(cacheInstance, func(c *gin.Context) (*models.Feed, error) {

@@ -3,9 +3,9 @@ package routeutils
 import (
 	"context"
 
-	"github.com/xihale/rsshub-go/internal/client"
-	"github.com/xihale/rsshub-go/internal/parser/rssfeed"
-	"github.com/xihale/rsshub-go/pkg/models"
+	"github.com/xihale/syndi/internal/client"
+	"github.com/xihale/syndi/internal/parser/rssfeed"
+	"github.com/xihale/syndi/pkg/models"
 )
 
 // GetFeed fetches a native RSS/Atom/RDF feed URL and parses it into models.Feed.

@@ -3,9 +3,9 @@ package routes
 import (
 	"time"
 
-	"github.com/xihale/rsshub-go/internal/routeutils"
-	ctxpkg "github.com/xihale/rsshub-go/pkg/context"
-	"github.com/xihale/rsshub-go/pkg/models"
+	"github.com/xihale/syndi/internal/routeutils"
+	ctxpkg "github.com/xihale/syndi/pkg/context"
+	"github.com/xihale/syndi/pkg/models"
 )
 
 var physRootRoute = routeutils.RouteSpec{

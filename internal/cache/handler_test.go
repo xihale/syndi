@@ -9,8 +9,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
-	"github.com/xihale/rsshub-go/pkg/cache"
-	"github.com/xihale/rsshub-go/pkg/models"
+	"github.com/xihale/syndi/pkg/cache"
+	"github.com/xihale/syndi/pkg/models"
 )
 
 func TestCached_CacheHit(t *testing.T) {

@@ -7,10 +7,10 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/xihale/rsshub-go/pkg/registry"
+	"github.com/xihale/syndi/pkg/registry"
 	"go.uber.org/zap"
 
-	"github.com/xihale/rsshub-go/pkg/logger"
+	"github.com/xihale/syndi/pkg/logger"
 )
 
 // Handler handles documentation HTTP requests
@@ -72,7 +72,7 @@ func (h *Handler) RegisterRoutes(engine *gin.Engine) {
 // RobotsHandler serves /robots.txt. Feeds are the public product, so crawlers
 // may fetch everything except internal JSON APIs.
 func (h *Handler) RobotsHandler(c *gin.Context) {
-	body := "# RSSHub Go\n" +
+	body := "# Syndi\n" +
 		"User-agent: *\n" +
 		"Allow: /\n" +
 		"Disallow: /api/\n"

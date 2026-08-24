@@ -1,6 +1,6 @@
 package routeutils
 
-import "github.com/xihale/rsshub-go/pkg/models"
+import "github.com/xihale/syndi/pkg/models"
 
 // AppendMappedItems maps source values to feed items and appends non-nil results.
 // If limit > 0, appending stops when feed has reached the limit.

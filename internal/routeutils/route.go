@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/xihale/rsshub-go/pkg/models"
-	"github.com/xihale/rsshub-go/pkg/registry"
+	"github.com/xihale/syndi/pkg/models"
+	"github.com/xihale/syndi/pkg/registry"
 )
 
 // RouteSpec defines route metadata in a compact form.

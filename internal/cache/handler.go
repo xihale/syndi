@@ -10,11 +10,11 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/xihale/rsshub-go/internal/middleware"
-	rssubcache "github.com/xihale/rsshub-go/pkg/cache"
-	"github.com/xihale/rsshub-go/pkg/logger"
-	"github.com/xihale/rsshub-go/pkg/models"
-	"github.com/xihale/rsshub-go/pkg/rss"
+	"github.com/xihale/syndi/internal/middleware"
+	rssubcache "github.com/xihale/syndi/pkg/cache"
+	"github.com/xihale/syndi/pkg/logger"
+	"github.com/xihale/syndi/pkg/models"
+	"github.com/xihale/syndi/pkg/rss"
 	"go.uber.org/zap"
 )
 

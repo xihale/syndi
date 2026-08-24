@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/xihale/rsshub-go/internal/routeutils"
-	ctxpkg "github.com/xihale/rsshub-go/pkg/context"
-	"github.com/xihale/rsshub-go/pkg/models"
-	dateutil "github.com/xihale/rsshub-go/pkg/utils/date"
+	"github.com/xihale/syndi/internal/routeutils"
+	ctxpkg "github.com/xihale/syndi/pkg/context"
+	"github.com/xihale/syndi/pkg/models"
+	dateutil "github.com/xihale/syndi/pkg/utils/date"
 )
 
 // DEMO_KEY is NASA's officially documented public demo key.

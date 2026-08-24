@@ -6,11 +6,11 @@ import (
 	"strings"
 	"time"
 
-	dateutil "github.com/xihale/rsshub-go/pkg/utils/date"
+	dateutil "github.com/xihale/syndi/pkg/utils/date"
 
-	"github.com/xihale/rsshub-go/internal/routeutils"
-	ctxpkg "github.com/xihale/rsshub-go/pkg/context"
-	"github.com/xihale/rsshub-go/pkg/models"
+	"github.com/xihale/syndi/internal/routeutils"
+	ctxpkg "github.com/xihale/syndi/pkg/context"
+	"github.com/xihale/syndi/pkg/models"
 )
 
 const bioRxivDaysBack = 7

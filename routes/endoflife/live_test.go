@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/xihale/rsshub-go/internal/testutil"
+	"github.com/xihale/syndi/internal/testutil"
 )
 
 func TestEndOfLifeProductLive(t *testing.T) {

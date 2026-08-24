@@ -19,9 +19,9 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/xihale/rsshub-go/internal/disguise"
-	"github.com/xihale/rsshub-go/internal/parser"
-	"github.com/xihale/rsshub-go/pkg/registry"
+	"github.com/xihale/syndi/internal/disguise"
+	"github.com/xihale/syndi/internal/parser"
+	"github.com/xihale/syndi/pkg/registry"
 )
 
 const zhihuCookiesEnv = "ZHIHU_COOKIES"

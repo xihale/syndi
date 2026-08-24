@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/xihale/rsshub-go/pkg/models"
-	dateutil "github.com/xihale/rsshub-go/pkg/utils/date"
+	"github.com/xihale/syndi/pkg/models"
+	dateutil "github.com/xihale/syndi/pkg/utils/date"
 )
 
 type rawItem struct {

@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/xihale/rsshub-go/internal/testutil"
+	"github.com/xihale/syndi/internal/testutil"
 )
 
 func TestDebianNewsRootLive(t *testing.T) {

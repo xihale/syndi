@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/xihale/rsshub-go/pkg/models"
+	"github.com/xihale/syndi/pkg/models"
 )
 
 const (

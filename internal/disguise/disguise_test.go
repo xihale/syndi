@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/xihale/rsshub-go/internal/client"
+	"github.com/xihale/syndi/internal/client"
 )
 
 func TestChromePresetHeaders(t *testing.T) {
@@ -129,7 +129,7 @@ func TestRequestAgainstServer(t *testing.T) {
 	if resp.OK != "yes" {
 		t.Fatalf("bad body: %v", resp)
 	}
-	if gotUA == "" || gotUA == "RSSHub-Go/1.0 (+https://github.com/xihale/rsshub-go)" {
+	if gotUA == "" || gotUA == "Syndi/0.0.1 (+https://github.com/xihale/syndi)" {
 		t.Fatalf("disguised UA not applied: %q", gotUA)
 	}
 	if gotLang != "en-US" || gotCookie != "a=b" {

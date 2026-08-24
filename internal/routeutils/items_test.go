@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/xihale/rsshub-go/pkg/models"
+	"github.com/xihale/syndi/pkg/models"
 )
 
 func TestAppendMappedItems(t *testing.T) {

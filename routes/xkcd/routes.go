@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"github.com/xihale/rsshub-go/internal/routeutils"
+	"github.com/xihale/syndi/internal/routeutils"
 )
 
 var Routes = []routeutils.RouteSpec{

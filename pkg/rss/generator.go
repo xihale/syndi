@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/xihale/rsshub-go/pkg/models"
+	"github.com/xihale/syndi/pkg/models"
 )
 
 // Namespace defines RSS/Atom namespaces for XML
@@ -108,7 +108,7 @@ func GenerateRSS(feed *models.Feed) ([]byte, error) {
 			Link:          feed.Link,
 			Description:   feed.Description,
 			LastBuildDate: time.Now().Format(time.RFC1123Z),
-			Generator:     "RSSHub-Go/1.0 (+https://github.com/xihale/rsshub-go)",
+			Generator:     "Syndi/0.0.1 (+https://github.com/xihale/syndi)",
 		},
 	}
 
@@ -158,7 +158,7 @@ func GenerateRSS(feed *models.Feed) ([]byte, error) {
 	}
 
 	return []byte(fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
-<!-- generator="RSSHub-Go/1.0" -->
+<!-- generator="Syndi/0.0.1" -->
 %s`, buf.String())), nil
 }
 
@@ -169,7 +169,7 @@ func GenerateAtom(feed *models.Feed) ([]byte, error) {
 		Title:     feed.Title,
 		ID:        feed.Link,
 		Updated:   time.Now().UTC().Format(time.RFC3339),
-		Generator: "RSSHub-Go/1.0 (+https://github.com/xihale/rsshub-go)",
+		Generator: "Syndi/0.0.1 (+https://github.com/xihale/syndi)",
 		Links: []AtomLink{
 			{Rel: "self", Href: feed.Link, Type: "application/atom+xml"},
 			{Rel: "alternate", Href: feed.Link, Type: "text/html"},
@@ -233,7 +233,7 @@ func GenerateAtom(feed *models.Feed) ([]byte, error) {
 	}
 
 	return []byte(fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
-<!-- generator="RSSHub-Go/1.0" -->
+<!-- generator="Syndi/0.0.1" -->
 %s`, buf.String())), nil
 }
 

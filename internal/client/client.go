@@ -16,7 +16,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/xihale/rsshub-go/internal/parser"
+	"github.com/xihale/syndi/internal/parser"
 	"go.uber.org/zap"
 )
 
@@ -104,7 +104,7 @@ type ClientOption func(*Client)
 // New creates a new HTTP client
 func New(options ...ClientOption) *Client {
 	c := &Client{
-		userAgent:    "RSSHub-Go/1.0 (+https://github.com/xihale/rsshub-go)",
+		userAgent:    "Syndi/0.0.1 (+https://github.com/xihale/syndi)",
 		timeout:      30 * time.Second,
 		maxRedirects: 10,
 		maxRetries:   3,

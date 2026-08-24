@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/xihale/rsshub-go/internal/parser"
+	"github.com/xihale/syndi/internal/parser"
 )
 
 func TestParseGitHubTrendingItem(t *testing.T) {

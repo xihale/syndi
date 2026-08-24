@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/xihale/rsshub-go/pkg/models"
+	"github.com/xihale/syndi/pkg/models"
 )
 
 func TestGenerateRSS(t *testing.T) {
@@ -151,7 +151,7 @@ func TestGenerateRSS_XMLEncoding(t *testing.T) {
 	}
 
 	// Should contain generator comment
-	if !strings.Contains(string(data), `generator="RSSHub-Go/1.0"`) {
+	if !strings.Contains(string(data), `generator="Syndi/0.0.1"`) {
 		t.Error("expected generator comment")
 	}
 }

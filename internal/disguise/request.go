@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"encoding/xml"
 
-	"github.com/xihale/rsshub-go/internal/client"
-	"github.com/xihale/rsshub-go/internal/parser"
-	"github.com/xihale/rsshub-go/internal/parser/rssfeed"
-	"github.com/xihale/rsshub-go/pkg/models"
+	"github.com/xihale/syndi/internal/client"
+	"github.com/xihale/syndi/internal/parser"
+	"github.com/xihale/syndi/internal/parser/rssfeed"
+	"github.com/xihale/syndi/pkg/models"
 )
 
 // Request binds a profile to one target fetch. Obtain via (*Profile).Fetch or

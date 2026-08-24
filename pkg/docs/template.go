@@ -42,7 +42,7 @@ const baseTemplate = `
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="color-scheme" content="light dark">
-    <title>{{.Title}} — RSSHub Go</title>
+    <title>{{.Title}} — Syndi</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
@@ -250,12 +250,12 @@ const baseTemplate = `
 
     <footer>
         <div class="container" style="display:flex;justify-content:space-between;width:100%;">
-            <span>RSSHub Go</span>
+            <span>Syndi</span>
             <nav>
                 <a href="/">routes</a>
                 <a href="/rss">rss</a>
                 <a href="/robots.txt">robots.txt</a>
-                <a href="https://github.com/xihale/rsshub-go">github</a>
+                <a href="https://github.com/xihale/syndi">github</a>
             </nav>
         </div>
     </footer>

@@ -17,7 +17,7 @@ func TestNew(t *testing.T) {
 		t.Fatal("expected non-nil client")
 	}
 
-	if c.userAgent != "RSSHub-Go/1.0 (+https://github.com/xihale/rsshub-go)" {
+	if c.userAgent != "Syndi/0.0.1 (+https://github.com/xihale/syndi)" {
 		t.Errorf("expected default user agent, got %s", c.userAgent)
 	}
 
@@ -51,8 +51,8 @@ func TestClient_Get(t *testing.T) {
 		}
 
 		ua := r.Header.Get("User-Agent")
-		if !strings.Contains(ua, "RSSHub-Go") {
-			t.Errorf("expected User-Agent to contain RSSHub-Go, got %s", ua)
+		if !strings.Contains(ua, "Syndi") {
+			t.Errorf("expected User-Agent to contain Syndi, got %s", ua)
 		}
 
 		w.WriteHeader(http.StatusOK)
