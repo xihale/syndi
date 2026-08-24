@@ -58,9 +58,7 @@ const baseTemplate = `
     --hover-bg: #fafafa;
     --path: #0b57d0;
 
-    --cat-programming: #1d4ed8; --cat-technology: #0f766e; --cat-science: #15803d;
     --cat-social_media: #9333ea; --cat-picture: #db2777; --cat-game: #ea580c;
-    --cat-finance: #b45309; --cat-new_media: #dc2626; --cat-study: #0369a1;
     --cat-dev: #6d28d9; --cat-blog: #57534e;
 }
 @media (prefers-color-scheme: dark) {
@@ -79,14 +77,6 @@ const baseTemplate = `
 
     }
 }
-        .cat-social-media { color: var(--cat-social_media); }
-        .cat-picture { color: var(--cat-picture); }
-        .cat-game { color: var(--cat-game); }
-        .cat-finance { color: var(--cat-finance); }
-        .cat-new-media { color: var(--cat-new_media); }
-        .cat-study { color: var(--cat-study); }
-        .cat-dev { color: var(--cat-dev); }
-        .cat-blog { color: var(--cat-blog); }
         .cat-default { color: var(--muted); }
         body {
             font-family: "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
