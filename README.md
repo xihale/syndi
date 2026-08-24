@@ -7,9 +7,10 @@ A high-performance RSS feed generation framework written in Go, inspired by RSSH
 - 🚀 **High Performance**: Built on Go's concurrency model
 - 🎯 **Easy to Use**: Simple API for creating RSS routes
 - 📦 **Extensible**: Plugin-based architecture
-- 🔧 **Flexible**: Support for HTML scraping, JSON APIs, XML feeds
+- 🔧 **Flexible**: Support for HTML scraping, JSON APIs, XML feeds, native RSS/Atom wrapping
 - ⚡ **Production Ready**: Built-in caching, rate limiting, retries
 - 🛡 **Type Safe**: Full Go types and interfaces
+- 🥸 **Request Disguise**: Browser-realistic profiles (UA rotation, Referer/Cookie/Language) in one fluent call — see `docs/DISGUISE.md`
 - 📝 **Configuration File**: YAML-based configuration
 
 ## Quick Start
@@ -112,9 +113,11 @@ rsshub-go/
 ├── internal/
 │   ├── cache/              # Handler-level caching
 │   ├── client/             # HTTP client with retry, proxy
+│   ├── disguise/           # Request disguise profiles (browser UA, headers)
 │   ├── middleware/         # Gin middleware
-│   ├── parser/             # HTML parsing utilities
-│   └── routeutils/         # Route helper utilities
+│   ├── parser/             # HTML parsing + RSS2/Atom/RDF feed parsing
+│   ├── routeutils/         # Route helper utilities
+│   └── testutil/           # Live-test harness for handlers
 ├── pkg/
 │   ├── cache/              # Cache interface and implementations
 │   ├── config/             # Configuration management

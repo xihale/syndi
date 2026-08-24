@@ -2,6 +2,7 @@ package routes
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 
@@ -13,7 +14,7 @@ import (
 var arxivSearchRoute = routeutils.RouteSpec{
 	Path:        "search/:keyword",
 	Name:        "arXiv Search",
-	Example:     "arxiv/search/federated%20learning",
+	Example:     "arxiv/search/federated+learning",
 	Maintainers: []string{"xihale"},
 	Description: "Search arXiv papers by keyword (all fields)",
 	Categories:  []models.Category{{Name: "study"}},
@@ -32,7 +33,7 @@ func ArxivSearchHandler(c *ctxpkg.Context) (*models.Feed, error) {
 	limit := routeutils.ParsePositiveInt(c.QueryParam("limit"), 20, 100)
 	ctx := c.Parent()
 
-	url := "https://export.arxiv.org/api/query?search_query=all:" + keyword +
+	url := "https://export.arxiv.org/api/query?search_query=all:" + url.QueryEscape(keyword) +
 		"&sortBy=relevance&sortOrder=descending&max_results=" + itoa(limit)
 
 	var resp arxivAtom

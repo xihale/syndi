@@ -179,13 +179,13 @@ func TestExtractListItems(t *testing.T) {
 
 	doc, _ := LoadString(html)
 	config := ListConfig{
-		ItemSelector:     ".article-item",
-		TitleSelector:    "h2 a",
-		LinkSelector:     "h2 a",
-		LinkFromHref:     true,
+		ItemSelector:        ".article-item",
+		TitleSelector:       "h2 a",
+		LinkSelector:        "h2 a",
+		LinkFromHref:        true,
 		DescriptionSelector: ".summary",
-		PubDateSelector:  ".date",
-		AuthorSelector:   ".author",
+		PubDateSelector:     ".date",
+		AuthorSelector:      ".author",
 	}
 
 	items := doc.ExtractListItems(config)
@@ -731,4 +731,3 @@ func TestFindImagesBySrc(t *testing.T) {
 		t.Errorf("expected 2 JPG images, got %d", len(images))
 	}
 }
-

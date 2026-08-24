@@ -7,4 +7,8 @@ var Routes = []routeutils.RouteSpec{
 	gitHubReposRoute,
 	gitHubTrendingRoute,
 	gitHubUserReposRoute,
+	gitHubCommitsRoute,
+	gitHubIssuesRoute,
+	gitHubPullRoute,
+	gitHubGistsRoute,
 }

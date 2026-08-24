@@ -7,19 +7,19 @@ import (
 
 // MetaData represents extracted meta tags from HTML
 type MetaData struct {
-	Title       string
-	Description string
-	Keywords    string
-	Author      string
-	Canonical   string
-	OGTitle     string
+	Title         string
+	Description   string
+	Keywords      string
+	Author        string
+	Canonical     string
+	OGTitle       string
 	OGDescription string
-	OGImage     string
-	OGType      string
-	TwitterCard string
-	Image       string
-	SiteName    string
-	URL         string
+	OGImage       string
+	OGType        string
+	TwitterCard   string
+	Image         string
+	SiteName      string
+	URL           string
 	PublishedTime time.Time
 	ModifiedTime  time.Time
 }
@@ -243,16 +243,16 @@ func (d *Document) ExtractListItems(config ListConfig) []ListItem {
 
 // ListConfig configures how to extract list items
 type ListConfig struct {
-	ItemSelector     string // Selector for each item container
-	TitleSelector    string // Selector for title within item
-	LinkSelector     string // Selector for link within item
+	ItemSelector        string // Selector for each item container
+	TitleSelector       string // Selector for title within item
+	LinkSelector        string // Selector for link within item
 	DescriptionSelector string // Selector for description
-	PubDateSelector  string // Selector for publish date
-	AuthorSelector   string // Selector for author
-	CategorySelector string // Selector for category
-	ThumbnailSelector string // Selector for thumbnail image
-	LinkFromTitle    bool   // Extract link from title's href
-	LinkFromHref     bool   // Extract link from href attribute
+	PubDateSelector     string // Selector for publish date
+	AuthorSelector      string // Selector for author
+	CategorySelector    string // Selector for category
+	ThumbnailSelector   string // Selector for thumbnail image
+	LinkFromTitle       bool   // Extract link from title's href
+	LinkFromHref        bool   // Extract link from href attribute
 }
 
 // ExtractJSONLD extracts JSON-LD structured data

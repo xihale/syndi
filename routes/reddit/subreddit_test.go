@@ -44,7 +44,7 @@ func TestParseRedditLimit(t *testing.T) {
 
 func TestBuildRedditListingURL(t *testing.T) {
 	got := buildRedditListingURL("golang", "top", 15, "week")
-	want := "https://www.reddit.com/r/golang/top.json?limit=15&t=week"
+	want := "https://www.reddit.com/r/golang/top/.rss?t=week"
 	if got != want {
 		t.Fatalf("buildRedditListingURL() = %q, want %q", got, want)
 	}

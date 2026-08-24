@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/assert"
 	"github.com/xihale/rsshub-go/pkg/cache"
 	"github.com/xihale/rsshub-go/pkg/models"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestCached_CacheHit(t *testing.T) {
@@ -18,7 +18,6 @@ func TestCached_CacheHit(t *testing.T) {
 	gob.Register(&models.Feed{})
 	gob.Register(&models.Item{})
 	gob.Register(&models.Author{})
-
 
 	cacheInstance := cache.NewMemoryCache(100)
 	callCount := 0
@@ -76,7 +75,6 @@ func TestCached_ETagSupport(t *testing.T) {
 	gob.Register(&models.Feed{})
 	gob.Register(&models.Item{})
 	gob.Register(&models.Author{})
-
 
 	cacheInstance := cache.NewMemoryCache(100)
 

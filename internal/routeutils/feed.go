@@ -135,7 +135,6 @@ func applyItemDefaults(item *models.Item) {
 	}
 }
 
-
 // SetCategories ensures item.Categories is non-nil and adds categories
 func SetCategories(item *models.Item, categories ...string) {
 	if item == nil {

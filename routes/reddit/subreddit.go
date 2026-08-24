@@ -1,16 +1,21 @@
 package routes
 
 import (
-	"context"
 	"fmt"
 	"net/url"
 	"strings"
 	"time"
 
+	"github.com/xihale/rsshub-go/internal/disguise"
 	"github.com/xihale/rsshub-go/internal/routeutils"
 	ctxpkg "github.com/xihale/rsshub-go/pkg/context"
 	"github.com/xihale/rsshub-go/pkg/models"
 )
+
+// reddit now 403s non-browser JSON requests from many networks; the Firefox
+// profile with a browser Accept header gets the listing through.
+var redditProfile = disguise.Firefox().
+	WithHeader("Accept", "application/json, text/plain, */*")
 
 var redditSubredditRoute = routeutils.RouteSpec{
 	Path:        ":subreddit",
@@ -23,63 +28,48 @@ var redditSubredditRoute = routeutils.RouteSpec{
 	Parameters: []models.Parameter{
 		routeutils.RequiredParam("subreddit", "Subreddit name (without r/)"),
 	},
-	CacheTTL: 10 * time.Minute, // Reddit is very active, shorter cache
+	CacheTTL: 30 * time.Minute, // Reddit rate-limits hard; cache aggressively
 	Handler:  RedditSubredditHandler,
 }
 
-// RedditSubredditHandler handles /reddit/:subreddit
+// RedditSubredditHandler handles /reddit/:subreddit.
+// Reddit 403/429s unauthenticated .json listing APIs from many networks, so we
+// consume the more permissive native .rss feed through a browser disguise
+// profile and normalize it into our Feed shape.
 func RedditSubredditHandler(c *ctxpkg.Context) (*models.Feed, error) {
 	subreddit := c.Param("subreddit")
 	sortBy := parseRedditSort(c.QueryParam("sort"))
 	limit := parseRedditLimit(c.QueryParam("limit"))
 	timeRange := parseRedditTimeRange(c.QueryParam("t"))
 
-	ctx, cancel := context.WithTimeout(c.Parent(), 10*time.Second)
-	defer cancel()
+	feedURL := buildRedditListingURL(subreddit, sortBy, limit, timeRange)
 
-	url := buildRedditListingURL(subreddit, sortBy, limit, timeRange)
-
-	var response RedditResponse
-	if err := routeutils.GetJSON(ctx, c.Client(), url, &response); err != nil {
+	feed, err := redditProfile.Fetch(feedURL).GetFeed(c.Parent(), c.Client())
+	if err != nil {
 		return nil, err
 	}
 
-	feed := routeutils.NewFeed(
-		fmt.Sprintf("Reddit r/%s", subreddit),
-		fmt.Sprintf("https://www.reddit.com/r/%s", subreddit),
-		fmt.Sprintf("%s posts from r/%s", sortDisplayName(sortBy), subreddit),
-	)
-	routeutils.AppendMappedItems(feed, response.Data.Children, limit, func(post RedditChild) *models.Item {
-		if post.Kind != "t3" || post.Data.Stickied {
-			return nil
+	feed.Title = fmt.Sprintf("Reddit r/%s", subreddit)
+	feed.Link = fmt.Sprintf("https://www.reddit.com/r/%s", subreddit)
+	feed.Description = fmt.Sprintf("%s posts from r/%s", sortDisplayName(sortBy), subreddit)
+
+	trimmed := make([]models.Item, 0, min(limit, len(feed.Items)))
+	for _, item := range feed.Items {
+		item.Categories = append(item.Categories, "r/"+subreddit)
+		trimmed = append(trimmed, item)
+		if len(trimmed) >= limit {
+			break
 		}
-
-		link := resolveRedditPostLink(post.Data.URL, post.Data.Permalink)
-		item := routeutils.NewItem(
-			post.Data.Title,
-			link,
-			buildRedditDescription(post.Data),
-			time.Unix(int64(post.Data.CreatedUTC), 0),
-		)
-		item.GUID = "reddit-" + post.Data.ID
-
-		if post.Data.Author != "" {
-			routeutils.SetAuthor(item, post.Data.Author,
-				routeutils.WithAuthorURI("https://www.reddit.com/user/"+post.Data.Author))
-		}
-
-		routeutils.SetCategories(item, "r/"+subreddit)
-		if post.Data.LinkFlairText != "" {
-			routeutils.SetCategories(item, post.Data.LinkFlairText)
-		}
-		if post.Data.Over18 {
-			routeutils.SetCategories(item, "NSFW")
-		}
-
-		return item
-	})
-
+	}
+	feed.Items = trimmed
 	return feed, nil
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
 
 func parseRedditSort(raw string) string {
@@ -95,16 +85,17 @@ func parseRedditTimeRange(raw string) string {
 }
 
 func buildRedditListingURL(subreddit, sortBy string, limit int, timeRange string) string {
-	endpoint := fmt.Sprintf(
-		"https://www.reddit.com/r/%s/%s.json?limit=%d",
-		url.PathEscape(subreddit),
-		sortBy,
-		limit,
-	)
-	if sortBy == "top" {
-		return endpoint + "&t=" + url.QueryEscape(timeRange)
+	sub := url.PathEscape(subreddit)
+	switch sortBy {
+	case "hot":
+		return fmt.Sprintf("https://www.reddit.com/r/%s/.rss", sub)
+	case "new":
+		return fmt.Sprintf("https://www.reddit.com/r/%s/new/.rss", sub)
+	case "rising":
+		return fmt.Sprintf("https://www.reddit.com/r/%s/rising/.rss", sub)
+	default: // top
+		return fmt.Sprintf("https://www.reddit.com/r/%s/top/.rss?t=%s", sub, url.QueryEscape(timeRange))
 	}
-	return endpoint
 }
 
 func resolveRedditPostLink(postURL, permalink string) string {

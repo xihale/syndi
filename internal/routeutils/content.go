@@ -14,15 +14,15 @@ import (
 
 // CleanOptions contains options for CleanDescription
 type CleanOptions struct {
-	Sanitize        bool
-	Suffix          string
-	BaseURL         string
-	ReferrerPolicy  bool
-	RemoveScripts   bool
-	FixLazyImages   bool
-	ResolveLinks    bool
-	AllowedTags     []string
-	AllowedAttrs    []string
+	Sanitize       bool
+	Suffix         string
+	BaseURL        string
+	ReferrerPolicy bool
+	RemoveScripts  bool
+	FixLazyImages  bool
+	ResolveLinks   bool
+	AllowedTags    []string
+	AllowedAttrs   []string
 }
 
 // DefaultCleanOptions returns sensible defaults for content cleaning

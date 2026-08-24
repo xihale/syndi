@@ -468,24 +468,24 @@ func TestUniqueByLink(t *testing.T) {
 
 func TestGenerateCacheKey(t *testing.T) {
 	tests := []struct {
-		name string
+		name  string
 		parts []string
-		want string
+		want  string
 	}{
 		{
-			name: "single part",
+			name:  "single part",
 			parts: []string{"feed"},
-			want: "feed",
+			want:  "feed",
 		},
 		{
-			name: "multiple parts",
+			name:  "multiple parts",
 			parts: []string{"feed", "github", "repos"},
-			want: "feed:github:repos",
+			want:  "feed:github:repos",
 		},
 		{
-			name: "empty parts",
+			name:  "empty parts",
 			parts: []string{"feed", "", "repos"},
-			want: "feed:repos",
+			want:  "feed:repos",
 		},
 	}
 
