@@ -73,8 +73,7 @@ func (h *Handler) RobotsHandler(c *gin.Context) {
 	body := "# RSSHub Go\n" +
 		"User-agent: *\n" +
 		"Allow: /\n" +
-		"Disallow: /api/\n" +
-		"Disallow: /docs/route\n"
+		"Disallow: /api/\n"
 	c.Header("Content-Type", "text/plain; charset=utf-8")
 	c.String(http.StatusOK, body)
 }
