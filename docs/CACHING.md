@@ -389,4 +389,3 @@ func TestCachedHandler(t *testing.T) {
 
 - [examples/handler_caching_example.go](../examples/handler_caching_example.go) - More code examples
 - [internal/cache/handler.go](../internal/cache/handler.go) - Implementation
-- [internal/middleware/cache.go](../internal/middleware/cache.go) - Middleware implementation
