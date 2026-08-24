@@ -252,7 +252,7 @@ const baseTemplate = `
             <span>RSSHub Go</span>
             <nav>
                 <a href="/">routes</a>
-                <a href="/api/routes">api</a>
+                <a href="/rss">rss</a>
                 <a href="/robots.txt">robots.txt</a>
                 <a href="https://github.com/xihale/rsshub-go">github</a>
             </nav>
