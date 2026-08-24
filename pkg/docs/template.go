@@ -117,7 +117,7 @@ const baseTemplate = `
             transition: background .1s;
         }
         .route:hover { background: #fafafa; }
-        .r-path { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 13px; word-break: break-all; }
+        .r-path { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 13px; word-break: break-all; color: #0b57d0; }
         .r-path .p, .d-path .p { color: var(--accent); }
         .r-name { font-size: 15px; color: #333; }
         .r-meta {
@@ -133,7 +133,7 @@ const baseTemplate = `
         .back { display: inline-block; margin: 40px 0 24px; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
         .back:hover { color: var(--accent); }
         .d-title { font-size: 42px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; }
-        .d-path { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 15px; margin-top: 10px; word-break: break-all; }
+        .d-path { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 15px; margin-top: 10px; word-break: break-all; color: #0b57d0; }
         .d-desc { margin-top: 20px; font-size: 16px; color: #333; max-width: 640px; }
         .d-cats { margin-top: 14px; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; }
         .d-cats .ttl { color: var(--muted); }
