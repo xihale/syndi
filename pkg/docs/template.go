@@ -77,14 +77,13 @@ const baseTemplate = `
     }
 }
         body {
-            font-family: "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
-            color: var(--fg);
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
             background: var(--bg);
             font-size: 15px;
             line-height: 1.6;
             -webkit-font-smoothing: antialiased;
         }
-        .mono { font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace; }
+        .mono { font-family: ui-monospace, "SF Mono", "Cascadia Mono", "Segoe UI Mono", Menlo, Consolas, monospace; }
         .container { max-width: 920px; margin: 0 auto; padding: 0 40px; }
         a { color: inherit; text-decoration: none; }
 
@@ -113,7 +112,6 @@ const baseTemplate = `
         #routesContainer .namespace { margin-top: 24px; }
         #routesContainer .namespace:first-child { margin-top: 44px; }
         .ns-header h2 { font-size: 24px; font-weight: 700; letter-spacing: -0.01em; }
-        .count { font-size: 13px; color: var(--muted); }
 
         .route {
             display: grid;
@@ -125,7 +123,7 @@ const baseTemplate = `
             transition: background .1s;
         }
         .route:hover { background: var(--hover-bg); }
-        .r-path { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 13px; word-break: break-all; color: var(--path); }
+        .r-path { font-family: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--path); }
         .r-path .p, .d-path .p { color: var(--accent); }
         .r-name { font-size: 15px; color: var(--fg-soft); }
         .r-meta {
@@ -143,7 +141,7 @@ const baseTemplate = `
         .crumbs a:hover { color: var(--accent); }
         .crumbs .sep { margin: 0 10px; }
         .crumbs .cur { color: var(--fg); }
-.d-path { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 15px; margin-top: 10px; word-break: break-all; color: var(--path); }
+.d-path { font-family: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace; font-size: 15px; margin-top: 10px; word-break: break-all; color: var(--path); }
         .d-desc { margin-top: 20px; font-size: 16px; color: var(--fg-soft); max-width: 640px; }
         .d-cats { margin-top: 14px; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; }
         .d-cats .ttl { color: var(--muted); }
@@ -152,13 +150,13 @@ const baseTemplate = `
         ul.plain li.off { opacity: 0.32; }
         ul.plain li.off:hover { opacity: 0.6; }
         .cred { margin-top: 16px; }
-        .cred-key { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 15px; font-weight: 700; }
+        .cred-key { font-family: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace; font-size: 15px; font-weight: 700; }
         section { padding: 44px 0 0; }
         section .label { display: block; margin-bottom: 14px; }
         pre.example {
             background: var(--code-bg);
             padding: 16px 20px;
-            font-family: "SF Mono", ui-monospace, Menlo, monospace;
+            font-family: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
             font-size: 13px;
             line-height: 1.7;
             overflow-x: auto;
@@ -166,13 +164,13 @@ const baseTemplate = `
             word-break: break-all;
         }
         .kv { display: grid; grid-template-columns: 170px 1fr; gap: 10px 28px; font-size: 14px; }
-        .kv dt { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 13px; font-weight: 600; }
+        .kv dt { font-family: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace; font-size: 13px; font-weight: 600; }
         .kv dd { color: var(--fg-soft); }
         .kv dd.yes { color: var(--ok); font-weight: 600; }
         .kv dd.no { color: var(--accent); font-weight: 600; }
         .no { color: var(--accent); }
         .st { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; }
-        .kv dd code { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 13px; color: var(--accent); }
+        .kv dd code { font-family: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace; font-size: 13px; color: var(--accent); }
         .try-row { display: flex; gap: 28px; align-items: flex-end; }
         .try-row input {
             flex: 1;
@@ -180,7 +178,7 @@ const baseTemplate = `
             border-bottom: 1px solid var(--rule);
             border-radius: 0;
             background: transparent;
-            font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+            font-family: ui-monospace, "SF Mono", "Cascadia Mono", "Segoe UI Mono", Menlo, Consolas, monospace;
             font-size: 13px;
             padding: 10px 0;
             outline: none;
@@ -202,7 +200,7 @@ const baseTemplate = `
         button.run:hover { border-color: var(--accent); color: var(--accent); }
         #tryStatus {
             margin-top: 22px;
-            font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+            font-family: ui-monospace, "SF Mono", "Cascadia Mono", "Segoe UI Mono", Menlo, Consolas, monospace;
             font-size: 11px;
             letter-spacing: 0.14em;
             text-transform: uppercase;
@@ -212,13 +210,22 @@ const baseTemplate = `
         #tryOut {
             margin-top: 8px;
             padding: 16px 0 4px;
-            font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+            font-family: ui-monospace, "SF Mono", "Cascadia Mono", "Segoe UI Mono", Menlo, Consolas, monospace;
             font-size: 12px;
             line-height: 1.8;
             max-height: 65vh;
             overflow: auto;
             white-space: pre;
             tab-size: 2;
+        }
+        .x-tag { color: #0550ae; font-weight: 600; }
+        .x-attr { color: #953800; }
+        .x-str { color: #116329; }
+        .x-cmt { color: var(--muted); font-style: italic; }
+        @media (prefers-color-scheme: dark) {
+            .x-tag { color: #79c0ff; }
+            .x-attr { color: #ffa657; }
+            .x-str { color: #a5d6ff; }
         }
         ul.plain { list-style: none; }
         ul.plain li { padding: 9px 0; cursor: pointer; }
@@ -250,11 +257,10 @@ const baseTemplate = `
 
     <footer>
         <div class="container" style="display:flex;justify-content:space-between;width:100%;">
-            <span>Syndi</span>
+            <span style="font-family: ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas, monospace; font-weight:700;">Syndi</span>
             <nav>
                 <a href="/">routes</a>
                 <a href="/rss">rss</a>
-                <a href="/robots.txt">robots.txt</a>
                 <a href="https://github.com/xihale/syndi">github</a>
             </nav>
         </div>
@@ -276,11 +282,10 @@ const indexContent = `
 <div class="namespace" data-namespace="{{.Name}}">
     <div class="ns-header">
         <h2>{{.Name}}</h2>
-        <span class="count">{{.RouteCount}}</span>
     </div>
     {{range .Routes}}
     <div class="route{{if .Unavailable}} off{{end}}" data-k="{{lower .Name}} {{lower .Description}} {{lower .Path}}"{{if .Unavailable}} title="缺少 {{range .MissingDeps}}{{.}} {{end}}配置"{{end}} onclick="location.href='{{.Path}}'">
-        <span class="r-path">{{pathHTML .Path}}</span>
+        <span class="r-path" title="{{.Path}}">{{pathHTML .Path}}</span>
         <span class="r-name">{{.Name}}</span>
         <span class="r-meta"><span class="ttl">{{.CacheTTL}}</span></span>
     </div>
@@ -378,6 +383,22 @@ const routeContent = `
 {{end}}
 
 <script>
+function escHTML(t) {
+    return t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+function hlXML(t) {
+    const s = escHTML(t);
+    if (!t.trimStart().startsWith('<')) return s;
+    return s
+        .replace(/&lt;!--[\s\S]*?--&gt;/g, m => '<span class="x-cmt">' + m + '</span>')
+        .replace(/&lt;\?[\s\S]*?\?&gt;/g, m => '<span class="x-cmt">' + m + '</span>')
+        .replace(/&lt;(\/?)([A-Za-z][\w:.-]*)((?:\s+[A-Za-z_:][\w:.-]*(?:="[^"]*")?)*)\s*(\/?)&gt;/g,
+            function(m, slash, name, attrs, selfc) {
+                attrs = attrs.replace(/([A-Za-z_:][\w:.-]*)(=)("[^"]*")/g,
+                    (a, an, eq, v) => '<span class="x-attr">' + an + '</span>=<span class="x-str">' + v + '</span>');
+                return '&lt;' + slash + '<span class="x-tag">' + name + '</span>' + attrs + selfc + '&gt;';
+            });
+}
 function fmtXML(t) {
     t = t.replace(/^\s*<\?xml[^>]*\?>/, '').trimStart();
     if (!t.startsWith('<')) return t;
@@ -405,7 +426,7 @@ function runTry() {
         const ms = Math.round(performance.now() - started);
         st.className = r.ok ? 'yes' : 'no';
         st.textContent = r.status + ' ' + r.statusText + ' · ' + ms + 'MS';
-        out.textContent = fmtXML(await r.text());
+        out.innerHTML = hlXML(fmtXML(await r.text()));
     }).catch(e => {
         st.className = 'no';
         st.textContent = 'FETCH FAILED';
