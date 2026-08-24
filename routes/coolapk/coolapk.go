@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"html"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -163,8 +164,15 @@ func fetchCoolapkDataList(c *ctxpkg.Context, fragment, title string) (*models.Fe
 	apiURL := coolapkAPIBase + url.QueryEscape(fragment) + "&page=1"
 	var resp coolapkDataListResp
 	if err := routeutils.GetJSONWithHeaders(ctx, c.Client(), apiURL, coolapkHeaders(), &resp); err != nil {
+		fmt.Println("COOLAPK_DEBUG fetch error:", err)
 		return nil, err
 	}
+	fmt.Println("COOLAPK_DEBUG entries:", len(resp.Flattened()), "datalen:", len(resp.Data))
+	n := len(resp.Data)
+	if n > 220 {
+		n = 220
+	}
+	fmt.Println("COOLAPK_DEBUG head:", string(resp.Data[:n]))
 
 	feed := routeutils.NewFeed("酷安 "+title, "https://www.coolapk.com/", "热榜-"+title)
 	for _, entry := range resp.Flattened() {
@@ -204,7 +212,7 @@ func buildCoolapkItem(entry coolapkEntry) *models.Item {
 
 	var pubDate time.Time
 	if entry.Dateline > 0 {
-		pubDate = time.Unix(entry.Dateline, 0)
+		pubDate = time.Unix(int64(entry.Dateline), 0)
 	}
 	item := routeutils.NewItem(title, link, desc, pubDate)
 	if item == nil {
@@ -225,7 +233,11 @@ func coolapkTitleFromMessage(message string) string {
 	if idx := strings.IndexByte(firstLine, '\n'); idx >= 0 {
 		firstLine = firstLine[:idx]
 	}
-	firstLine = strings.TrimSpace(firstLine)
+	// Messages may embed inline HTML (topic tags etc.); keep titles plain.
+	if strings.Contains(firstLine, "<") {
+		firstLine = coolapkTagStripRe.ReplaceAllString(firstLine, "")
+	}
+	firstLine = html.UnescapeString(strings.TrimSpace(firstLine))
 	runes := []rune(firstLine)
 	if len(runes) > 80 {
 		return string(runes[:77]) + "..."
@@ -236,23 +248,32 @@ func coolapkTitleFromMessage(message string) string {
 	return firstLine
 }
 
+// coolapkTagStripRe removes inline HTML markup for plain-text titles.
+var coolapkTagStripRe = regexp.MustCompile(`<[^>]*>`)
+
 type coolapkDataListResp struct {
 	Data json.RawMessage `json:"data"`
 }
 
 // Flattened decodes data as either a plain array of entities or card wrappers.
+// Entries are decoded individually so one odd-shaped row cannot void the
+// whole list (mixed lists like digestList do occur in the wild).
 func (r *coolapkDataListResp) Flattened() []coolapkEntry {
+	var raws []json.RawMessage
+	if err := json.Unmarshal(r.Data, &raws); err != nil {
+		return nil
+	}
 	var entries []coolapkEntry
-	var direct []coolapkEntry
-	if err := json.Unmarshal(r.Data, &direct); err == nil {
-		for _, e := range direct {
-			if e.EntityType == "card" {
-				entries = append(entries, e.Entities...)
-			} else {
-				entries = append(entries, e)
-			}
+	for _, raw := range raws {
+		var e coolapkEntry
+		if err := json.Unmarshal(raw, &e); err != nil {
+			continue
 		}
-		return entries
+		if e.EntityType == "card" {
+			entries = append(entries, e.Entities...)
+		} else {
+			entries = append(entries, e)
+		}
 	}
 	return entries
 }
@@ -260,13 +281,55 @@ func (r *coolapkDataListResp) Flattened() []coolapkEntry {
 type coolapkEntry struct {
 	EntityType   string         `json:"entityType"`
 	ID           json.Number    `json:"id"`
-	Type         int            `json:"type"`
+	Type         coolapkInt     `json:"type"`
 	Title        string         `json:"title"`
 	MessageTitle string         `json:"message_title"`
 	Message      string         `json:"message"`
-	Dateline     int64          `json:"dateline"`
+	Dateline     coolapkTime    `json:"dateline"`
 	URL          string         `json:"url"`
 	Username     string         `json:"username"`
-	PicArr       []string       `json:"picArr"`
+	PicArr       flexStrings    `json:"picArr"`
 	Entities     []coolapkEntry `json:"entities"`
 }
+
+// flexStrings tolerates picArr appearing as an array, a bare string or null.
+type flexStrings []string
+
+func (s *flexStrings) UnmarshalJSON(b []byte) error {
+	var arr []string
+	if err := json.Unmarshal(b, &arr); err == nil {
+		*s = arr
+		return nil
+	}
+	var str string
+	if err := json.Unmarshal(b, &str); err == nil {
+		if str != "" {
+			*s = []string{str}
+		}
+		return nil
+	}
+	*s = nil
+	return nil
+}
+
+// coolapkInt accepts JSON numbers as numbers or strings; coolapk serves some
+// fields either way depending on the endpoint.
+type coolapkInt int64
+
+func (t *coolapkInt) UnmarshalJSON(b []byte) error {
+	s := strings.Trim(string(b), `"`)
+	if s == "" || s == "null" {
+		*t = 0
+		return nil
+	}
+	v, err := strconv.ParseInt(s, 10, 64)
+	if err != nil {
+		*t = 0
+		return nil // tolerate unexpected shapes instead of dropping the entry
+	}
+	*t = coolapkInt(v)
+	return nil
+}
+
+// coolapkTime accepts unix timestamps as numbers or strings.
+type coolapkTime = coolapkInt

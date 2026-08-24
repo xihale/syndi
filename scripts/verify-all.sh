@@ -25,13 +25,13 @@ sleep 3
 ok=0; empty=0; fail=0
 : > /tmp/rsshub-verify-results.txt
 while IFS= read -r ex; do
-  code=$(curl -s -o /tmp/rsshub-body.xml -w '%{http_code}' -m 45 "http://127.0.0.1:$PORT/$ex")
+  code=$(curl -s -o /tmp/rsshub-body.xml -w '%{http_code}' -m 45 "http://127.0.0.1:$PORT/rss/$ex")
   if [ "$code" != "200" ]; then
     echo "FAIL $code $ex" >> /tmp/rsshub-verify-results.txt
     fail=$((fail+1))
     continue
   fi
-  n=$(grep -c '<item>' /tmp/rsshub-body.xml 2>/dev/null || echo 0)
+  n=$(grep -c '<item>' /tmp/rsshub-body.xml)
   if [ "${n:-0}" -gt 0 ]; then
     echo "OK $n $ex" >> /tmp/rsshub-verify-results.txt
     ok=$((ok+1))
