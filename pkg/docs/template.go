@@ -3,6 +3,8 @@ package docs
 import (
 	"html/template"
 	"strings"
+
+	"github.com/xihale/rsshub-go/pkg/registry"
 )
 
 // PageData represents the HTML page data
@@ -11,12 +13,16 @@ type PageData struct {
 	Namespaces  []*NamespaceDoc
 	TotalRoutes int
 	Categories  []string
+	EnvStatuses map[string][]registry.EnvStatus
 }
 
 // RoutePageData represents a single route page data
 type RoutePageData struct {
-	Route   *RouteDoc
-	Related []*RouteDoc
+	// Title is required by the shared base template's <title> tag.
+	Title            string
+	Route            *RouteDoc
+	Related          []*RouteDoc
+	RouteEnvStatuses []registry.EnvStatus
 }
 
 const baseTemplate = `
@@ -210,6 +216,38 @@ const baseTemplate = `
             padding: 2px 5px;
             color: #b294bb;
         }
+        .env-panel {
+            background: #282a2e;
+            border: 1px solid #373b41;
+            padding: 15px;
+            margin-bottom: 30px;
+        }
+        .env-panel h3 {
+            color: #f0f0f0;
+            font-size: 0.95em;
+            margin-bottom: 10px;
+        }
+        .env-group {
+            margin-bottom: 10px;
+        }
+        .env-group:last-child {
+            margin-bottom: 0;
+        }
+        .env-item {
+            display: flex;
+            gap: 8px;
+            align-items: baseline;
+            padding: 3px 0;
+            font-size: 0.85em;
+        }
+        .env-key {
+            color: #b294bb;
+            font-weight: 600;
+        }
+        .env-state-yes { color: #b5bd68; }
+        .env-state-no { color: #cc6666; }
+        .env-scope { color: #de935f; }
+        .env-desc { color: #969896; }
         code {
             font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
         }
@@ -238,7 +276,7 @@ const baseTemplate = `
     <header>
         <div class="container">
             <h1>RSSHub Go</h1>
-            <p>/docs</p>
+            <p><a href="/">/</a> · <a href="/robots.txt">/robots.txt</a> · <a href="/api/routes">/api/routes</a></p>
         </div>
     </header>
 
@@ -264,6 +302,25 @@ const indexContent = `
     <div class="stat"><strong>{{len .Namespaces}}</strong> namespaces</div>
     <div class="stat"><strong>{{len .Categories}}</strong> categories</div>
 </div>
+
+{{if .EnvStatuses}}
+<div class="env-panel">
+    <h3>CREDENTIALS / 配置状态</h3>
+    {{range $ns, $statuses := .EnvStatuses}}
+    <div class="env-group">
+        {{range $statuses}}
+        <div class="env-item">
+            <span class="env-key">{{.Key}}</span>
+            {{if .Configured}}<span class="env-state-yes">✓ 已配置</span>{{else}}<span class="env-state-no">✗ 未设置</span>{{end}}
+            <span class="env-scope">[{{$ns}} · {{.Scope}}]</span>
+            <span class="env-desc">{{.Description}}</span>
+        </div>
+        {{end}}
+    </div>
+    {{end}}
+    <div class="env-desc" style="margin-top: 8px;">状态为服务进程运行时实时检测，仅显示是否配置，不回显值。</div>
+</div>
+{{end}}
 
 <div id="routesContainer">
 {{range .Namespaces}}
@@ -349,6 +406,20 @@ const routeContent = `
     </div>
     <div class="route">
         <p class="route-desc" style="font-size: 1em; margin-bottom: 20px;">{{.Route.Description}}</p>
+
+        {{if .RouteEnvStatuses}}
+        <div class="env-panel" style="margin-bottom: 20px;">
+            <h3>CREDENTIALS / 本路由凭据状态</h3>
+            {{range .RouteEnvStatuses}}
+            <div class="env-item">
+                <span class="env-key">{{.Key}}</span>
+                {{if .Configured}}<span class="env-state-yes">✓ 已配置</span>{{else}}<span class="env-state-no">✗ 未设置（相关路由将报错）</span>{{end}}
+                <span class="env-scope">[{{.Scope}}]</span>
+                <span class="env-desc">{{.Description}}</span>
+            </div>
+            {{end}}
+        </div>
+        {{end}}
 
         <h3 style="margin-bottom: 10px; color: #f0f0f0; font-size: 0.95em;">PATH</h3>
         <div class="route-example" style="margin-bottom: 20px;">{{.Route.Path}}</div>

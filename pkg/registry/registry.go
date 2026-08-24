@@ -10,9 +10,9 @@ import (
 
 // Registry manages route registration and discovery
 type Registry struct {
-	mu       sync.RWMutex
-	routes   map[string]*models.Route
-	catches  map[string][]*models.Route
+	mu         sync.RWMutex
+	routes     map[string]*models.Route
+	catches    map[string][]*models.Route
 	namespaces map[string]*Namespace
 }
 
@@ -31,8 +31,8 @@ var once sync.Once
 func GetRegistry() *Registry {
 	once.Do(func() {
 		globalRegistry = &Registry{
-			routes:   make(map[string]*models.Route),
-			catches:  make(map[string][]*models.Route),
+			routes:     make(map[string]*models.Route),
+			catches:    make(map[string][]*models.Route),
 			namespaces: make(map[string]*Namespace),
 		}
 	})

@@ -26,6 +26,25 @@ Each route file under `routes/<namespace>/` should follow this structure:
 - `routeutils.AppendMappedItems`: map source payloads to feed items with optional limit handling.
 - Item defaults: `routeutils.NewItem`, `NewItemWithOptions`, `AddItem/AddItems`, and `AppendMappedItems` will fill `GUID` from `Link` when `GUID` is empty.
 
+## Credentials & Docs Frontend
+
+If a namespace depends on an environment variable (cookie, token, API key),
+declare it in the package `init()` so the docs frontend shows its live status:
+
+```go
+func init() {
+    registry.RegisterNamespaceEnv("zhihu", registry.EnvRequirement{
+        Key:         "ZHIHU_COOKIES",
+        Description: "知乎登录 Cookie（至少包含 z_c0）。",
+        Scope:       "部分路由（登录类）",
+    })
+}
+```
+
+The frontend (`/`) renders a CREDENTIALS panel with ✓/✗ state resolved from
+the live process environment; `/api/config` exposes the same as JSON.
+Only booleans are exposed — values are never echoed back.
+
 ## Handler Pipeline Style
 
 Prefer this shape:

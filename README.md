@@ -167,7 +167,10 @@ Recommended route structure:
 
 ## Documentation
 
-- `/docs` - Interactive route documentation (when server is running)
+- `/` - Interactive route documentation with live credential status (also at `/docs`)
+- `/robots.txt` - Crawler policy (feeds allowed, `/api/` and `/docs/route` disallowed)
+- `/api/routes`, `/api/namespaces`, `/api/categories` - Route metadata JSON
+- `/api/config` - Which credential env vars (e.g. `ZHIHU_COOKIES`) are set; booleans only, values never echoed
 - `docs/CACHING.md` - Comprehensive caching guide
 - `docs/CLIENT_CONFIG.md` - HTTP client config behavior and precedence
 - `docs/ROUTES.md` - Route architecture and scaffolding workflow

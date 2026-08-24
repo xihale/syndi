@@ -155,7 +155,7 @@ func setupGinRoutes(engine *gin.Engine, routeRegistry *registry.Registry, cacheI
 		logger.Warn("Failed to initialize docs handler", zap.Error(err))
 	} else {
 		docsHandler.RegisterRoutes(engine)
-		logger.Info("Documentation available at", zap.String("url", "http://localhost:"+cfg.GetPort()+"/docs"))
+		logger.Info("Documentation available at", zap.String("url", "http://localhost:"+cfg.GetPort()+"/"))
 	}
 
 	// Health check - no caching (always fresh status)

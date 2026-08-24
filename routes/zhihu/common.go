@@ -21,9 +21,20 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/xihale/rsshub-go/internal/disguise"
 	"github.com/xihale/rsshub-go/internal/parser"
+	"github.com/xihale/rsshub-go/pkg/registry"
 )
 
 const zhihuCookiesEnv = "ZHIHU_COOKIES"
+
+func init() {
+	// Surface the credential requirement on the docs frontend so users can
+	// see at a glance whether this deployment can serve login-gated routes.
+	registry.RegisterNamespaceEnv("zhihu", registry.EnvRequirement{
+		Key:         zhihuCookiesEnv,
+		Description: "知乎登录 Cookie（至少包含 z_c0）。配置后解锁专栏、问题回答、用户动态、收藏夹等需登录路由；热榜与日报匿名可用。",
+		Scope:       "部分路由（登录类）",
+	})
+}
 
 // zhihuInt64 accepts both JSON numbers and quoted strings. Zhihu serializes
 // ids above 2^53 as strings to avoid JS precision loss, so every id field
