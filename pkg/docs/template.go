@@ -147,8 +147,7 @@ const baseTemplate = `
         .crumbs a:hover { color: var(--accent); }
         .crumbs .sep { margin: 0 10px; }
         .crumbs .cur { color: var(--fg); }
-        .d-title { font-size: 42px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; }
-        .d-path { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 15px; margin-top: 10px; word-break: break-all; color: var(--path); }
+.d-path { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 15px; margin-top: 10px; word-break: break-all; color: var(--path); }
         .d-desc { margin-top: 20px; font-size: 16px; color: var(--fg-soft); max-width: 640px; }
         .d-cats { margin-top: 14px; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; }
         .d-cats .ttl { color: var(--muted); }
@@ -328,7 +327,6 @@ const routeContent = `
 {{define "content"}}
 <nav class="crumbs"><a href="/">index</a>{{with seg1 .Route.Path}}<span class="sep">/</span><span>{{.}}</span>{{end}}<span class="sep">/</span><span class="cur">{{.Route.Name}}</span></nav>
 
-<h1 class="d-title">{{.Route.Name}}</h1>
 <div class="d-path">{{pathHTML .Route.Path}}</div>
 <p class="d-desc">{{.Route.Description}}</p>
 <div class="d-cats"><span class="ttl">缓存 {{.Route.CacheTTL}}</span></div>
