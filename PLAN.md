@@ -1,5 +1,22 @@
 # RSSHub Go - Implementation Plan
 
+## Current Status (updated 2026-08-24)
+
+**Framework complete. Route coverage: 102 registered paths across ~70 namespaces.**
+
+- Core infrastructure, middleware stack, caching, HTTP client: DONE (phases 1-6 below)
+- RSS2/Atom/RDF feed parser (`internal/parser/rssfeed`) + `routeutils.GetFeed` for native-feed wrappers
+- Request disguise API (`internal/disguise`): browser presets, UA rotation, Referer/Cookie/Language — see `docs/DISGUISE.md`
+- 100+ routes ported from RSSHub TypeScript and live-verified (`make verify-all`, results in `docs/ROUTES_CATALOG.md`: 98/102 OK)
+- Porting workflow for contributors: `docs/PORTING_GUIDE.md` + `internal/testutil.RunHandler`
+
+Known limitations:
+- `steam/news` blocked from some networks (upstream 403); `techne98.com` domain dead
+- Reddit heavily rate-limits unauthenticated .json APIs; route uses native .rss via disguise profile
+
+---
+
+
 ## Current Status
 
 ### ✅ Completed (Middleware & Caching Implementation)

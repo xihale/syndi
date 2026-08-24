@@ -47,6 +47,10 @@ verify-routes: gen-routes-imports
 verify-routes-strict: gen-routes-imports
 	go run ./scripts/verify-routes --strict
 
+# Live-verify every registered route via a running server (slow, needs network)
+verify-all:
+	./scripts/verify-all.sh
+
 # Run local checks equivalent to CI workflow
 ci-local:
 	@echo "Running local CI checks..."
