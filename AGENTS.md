@@ -23,6 +23,13 @@
 - Tests live alongside implementation (`internal/`, `pkg/`, `routes/` etc.) and rely on `stretchr/testify`.
 - Run `go test ./...` for full coverage, `make test-coverage` when updating metrics, and include failing test reproduction steps in PRs.
 - Keep test helpers (e.g., fixtures, mock clients) in `_test.go` files and avoid network calls unless explicitly mocked.
+- Route handlers may use live network tests guarded by the `LIVE` env var via `internal/testutil.RunHandler`; run them with `LIVE=1 go test ./routes/<ns>/ -run Live`.
+
+## Adding or Modifying Routes
+- Read `docs/PORTING_GUIDE.md` first: namespace package layout, `RouteSpec` metadata, date/description/GUID rules, and verification workflow.
+- Every route package needs a `routes.go` exporting `Routes []routeutils.RouteSpec`; a directory without it is silently skipped by `scripts/generate-routes.go`.
+- For sites that block default clients, prefer the request disguise API (`docs/DISGUISE.md`): e.g. `disguise.Chrome().Lang("zh-CN").GetHTML(ctx, c.Client(), url)` — keep transport behavior (retry/proxy/rate-limit) untouched.
+- After adding namespaces, regenerate the bootstrap with `go run scripts/generate-routes.go`, then `make verify-routes-strict`; live-check examples with `make verify-all`.
 
 ## Commit & Pull Request Guidelines
 - Commit messages use `type: short description` (e.g., `feat: add new caching helper`), mirroring recent history.
