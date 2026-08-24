@@ -69,9 +69,9 @@ func TestParseDate_Relative(t *testing.T) {
 	now := time.Now()
 
 	tests := []struct {
-		name         string
-		input        string
-		checkTime    func(time.Time) bool
+		name      string
+		input     string
+		checkTime func(time.Time) bool
 	}{
 		{
 			name:  "now",
@@ -802,4 +802,3 @@ func TestStartOfYear(t *testing.T) {
 		t.Error("start of year should have same year as input")
 	}
 }
-

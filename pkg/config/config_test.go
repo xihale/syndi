@@ -104,8 +104,6 @@ middleware:
 		t.Errorf("expected cache type 'memory', got %s", cfg.Cache.Type)
 	}
 
-
-
 	if cfg.Cache.TTL != 30*time.Minute {
 		t.Errorf("expected cache TTL 30m, got %v", cfg.Cache.TTL)
 	}

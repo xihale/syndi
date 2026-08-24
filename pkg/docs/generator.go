@@ -27,18 +27,24 @@ type NamespaceDoc struct {
 
 // RouteDoc represents a route documentation
 type RouteDoc struct {
-	Path        string           `json:"path"`
-	Name        string           `json:"name"`
-	Description string           `json:"description"`
-	Example     string           `json:"example"`
-	ExampleURL  string           `json:"example_url"`
-	Categories  []string         `json:"categories"`
-	Parameters  []*ParameterDoc  `json:"parameters"`
-	Features    *FeaturesDoc     `json:"features,omitempty"`
-	Maintainers []string         `json:"maintainers"`
-	CacheTTL    string           `json:"cache_ttl"`
-	CurlExample string           `json:"curl_example"`
-	QueryParams []*QueryParamDoc `json:"query_params"`
+	Path        string          `json:"path"`
+	Name        string          `json:"name"`
+	Description string          `json:"description"`
+	Example     string          `json:"example"`
+	ExampleURL  string          `json:"example_url"`
+	Categories  []string        `json:"categories"`
+	Parameters  []*ParameterDoc `json:"parameters"`
+	Features    *FeaturesDoc    `json:"features,omitempty"`
+	Maintainers []string        `json:"maintainers"`
+	CacheTTL    string          `json:"cache_ttl"`
+	CurlExample string          `json:"curl_example"`
+
+	// EnvDeps lists credential env vars this route requires.
+	EnvDeps []string `json:"env_deps,omitempty"`
+	// MissingDeps/Unavailable are resolved once at startup against the live
+	// process environment; Unavailable routes render grayed out.
+	MissingDeps []string `json:"-"`
+	Unavailable bool     `json:"-"`
 }
 
 // ParameterDoc represents a route parameter documentation
@@ -53,42 +59,6 @@ type ParameterDoc struct {
 type FeaturesDoc struct {
 	SupportRadar bool `json:"support_radar"`
 	AntiCrawler  bool `json:"anti_crawler"`
-}
-
-// QueryParamDoc represents a query parameter documentation
-type QueryParamDoc struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Example     string `json:"example"`
-}
-
-// Standard query parameters documentation
-var standardQueryParams = []*QueryParamDoc{
-	{
-		Name:        "limit",
-		Description: "Limit the number of items in the feed",
-		Example:     "?limit=10",
-	},
-	{
-		Name:        "filter",
-		Description: "Filter items by keyword (case-insensitive regex)",
-		Example:     "?filter=release",
-	},
-	{
-		Name:        "filterout",
-		Description: "Exclude items matching keyword (case-insensitive regex)",
-		Example:     "?filterout=beta",
-	},
-	{
-		Name:        "filter_time",
-		Description: "Only include items from the last N seconds",
-		Example:     "?filter_time=86400",
-	},
-	{
-		Name:        "sorted",
-		Description: "Sort items by date (true or false, default true)",
-		Example:     "?sorted=false",
-	},
 }
 
 // Generate generates complete documentation from registry
@@ -203,7 +173,7 @@ func routeToDoc(route *models.Route) *RouteDoc {
 		Maintainers: route.Maintainers,
 		CacheTTL:    cacheTTL,
 		CurlExample: curlExample,
-		QueryParams: standardQueryParams,
+		EnvDeps:     route.Features.EnvDeps,
 	}
 }
 

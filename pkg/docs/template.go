@@ -137,18 +137,12 @@ const baseTemplate = `
         .d-desc { margin-top: 20px; font-size: 16px; color: #333; max-width: 640px; }
         .d-cats { margin-top: 14px; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; }
         .d-cats .ttl { color: var(--muted); }
-        .cred { margin-top: 20px; }
-        .cred-status { margin-left: 14px; font-size: 13px; }
-        .cred-note { margin-top: 10px; font-size: 13px; color: #444; }
-        .cred-note code {
-            font-family: "SF Mono", ui-monospace, Menlo, monospace;
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--accent);
-            background: #f5f5f5;
-            padding: 2px 8px;
-            margin-right: 10px;
-        }
+        .route.off { opacity: 0.32; }
+        .route.off:hover { opacity: 0.6; }
+        ul.plain li.off { opacity: 0.32; }
+        ul.plain li.off:hover { opacity: 0.6; }
+        .cred { margin-top: 16px; font-size: 14px; }
+        .cred-status { margin-left: 14px; }
         section { padding: 30px 0; border-bottom: 1px solid var(--hairline); }
         section .label { display: block; margin-bottom: 14px; }
         pre.example {
@@ -238,7 +232,7 @@ const indexContent = `
         <span class="count">{{.RouteCount}}</span>
     </div>
     {{range .Routes}}
-    <div class="route" data-k="{{lower .Name}} {{lower .Description}} {{lower .Path}}" onclick="location.href='/docs/route?path={{.Path}}'">
+    <div class="route{{if .Unavailable}} off{{end}}" data-k="{{lower .Name}} {{lower .Description}} {{lower .Path}}"{{if .Unavailable}} title="缺少 {{range .MissingDeps}}{{.}} {{end}}配置"{{end}} onclick="location.href='/docs/route?path={{.Path}}'">
         <span class="r-path">{{pathHTML .Path}}</span>
         <span class="r-name">{{.Name}}</span>
         <span class="r-meta">{{range .Categories}}<span class="cat-{{catclass .}}">{{.}}</span>&ensp;{{end}}<span class="ttl">{{.CacheTTL}}</span></span>
@@ -288,22 +282,11 @@ const routeContent = `
     <span class="label">Credentials</span>
     {{range .RouteEnvStatuses}}
     <div class="cred">
-        <span class="env-key">{{.Key}}</span><span class="cred-status {{if .Configured}}yes{{else}}no{{end}}">{{if .Configured}}已配置{{else}}未设置{{end}}</span>
-        {{if not .Configured}}
-<pre class="example" style="margin-top:12px;">export {{.Key}}='{{range $i, $f := .Fields}}{{if $i}}, {{end}}{{$f.Name}}=&lt;值&gt;{{end}}'</pre>
-        {{end}}
-        {{range .Fields}}
-        <p class="cred-note"><code>{{.Name}}</code>{{.Note}}</p>
-        {{end}}
+        <span class="env-key">{{.Key}}</span><span class="cred-status {{if .Configured}}yes{{else}}no{{end}}">{{if .Configured}}已配置{{else}}{{if .Fields}}缺少 {{range $i, $f := .Fields}}{{if $i}}、{{end}}{{$f.Name}}{{end}}{{else}}未设置{{end}}{{end}}</span>
     </div>
     {{end}}
 </section>
 {{end}}
-
-<section>
-    <span class="label">Example</span>
-    <pre class="example">{{.Route.CurlExample}}</pre>
-</section>
 
 {{if .Route.Parameters}}
 <section>
@@ -317,24 +300,12 @@ const routeContent = `
 </section>
 {{end}}
 
-{{if .Route.QueryParams}}
-<section>
-    <span class="label">Query Params</span>
-    <dl class="kv">
-        {{range .Route.QueryParams}}
-        <dt>{{.Name}}</dt>
-        <dd>{{.Description}}<br><code>{{.Example}}</code></dd>
-        {{end}}
-    </dl>
-</section>
-{{end}}
-
 {{if .Related}}
 <section>
     <span class="label">Related</span>
     <ul class="plain">
     {{range .Related}}
-        <li onclick="location.href='/docs/route?path={{.Path}}'">
+        <li{{if .Unavailable}} class="off" title="缺少 {{range .MissingDeps}}{{.}} {{end}}配置"{{end}} onclick="location.href='/docs/route?path={{.Path}}'">
             <span class="r-path">{{pathHTML .Path}}</span><span class="r-name">{{.Name}}</span>
         </li>
     {{end}}

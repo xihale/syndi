@@ -1,11 +1,13 @@
 package config
+
 import (
 	"fmt"
+	"gopkg.in/yaml.v3"
 	"os"
 	"path/filepath"
 	"time"
-	"gopkg.in/yaml.v3"
 )
+
 // Config holds application configuration
 type Config struct {
 	// Server settings
@@ -18,13 +20,13 @@ type Config struct {
 	} `yaml:"server"`
 	// Cache settings
 	Cache struct {
-		Type   string        `yaml:"type"` // "memory" or "badger"
+		Type   string `yaml:"type"` // "memory" or "badger"
 		Badger struct {
 			Path string `yaml:"path"`
 		} `yaml:"badger"`
 		CleanupInterval time.Duration `yaml:"cleanup_interval"`
 		TTL             time.Duration `yaml:"ttl"`
-		MemorySize int           `yaml:"memory_size"`
+		MemorySize      int           `yaml:"memory_size"`
 	} `yaml:"cache"`
 	// Client settings
 	Client struct {
@@ -45,6 +47,7 @@ type Config struct {
 		AllowOrigin string `yaml:"allow_origin"`
 	} `yaml:"middleware"`
 }
+
 // DefaultConfig returns the default configuration
 func DefaultConfig() *Config {
 	cfg := &Config{}
@@ -74,6 +77,7 @@ func DefaultConfig() *Config {
 	cfg.Middleware.AllowOrigin = "*"
 	return cfg
 }
+
 // Load loads configuration from a YAML file
 // If configPath is empty, it tries to find config.yaml in:
 // 1. ./config.yaml (current directory)
@@ -107,6 +111,7 @@ func Load(configPath string) (*Config, error) {
 	}
 	return cfg, nil
 }
+
 // LoadOrPanic loads configuration and panics on error
 func LoadOrPanic(configPath string) *Config {
 	cfg, err := Load(configPath)
@@ -115,62 +120,77 @@ func LoadOrPanic(configPath string) *Config {
 	}
 	return cfg
 }
+
 // GetPort returns the server port (for backward compatibility)
 func (c *Config) GetPort() string {
 	return c.Server.Port
 }
+
 // GetEnv returns the environment (for backward compatibility)
 func (c *Config) GetEnv() string {
 	return c.Server.Env
 }
+
 // GetCacheTTL returns the cache TTL (for backward compatibility)
 func (c *Config) GetCacheTTL() time.Duration {
 	return c.Cache.TTL
 }
+
 // GetCacheType returns the cache type (for backward compatibility)
 func (c *Config) GetCacheType() string {
 	return c.Cache.Type
 }
+
 // GetMemoryCacheSize returns the memory cache size (for backward compatibility)
 func (c *Config) GetMemoryCacheSize() int {
 	return c.Cache.MemorySize
 }
+
 // GetBadgerPath returns the BadgerDB path (for backward compatibility)
 func (c *Config) GetBadgerPath() string {
 	return c.Cache.Badger.Path
 }
+
 // GetCacheCleanupInterval returns the cleanup interval for expired cache entries (for backward compatibility)
 func (c *Config) GetCacheCleanupInterval() time.Duration {
 	return c.Cache.CleanupInterval
 }
+
 // GetUserAgent returns the user agent (for backward compatibility)
 func (c *Config) GetUserAgent() string {
 	return c.Client.UserAgent
 }
+
 // GetTimeout returns the HTTP client timeout (for backward compatibility)
 func (c *Config) GetTimeout() time.Duration {
 	return c.Client.Timeout
 }
+
 // GetProxy returns the proxy URL (for backward compatibility)
 func (c *Config) GetProxy() string {
 	return c.Client.Proxy
 }
+
 // GetDisableNSFW returns whether NSFW routes are disabled (for backward compatibility)
 func (c *Config) GetDisableNSFW() bool {
 	return c.Routes.DisableNSFW
 }
+
 // GetEnableCache returns whether caching is enabled (for backward compatibility)
 func (c *Config) GetEnableCache() bool {
 	return c.Middleware.EnableCache
 }
+
 // GetAccessKey returns the access key (for backward compatibility)
 func (c *Config) GetAccessKey() string {
 	return c.Middleware.AccessKey
 }
+
 // GetAllowOrigin returns the allowed origin (for backward compatibility)
 func (c *Config) GetAllowOrigin() string {
 	return c.Middleware.AllowOrigin
 }
+
 // Get retrieves a configuration value for a route
 // This checks environment variables for route-specific configs
 func (c *Config) Get(key, defaultValue string) string {
@@ -179,10 +199,12 @@ func (c *Config) Get(key, defaultValue string) string {
 	}
 	return defaultValue
 }
+
 // IsProduction checks if running in production
 func (c *Config) IsProduction() bool {
 	return c.Server.Env == "production"
 }
+
 // GetConfigPath returns the absolute path to the config file
 func GetConfigPath(configPath string) (string, error) {
 	if configPath == "" {

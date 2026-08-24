@@ -23,7 +23,7 @@ var zhihuPeopleAnswersRoute = routeutils.RouteSpec{
 	Maintainers: []string{"xihale"},
 	Description: "指定用户的最新回答",
 	Categories:  []models.Category{{Name: "social-media"}},
-	Features:    models.Features{SupportRadar: true},
+	Features:    models.Features{SupportRadar: true, EnvDeps: []string{zhihuCookiesEnv}},
 	Parameters: []models.Parameter{
 		routeutils.RequiredParam("id", "用户 url token，可在用户主页 URL 中找到"),
 		routeutils.OptionalParam("limit", "条数，默认 20，上限 50"),
@@ -111,7 +111,7 @@ var zhihuPostsRoute = routeutils.RouteSpec{
 	Maintainers: []string{"xihale"},
 	Description: "用户发布的专栏文章",
 	Categories:  []models.Category{{Name: "social-media"}},
-	Features:    models.Features{SupportRadar: true},
+	Features:    models.Features{SupportRadar: true, EnvDeps: []string{zhihuCookiesEnv}},
 	Parameters: []models.Parameter{
 		routeutils.RequiredParam("usertype", "用户类型：people（普通用户）或 org（机构账号）"),
 		routeutils.RequiredParam("id", "用户 url token"),
@@ -244,7 +244,7 @@ var zhihuActivitiesRoute = routeutils.RouteSpec{
 	Maintainers: []string{"xihale"},
 	Description: "用户的回答、文章、想法等公开动态",
 	Categories:  []models.Category{{Name: "social-media"}},
-	Features:    models.Features{SupportRadar: true},
+	Features:    models.Features{SupportRadar: true, EnvDeps: []string{zhihuCookiesEnv}},
 	Parameters: []models.Parameter{
 		routeutils.RequiredParam("id", "用户 url token"),
 		routeutils.OptionalParam("limit", "条数，默认 20，上限 20"),

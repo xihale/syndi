@@ -42,7 +42,7 @@ var zhihuCollectionRoute = routeutils.RouteSpec{
 	Maintainers: []string{"xihale"},
 	Description: "公开收藏夹的内容",
 	Categories:  []models.Category{{Name: "social-media"}},
-	Features:    models.Features{SupportRadar: true},
+	Features:    models.Features{SupportRadar: true, EnvDeps: []string{zhihuCookiesEnv}},
 	Parameters: []models.Parameter{
 		routeutils.RequiredParam("id", "收藏夹 id，可在收藏夹页面 URL 中找到"),
 		routeutils.OptionalParam("limit", "条数，默认 20，上限 500"),

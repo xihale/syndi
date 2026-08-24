@@ -12,16 +12,16 @@ import (
 
 // Namespace defines RSS/Atom namespaces for XML
 const (
-	NSRSS    = "http://purl.org/rss/1.0/modules/content/"
-	NSAtom   = "http://www.w3.org/2005/Atom"
-	NSDC     = "http://purl.org/dc/elements/1.1/"
+	NSRSS     = "http://purl.org/rss/1.0/modules/content/"
+	NSAtom    = "http://www.w3.org/2005/Atom"
+	NSDC      = "http://purl.org/dc/elements/1.1/"
 	NSContent = "http://purl.org/rss/1.0/modules/content/"
 )
 
 // Feed represents RSS 2.0 structure
 type RSSFeed struct {
-	XMLName xml.Name `xml:"rss"`
-	Version string   `xml:"version,attr"`
+	XMLName xml.Name    `xml:"rss"`
+	Version string      `xml:"version,attr"`
 	Channel *RSSChannel `xml:"channel"`
 }
 
@@ -58,16 +58,16 @@ type RSSContent struct {
 
 // AtomFeed represents Atom 1.0 structure
 type AtomFeed struct {
-	XMLName   xml.Name   `xml:"feed"`
-	XMLNs     string     `xml:"xmlns,attr"`
-	Title     string     `xml:"title"`
-	ID        string     `xml:"id"`
-	Updated   string     `xml:"updated"`
-	Links     []AtomLink `xml:"link"`
-	Subtitle  string     `xml:"subtitle,omitempty"`
+	XMLName   xml.Name     `xml:"feed"`
+	XMLNs     string       `xml:"xmlns,attr"`
+	Title     string       `xml:"title"`
+	ID        string       `xml:"id"`
+	Updated   string       `xml:"updated"`
+	Links     []AtomLink   `xml:"link"`
+	Subtitle  string       `xml:"subtitle,omitempty"`
 	Authors   []AtomAuthor `xml:"author,omitempty"`
-	Generator string     `xml:"generator,omitempty"`
-	Entries   []AtomEntry `xml:"entry"`
+	Generator string       `xml:"generator,omitempty"`
+	Entries   []AtomEntry  `xml:"entry"`
 }
 
 type AtomLink struct {
@@ -83,15 +83,15 @@ type AtomAuthor struct {
 }
 
 type AtomEntry struct {
-	Title     string      `xml:"title"`
-	ID        string      `xml:"id"`
-	Updated   string      `xml:"updated"`
-	Published string      `xml:"published,omitempty"`
-	Link      []AtomLink  `xml:"link"`
-	Summary   string      `xml:"summary,omitempty"`
-	Content   AtomContent `xml:"content,omitempty"`
-	Authors   []AtomAuthor `xml:"author,omitempty"`
-	Categories []string   `xml:"category,omitempty"`
+	Title      string       `xml:"title"`
+	ID         string       `xml:"id"`
+	Updated    string       `xml:"updated"`
+	Published  string       `xml:"published,omitempty"`
+	Link       []AtomLink   `xml:"link"`
+	Summary    string       `xml:"summary,omitempty"`
+	Content    AtomContent  `xml:"content,omitempty"`
+	Authors    []AtomAuthor `xml:"author,omitempty"`
+	Categories []string     `xml:"category,omitempty"`
 }
 
 type AtomContent struct {
@@ -104,11 +104,11 @@ func GenerateRSS(feed *models.Feed) ([]byte, error) {
 	rss := &RSSFeed{
 		Version: "2.0",
 		Channel: &RSSChannel{
-			Title:          feed.Title,
-			Link:           feed.Link,
-			Description:    feed.Description,
-			LastBuildDate:  time.Now().Format(time.RFC1123Z),
-			Generator:      "RSSHub-Go/1.0 (+https://github.com/xihale/rsshub-go)",
+			Title:         feed.Title,
+			Link:          feed.Link,
+			Description:   feed.Description,
+			LastBuildDate: time.Now().Format(time.RFC1123Z),
+			Generator:     "RSSHub-Go/1.0 (+https://github.com/xihale/rsshub-go)",
 		},
 	}
 
@@ -189,11 +189,11 @@ func GenerateAtom(feed *models.Feed) ([]byte, error) {
 
 	for _, item := range feed.Items {
 		entry := AtomEntry{
-			Title:     item.Title,
-			ID:        item.GUID,
-			Updated:   time.Now().UTC().Format(time.RFC3339),
-			Link:      []AtomLink{{Rel: "alternate", Href: item.Link}},
-			Summary:   item.Description,
+			Title:   item.Title,
+			ID:      item.GUID,
+			Updated: time.Now().UTC().Format(time.RFC3339),
+			Link:    []AtomLink{{Rel: "alternate", Href: item.Link}},
+			Summary: item.Description,
 		}
 
 		if !item.PubDate.IsZero() {

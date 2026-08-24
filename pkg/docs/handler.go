@@ -25,6 +25,24 @@ func NewHandler() (*Handler, error) {
 	indexTmpl, routeTmpl := ParseTemplates()
 	docData := Generate()
 
+	// Resolve per-route availability against the live process environment.
+	// Env vars cannot change during the process lifetime in practice, so
+	// computing once here is enough.
+	configured := map[string]bool{}
+	for _, statuses := range registry.AllEnvStatuses() {
+		for _, st := range statuses {
+			configured[st.Key] = st.Configured
+		}
+	}
+	for _, r := range docData.Routes {
+		for _, k := range r.EnvDeps {
+			if !configured[k] {
+				r.Unavailable = true
+				r.MissingDeps = append(r.MissingDeps, k)
+			}
+		}
+	}
+
 	return &Handler{
 		indexTmpl: indexTmpl,
 		routeTmpl: routeTmpl,

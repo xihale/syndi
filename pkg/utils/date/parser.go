@@ -57,7 +57,7 @@ func parseTimestamp(input string) (time.Time, bool) {
 			digitCount++
 		}
 	}
-	if float64(digitCount) / float64(len(input)) < 0.8 {
+	if float64(digitCount)/float64(len(input)) < 0.8 {
 		return time.Time{}, false
 	}
 
@@ -170,7 +170,7 @@ func parseNaturalLanguage(input string) (time.Time, error) {
 		if strings.Contains(lower, weekdayName) {
 			now := time.Now()
 			currentDay := now.Weekday()
-			daysUntil := int(targetDay - currentDay + 7) % 7
+			daysUntil := int(targetDay-currentDay+7) % 7
 
 			// If it's "last <weekday>" or "last <day>", go back
 			if strings.HasPrefix(lower, "last ") {
@@ -245,13 +245,13 @@ func parseChinese(input string) (time.Time, error) {
 
 	// Weekday names in Chinese
 	weekdayMap := map[string]time.Weekday{
-		"周日": time.Sunday,
-		"周一": time.Monday,
-		"周二": time.Tuesday,
-		"周三": time.Wednesday,
-		"周四": time.Thursday,
-		"周五": time.Friday,
-		"周六": time.Saturday,
+		"周日":  time.Sunday,
+		"周一":  time.Monday,
+		"周二":  time.Tuesday,
+		"周三":  time.Wednesday,
+		"周四":  time.Thursday,
+		"周五":  time.Friday,
+		"周六":  time.Saturday,
 		"星期日": time.Sunday,
 		"星期一": time.Monday,
 		"星期二": time.Tuesday,
@@ -323,17 +323,17 @@ func parseChinese(input string) (time.Time, error) {
 	// "本周", "上周", "下周"
 	if strings.Contains(input, "本周") || strings.Contains(input, "这周") {
 		// Start of this week (Monday)
-		daysSinceMonday := int(now.Weekday() - time.Monday + 7) % 7
+		daysSinceMonday := int(now.Weekday()-time.Monday+7) % 7
 		return now.AddDate(0, 0, -daysSinceMonday), nil
 	}
 	if strings.Contains(input, "上周") {
 		// Start of last week
-		daysSinceMonday := int(now.Weekday() - time.Monday + 7) % 7
+		daysSinceMonday := int(now.Weekday()-time.Monday+7) % 7
 		return now.AddDate(0, 0, -daysSinceMonday-7), nil
 	}
 	if strings.Contains(input, "下周") {
 		// Start of next week
-		daysSinceMonday := int(now.Weekday() - time.Monday + 7) % 7
+		daysSinceMonday := int(now.Weekday()-time.Monday+7) % 7
 		return now.AddDate(0, 0, -daysSinceMonday+7), nil
 	}
 
@@ -443,7 +443,7 @@ func EndOfDay(t time.Time) time.Time {
 
 // StartOfWeek returns the start of the week (Monday)
 func StartOfWeek(t time.Time) time.Time {
-	daysSinceMonday := int(t.Weekday() - time.Monday + 7) % 7
+	daysSinceMonday := int(t.Weekday()-time.Monday+7) % 7
 	return t.AddDate(0, 0, -daysSinceMonday)
 }
 

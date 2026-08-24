@@ -53,7 +53,7 @@ var zhihuZhuanlanRoute = routeutils.RouteSpec{
 	Maintainers: []string{"xihale"},
 	Description: "知乎专栏最新文章，支持新旧两种专栏 id",
 	Categories:  []models.Category{{Name: "social-media"}},
-	Features:    models.Features{SupportRadar: true},
+	Features:    models.Features{SupportRadar: true, EnvDeps: []string{zhihuCookiesEnv}},
 	Parameters: []models.Parameter{
 		routeutils.RequiredParam("id", "专栏 id，可在专栏主页 URL 中找到（旧格式如 googledevelopers，新格式以 c_ 开头）"),
 		routeutils.OptionalParam("limit", "条数，默认 20，上限 50"),
@@ -177,7 +177,7 @@ var zhihuQuestionRoute = routeutils.RouteSpec{
 	Maintainers: []string{"xihale"},
 	Description: "知乎问题的全部回答",
 	Categories:  []models.Category{{Name: "social-media"}},
-	Features:    models.Features{SupportRadar: true},
+	Features:    models.Features{SupportRadar: true, EnvDeps: []string{zhihuCookiesEnv}},
 	Parameters: []models.Parameter{
 		routeutils.RequiredParam("questionId", "问题 id"),
 		routeutils.OptionalParam("sort_by", "排序方式：default（默认）、created、updated"),
