@@ -162,6 +162,12 @@ func (h *Handler) DocsHandler(c *gin.Context) {
 		return
 	}
 	if len(segs) == 1 {
+		// Bare-namespace paths may also BE a route ("/arstechnica").
+		// An exact route match takes precedence over the namespace overview.
+		if route := h.matchDocRoute("/" + ns); route != nil {
+			h.renderRoutePage(c, route)
+			return
+		}
 		h.renderIndex(c, ns)
 		return
 	}
