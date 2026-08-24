@@ -87,7 +87,7 @@ const baseTemplate = `
         .container { max-width: 920px; margin: 0 auto; padding: 0 40px; }
         a { color: inherit; text-decoration: none; }
 
-        header { padding: 64px 0 36px; border-bottom: 2px solid var(--rule); }
+        header { padding: 64px 0 44px; }
         header h1 { font-size: 62px; font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
         header nav { margin-top: 20px; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
         header nav a { margin-right: 28px; transition: color .12s; }
@@ -113,8 +113,9 @@ const baseTemplate = `
         .namespace { padding-top: 48px; }
         .ns-header {
             display: flex; justify-content: space-between; align-items: baseline;
-            padding-bottom: 10px; border-bottom: 2px solid var(--rule);
         }
+        #routesContainer .namespace { margin-top: 72px; }
+        #routesContainer .namespace:first-child { margin-top: 44px; }
         .ns-header h2 { font-size: 24px; font-weight: 700; letter-spacing: -0.01em; }
         .count { font-size: 13px; color: var(--muted); }
 
@@ -123,8 +124,7 @@ const baseTemplate = `
             grid-template-columns: minmax(240px, 5fr) 4fr minmax(120px, 3fr);
             gap: 24px;
             align-items: baseline;
-            padding: 13px 4px;
-            border-bottom: 1px solid var(--hairline);
+            padding: 12px 4px;
             cursor: pointer;
             transition: background .1s;
         }
@@ -155,7 +155,7 @@ const baseTemplate = `
         ul.plain li.off:hover { opacity: 0.6; }
         .cred { margin-top: 16px; }
         .cred-key { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 15px; font-weight: 700; }
-        section { padding: 30px 0; border-bottom: 1px solid var(--hairline); }
+        section { padding: 44px 0 0; }
         section .label { display: block; margin-bottom: 14px; }
         pre.example {
             background: var(--code-bg);
@@ -214,7 +214,6 @@ const baseTemplate = `
         #tryOut {
             margin-top: 8px;
             padding: 16px 0 4px;
-            border-top: 1px solid var(--hairline);
             font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
             font-size: 12px;
             line-height: 1.8;
@@ -224,15 +223,13 @@ const baseTemplate = `
             tab-size: 2;
         }
         ul.plain { list-style: none; }
-        ul.plain li { padding: 10px 0; border-bottom: 1px solid var(--hairline); cursor: pointer; }
-        ul.plain li:last-child { border-bottom: none; }
+        ul.plain li { padding: 9px 0; cursor: pointer; }
         ul.plain li:hover { background: var(--hover-bg); }
         ul.plain .r-path { margin-right: 16px; }
 
         footer {
-            margin-top: 96px;
-            padding: 26px 0 56px;
-            border-top: 2px solid var(--rule);
+            margin-top: 120px;
+            padding: 0 0 56px;
             display: flex; justify-content: space-between;
             font-size: 12px; color: var(--muted);
         }
