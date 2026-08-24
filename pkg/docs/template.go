@@ -3,8 +3,6 @@ package docs
 import (
 	"html/template"
 	"strings"
-
-	"github.com/xihale/rsshub-go/pkg/registry"
 )
 
 // PageData represents the HTML page data
@@ -21,7 +19,19 @@ type RoutePageData struct {
 	Title            string
 	Route            *RouteDoc
 	Related          []*RouteDoc
-	RouteEnvStatuses []registry.EnvStatus
+	RouteEnvStatuses []CredStatus
+}
+
+// CredStatus groups the concrete cookies read from one env var.
+type CredStatus struct {
+	Key    string
+	Fields []CredField
+}
+
+// CredField is one cookie and whether it is present in the env value.
+type CredField struct {
+	Name    string
+	Present bool
 }
 
 const baseTemplate = `
@@ -30,31 +40,66 @@ const baseTemplate = `
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
     <title>{{.Title}} — RSSHub Go</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
-            --accent: #e00000;
-            --hairline: #e8e8e8;
-            --muted: #8a8a8a;
-        }
+    color-scheme: light dark;
+    --accent: #e00000;
+    --ok: #0a7d33;
+    --bg: #ffffff;
+    --fg: #111111;
+    --fg-soft: #333333;
+    --muted: #8a8a8a;
+    --hairline: #e8e8e8;
+    --rule: #111111;
+    --code-bg: #f5f5f5;
+    --hover-bg: #fafafa;
+    --path: #0b57d0;
+
+    --cat-programming: #1d4ed8; --cat-technology: #0f766e; --cat-science: #15803d;
+    --cat-social_media: #9333ea; --cat-picture: #db2777; --cat-game: #ea580c;
+    --cat-finance: #b45309; --cat-new_media: #dc2626; --cat-study: #0369a1;
+    --cat-dev: #6d28d9; --cat-blog: #57534e;
+}
+@media (prefers-color-scheme: dark) {
+    :root {
+        --accent: #ff5449;
+        --ok: #4ade80;
+        --bg: #111111;
+        --fg: #ececec;
+        --fg-soft: #c9c9c9;
+        --muted: #8a8a8a;
+        --hairline: #2a2a2a;
+        --rule: #ececec;
+        --code-bg: #1c1c1c;
+        --hover-bg: #1a1a1a;
+        --path: #7aa7ff;
+
+        --cat-programming: #8ab4ff; --cat-technology: #4dd0c4; --cat-science: #66bb6a;
+        --cat-social_media: #c084fc; --cat-picture: #f472b6; --cat-game: #fb923c;
+        --cat-finance: #e0a458; --cat-new_media: #ff6b60; --cat-study: #62b0e8;
+        --cat-dev: #a78bfa; --cat-blog: #a8a29e;
+    }
+}
         /* category hues */
-        .cat-programming { color: #1d4ed8; }
-        .cat-technology { color: #0f766e; }
-        .cat-science { color: #15803d; }
-        .cat-social-media { color: #9333ea; }
-        .cat-picture { color: #db2777; }
-        .cat-game { color: #ea580c; }
-        .cat-finance { color: #b45309; }
-        .cat-new-media { color: #dc2626; }
-        .cat-study { color: #0369a1; }
-        .cat-dev { color: #6d28d9; }
-        .cat-blog { color: #57534e; }
+        .cat-programming { color: var(--cat-programming); }
+        .cat-technology { color: var(--cat-technology); }
+        .cat-science { color: var(--cat-science); }
+        .cat-social-media { color: var(--cat-social_media); }
+        .cat-picture { color: var(--cat-picture); }
+        .cat-game { color: var(--cat-game); }
+        .cat-finance { color: var(--cat-finance); }
+        .cat-new-media { color: var(--cat-new_media); }
+        .cat-study { color: var(--cat-study); }
+        .cat-dev { color: var(--cat-dev); }
+        .cat-blog { color: var(--cat-blog); }
         .cat-default { color: var(--muted); }
         body {
             font-family: "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
-            color: #111;
-            background: #fff;
+            color: var(--fg);
+            background: var(--bg);
             font-size: 15px;
             line-height: 1.6;
             -webkit-font-smoothing: antialiased;
@@ -63,7 +108,7 @@ const baseTemplate = `
         .container { max-width: 920px; margin: 0 auto; padding: 0 40px; }
         a { color: inherit; text-decoration: none; }
 
-        header { padding: 64px 0 36px; border-bottom: 2px solid #111; }
+        header { padding: 64px 0 36px; border-bottom: 2px solid var(--rule); }
         header h1 { font-size: 62px; font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
         header nav { margin-top: 20px; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
         header nav a { margin-right: 28px; transition: color .12s; }
@@ -78,7 +123,8 @@ const baseTemplate = `
         .env-section .label { display: block; margin-bottom: 12px; }
         .env-row { display: flex; align-items: baseline; gap: 20px; padding: 5px 0; font-size: 14px; flex-wrap: wrap; }
         .env-key { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 13px; font-weight: 600; min-width: 160px; }
-        .yes { color: #0a7d33; }
+        .yes { color: var(--ok); }
+        .st { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; padding-top: 2px; }
         .no { color: var(--accent); }
         .env-scope { font-size: 12px; color: var(--muted); }
         .env-desc { width: 100%; font-size: 13px; color: var(--muted); padding-left: 180px; }
@@ -87,7 +133,7 @@ const baseTemplate = `
         .search-box input {
             width: 100%;
             border: none;
-            border-bottom: 1px solid #111;
+            border-bottom: 1px solid var(--rule);
             border-radius: 0;
             background: transparent;
             font: inherit;
@@ -101,7 +147,7 @@ const baseTemplate = `
         .namespace { padding-top: 48px; }
         .ns-header {
             display: flex; justify-content: space-between; align-items: baseline;
-            padding-bottom: 10px; border-bottom: 2px solid #111;
+            padding-bottom: 10px; border-bottom: 2px solid var(--rule);
         }
         .ns-header h2 { font-size: 24px; font-weight: 700; letter-spacing: -0.01em; }
         .count { font-size: 13px; color: var(--muted); }
@@ -116,10 +162,10 @@ const baseTemplate = `
             cursor: pointer;
             transition: background .1s;
         }
-        .route:hover { background: #fafafa; }
-        .r-path { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 13px; word-break: break-all; color: #0b57d0; }
+        .route:hover { background: var(--hover-bg); }
+        .r-path { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 13px; word-break: break-all; color: var(--path); }
         .r-path .p, .d-path .p { color: var(--accent); }
-        .r-name { font-size: 15px; color: #333; }
+        .r-name { font-size: 15px; color: var(--fg-soft); }
         .r-meta {
             text-align: right;
             font-size: 11px;
@@ -133,20 +179,20 @@ const baseTemplate = `
         .back { display: inline-block; margin: 40px 0 24px; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
         .back:hover { color: var(--accent); }
         .d-title { font-size: 42px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; }
-        .d-path { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 15px; margin-top: 10px; word-break: break-all; color: #0b57d0; }
-        .d-desc { margin-top: 20px; font-size: 16px; color: #333; max-width: 640px; }
+        .d-path { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 15px; margin-top: 10px; word-break: break-all; color: var(--path); }
+        .d-desc { margin-top: 20px; font-size: 16px; color: var(--fg-soft); max-width: 640px; }
         .d-cats { margin-top: 14px; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; }
         .d-cats .ttl { color: var(--muted); }
         .route.off { opacity: 0.32; }
         .route.off:hover { opacity: 0.6; }
         ul.plain li.off { opacity: 0.32; }
         ul.plain li.off:hover { opacity: 0.6; }
-        .cred { margin-top: 16px; font-size: 14px; }
-        .cred-status { margin-left: 14px; }
+        .cred { margin-top: 16px; }
+        .cred-key { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 15px; font-weight: 700; }
         section { padding: 30px 0; border-bottom: 1px solid var(--hairline); }
         section .label { display: block; margin-bottom: 14px; }
         pre.example {
-            background: #f5f5f5;
+            background: var(--code-bg);
             padding: 16px 20px;
             font-family: "SF Mono", ui-monospace, Menlo, monospace;
             font-size: 13px;
@@ -157,18 +203,18 @@ const baseTemplate = `
         }
         .kv { display: grid; grid-template-columns: 170px 1fr; gap: 10px 28px; font-size: 14px; }
         .kv dt { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 13px; font-weight: 600; }
-        .kv dd { color: #444; }
+        .kv dd { color: var(--fg-soft); }
         .kv dd code { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 13px; color: var(--accent); }
         ul.plain { list-style: none; }
         ul.plain li { padding: 10px 0; border-bottom: 1px solid var(--hairline); cursor: pointer; }
         ul.plain li:last-child { border-bottom: none; }
-        ul.plain li:hover { background: #fafafa; }
+        ul.plain li:hover { background: var(--hover-bg); }
         ul.plain .r-path { margin-right: 16px; }
 
         footer {
             margin-top: 96px;
             padding: 26px 0 56px;
-            border-top: 2px solid #111;
+            border-top: 2px solid var(--rule);
             display: flex; justify-content: space-between;
             font-size: 12px; color: var(--muted);
         }
@@ -282,7 +328,13 @@ const routeContent = `
     <span class="label">Credentials</span>
     {{range .RouteEnvStatuses}}
     <div class="cred">
-        <span class="env-key">{{.Key}}</span><span class="cred-status {{if .Configured}}yes{{else}}no{{end}}">{{if .Configured}}已配置{{else}}{{if .Fields}}缺少 {{range $i, $f := .Fields}}{{if $i}}、{{end}}{{$f.Name}}{{end}}{{else}}未设置{{end}}{{end}}</span>
+        <div class="cred-key">{{.Key}}</div>
+        <dl class="kv" style="margin-top:8px;">
+            {{range .Fields}}
+            <dt>{{.Name}}</dt>
+            <dd class="st {{if .Present}}yes{{else}}no{{end}}">{{if .Present}}ok{{else}}missing{{end}}</dd>
+            {{end}}
+        </dl>
     </div>
     {{end}}
 </section>

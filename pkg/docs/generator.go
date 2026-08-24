@@ -3,7 +3,9 @@ package docs
 import (
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/xihale/rsshub-go/pkg/models"
 	"github.com/xihale/rsshub-go/pkg/registry"
@@ -149,7 +151,7 @@ func routeToDoc(route *models.Route) *RouteDoc {
 	// Build cache TTL string
 	cacheTTL := "default (15m)"
 	if route.CacheTTL != nil {
-		cacheTTL = route.CacheTTL.String()
+		cacheTTL = formatTTL(*route.CacheTTL)
 	}
 
 	// Build categories
@@ -175,6 +177,24 @@ func routeToDoc(route *models.Route) *RouteDoc {
 		CurlExample: curlExample,
 		EnvDeps:     route.Features.EnvDeps,
 	}
+}
+
+// formatTTL renders a duration without zero components: 1h0m0s -> 1h.
+func formatTTL(d time.Duration) string {
+	var b strings.Builder
+	if h := int(d.Hours()); h > 0 {
+		b.WriteString(strconv.Itoa(h) + "h")
+	}
+	if m := int(d.Minutes()) % 60; m > 0 {
+		b.WriteString(strconv.Itoa(m) + "m")
+	}
+	if sec := int(d.Seconds()) % 60; sec > 0 {
+		b.WriteString(strconv.Itoa(sec) + "s")
+	}
+	if b.Len() == 0 {
+		return d.String()
+	}
+	return b.String()
 }
 
 // buildCurlExample builds a curl command example

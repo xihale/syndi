@@ -128,16 +128,18 @@ func (h *Handler) RouteHandler(c *gin.Context) {
 
 	// Credential requirements declared by this route's namespace.
 	ns := strings.Split(path, "/")[1]
-	routeEnvStatuses := make([]registry.EnvStatus, 0)
-	for _, st := range registry.NamespaceEnvReqs(ns) {
-		routeEnvStatuses = append(routeEnvStatuses, registry.EnvStatus{
-			Namespace:   ns,
-			Key:         st.Key,
-			Description: st.Description,
-			Scope:       st.Scope,
-			Configured:  envConfigured(st.Key),
-			Fields:      st.Fields,
-		})
+	routeEnvStatuses := make([]CredStatus, 0)
+	for _, req := range registry.NamespaceEnvReqs(ns) {
+		cs := CredStatus{Key: req.Key}
+		value := os.Getenv(req.Key)
+		for _, f := range req.Fields {
+			// Cookie strings look like "z_c0=xxx; other=yyy".
+			cs.Fields = append(cs.Fields, CredField{
+				Name:    f.Name,
+				Present: strings.Contains(value, f.Name+"="),
+			})
+		}
+		routeEnvStatuses = append(routeEnvStatuses, cs)
 	}
 
 	// Limit to 5 related routes
@@ -242,9 +244,4 @@ func (h *Handler) ConfigJSONHandler(c *gin.Context) {
 		"configured": configured,
 		"namespaces": groups,
 	})
-}
-
-func envConfigured(key string) bool {
-	v, ok := os.LookupEnv(key)
-	return ok && v != ""
 }

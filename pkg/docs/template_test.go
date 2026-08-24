@@ -2,8 +2,6 @@ package docs
 
 import (
 	"testing"
-
-	"github.com/xihale/rsshub-go/pkg/registry"
 )
 
 func TestRouteAndIndexTemplatesRender(t *testing.T) {
@@ -24,20 +22,16 @@ func TestRouteAndIndexTemplatesRender(t *testing.T) {
 		Title:   route.Name,
 		Route:   route,
 		Related: []*RouteDoc{},
-		RouteEnvStatuses: []registry.EnvStatus{{
-			Namespace:   "zhihu",
-			Key:         "ZHIHU_COOKIES",
-			Description: "配置后解锁需登录的知乎路由",
-			Scope:       "部分路由（登录类）",
-			Configured:  false,
-			Fields:      []registry.EnvField{{Name: "z_c0", Note: "n"}},
+		RouteEnvStatuses: []CredStatus{{
+			Key:    "ZHIHU_COOKIES",
+			Fields: []CredField{{Name: "z_c0", Present: false}},
 		}},
 	}
 	if err := routeTmpl.Execute(testWriter{}, data); err != nil {
 		t.Fatalf("route template error: %v", err)
 	}
 
-	data.RouteEnvStatuses[0].Configured = true
+	data.RouteEnvStatuses[0].Fields[0].Present = true
 	if err := routeTmpl.Execute(testWriter{}, data); err != nil {
 		t.Fatalf("route template (configured) error: %v", err)
 	}
