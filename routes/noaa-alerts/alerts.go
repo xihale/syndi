@@ -14,7 +14,7 @@ import (
 const (
 	noaaAlertsURL = "https://api.weather.gov/alerts/active"
 	noaaMaxAlerts = 20
-	noaaContactUA = "rsshub-go/1.0 (+https://github.com/xihale/syndi; contact via https://github.com/xihale/syndi/issues)"
+	noaaContactUA = "Syndi/0.0.1 (+https://github.com/xihale/syndi; contact via https://github.com/xihale/syndi/issues)"
 )
 
 var noaaAlertsRoute = routeutils.RouteSpec{

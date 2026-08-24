@@ -49,7 +49,7 @@ rsshub-go/
 
 ```bash
 # Build
-make build              # Build binary to build/rsshub-go
+make build              # Build binary to build/syndi
 make run                # Run directly (go run ./cmd/server)
 
 # Testing
@@ -63,7 +63,7 @@ make fmt                # Format code (go fmt + goimports)
 make lint               # Run golangci-lint (if installed)
 
 # Configuration
-make install-config     # Install config to /etc/rsshub-go/ (requires sudo)
+make install-config     # Install config to /etc/syndi/ (requires sudo)
 
 # Maintenance
 make clean              # Remove build artifacts
@@ -75,7 +75,7 @@ make help               # Show all targets
 
 ### Server Startup (`cmd/server.go`)
 
-1. Load configuration from YAML file (`config.yaml` or `/etc/rsshub-go/config.yaml`)
+1. Load configuration from YAML file (`config.yaml` or `/etc/syndi/config.yaml`)
 2. Initialize zap logger with KDL format (human-readable structured logging)
 3. Create cache instance (MemoryCache, Redis placeholder)
 4. Create HTTP client with retry logic and rate limiting
@@ -177,7 +177,7 @@ Configuration is loaded from YAML files (`pkg/config/config.go`):
 **Config file search order**:
 1. `RSSHUB_CONFIG` environment variable (if set)
 2. `./config.yaml` (current directory)
-3. `/etc/rsshub-go/config.yaml` (system-wide)
+3. `/etc/syndi/config.yaml` (system-wide)
 
 **Configuration structure** (see `config.yaml` for full example):
 ```yaml

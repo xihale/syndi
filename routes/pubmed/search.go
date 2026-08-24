@@ -15,7 +15,7 @@ import (
 )
 
 // eutilsUA is the Tooling User-Agent NCBI asks automated clients to send.
-const eutilsUA = "rsshub-go/1.0 (https://github.com/xihale/syndi; Tooling)"
+const eutilsUA = "Syndi/0.0.1 (https://github.com/xihale/syndi; Tooling)"
 
 const eutilsBaseURL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
 

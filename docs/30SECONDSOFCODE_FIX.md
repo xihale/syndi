@@ -106,7 +106,7 @@ func fetchDetailItem(ctx context.Context, httpClient *client.Client, rootURL, ur
 
 ```bash
 # 启动服务器
-./build/rsshub-go
+./build/syndi
 
 # 测试路由
 curl "http://localhost:1200/30secondsofcode/category/js" | head -100

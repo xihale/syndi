@@ -207,9 +207,9 @@ server:
 }
 
 func TestLoad_EnvVariableOverride(t *testing.T) {
-	// Test that RSSHUB_CONFIG environment variable works
-	origConfig := os.Getenv("RSSHUB_CONFIG")
-	defer os.Setenv("RSSHUB_CONFIG", origConfig)
+	// Test that SYNDI_CONFIG environment variable works
+	origConfig := os.Getenv("SYNDI_CONFIG")
+	defer os.Setenv("SYNDI_CONFIG", origConfig)
 
 	tmpDir := t.TempDir()
 	configFile := filepath.Join(tmpDir, "custom-config.yaml")
@@ -223,7 +223,7 @@ server:
 		t.Fatalf("failed to write config file: %v", err)
 	}
 
-	os.Setenv("RSSHUB_CONFIG", configFile)
+	os.Setenv("SYNDI_CONFIG", configFile)
 
 	cfg, err := Load("")
 	if err != nil {

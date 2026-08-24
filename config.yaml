@@ -29,7 +29,7 @@ cache:
 # HTTP client settings
 client:
   # User agent string for HTTP requests
-  user_agent: "RSSHub-Go/1.0 (+https://github.com/xihale/rsshub-go)"
+  user_agent: "Syndi/0.0.1 (+https://github.com/xihale/syndi)"
   # Request timeout
   timeout: 30s
   # Maximum number of redirects to follow

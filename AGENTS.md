@@ -7,11 +7,11 @@
 - Configuration and scripts live at the repo root (`config.yaml`, `Makefile`, `scripts/`), while generated binaries go to `build/`.
 
 ## Build, Test, and Development Commands
-- `make build` compiles `cmd/server.go` into `build/rsshub-go` using Go 1.25 modules.
+- `make build` compiles `cmd/server.go` into `build/syndi` using Go 1.25 modules.
 - `make run` boots the server with `go run ./cmd/server`; rely on this for quick local iterations.
 - `make fmt` (`go fmt` + `goimports`) and `make lint` (golangci-lint when installed) enforce formatting and linting.
 - `make test`, `go test ./...`, or `go test -v ./...` run the codebase tests; `make test-coverage` writes `coverage.html`.
-- `make install-config` copies `config.yaml` to `/etc/rsshub-go/` (sudo) for system-wide installs; `make clean` removes artifacts.
+- `make install-config` copies `config.yaml` to `/etc/syndi/` (sudo) for system-wide installs; `make clean` removes artifacts.
 
 ## Coding Style & Naming Conventions
 - Follow idiomatic Go: tabs for indentation, exported identifiers start with uppercase, file-level comments on packages.
@@ -37,5 +37,5 @@
 - Tag reviewers early for architectural routes (new directories under `routes/` or middleware changes) so caches, docs, and server startup receive scrutiny.
 
 ## Configuration & Deployment Tips
-- Config loads from `RSSHUB_CONFIG`, then `./config.yaml`, then `/etc/rsshub-go/config.yaml`; share overrides via environment variables when needed.
+- Config loads from `RSSHUB_CONFIG`, then `./config.yaml`, then `/etc/syndi/config.yaml`; share overrides via environment variables when needed.
 - Use `config.yaml` defaults to adjust server timeouts, cache TTLs, client settings, and middleware behavior before committing route changes.

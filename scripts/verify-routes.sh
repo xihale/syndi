@@ -7,7 +7,7 @@ echo "======================================"
 echo ""
 
 # 启动服务器
-./build/rsshub-go > /tmp/rsshub-test.log 2>&1 &
+./build/syndi > /tmp/rsshub-test.log 2>&1 &
 SERVER_PID=$!
 
 # 等待服务器启动

@@ -29,7 +29,7 @@ go test -v ./routes/academia
 make build
 
 # 启动服务器
-./build/rsshub-go
+./build/syndi
 
 # 在另一个终端测试路由
 curl "http://localhost:1200/academia/topic/Urban_History" | head -50

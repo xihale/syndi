@@ -32,7 +32,7 @@ echo ""
 
 # 3. 启动服务器
 echo -e "${YELLOW}3. 启动服务器...${NC}"
-./build/rsshub-go > /tmp/rsshub-test.log 2>&1 &
+./build/syndi > /tmp/rsshub-test.log 2>&1 &
 SERVER_PID=$!
 sleep 3
 
@@ -93,7 +93,7 @@ echo -e "${GREEN}测试完成！${NC}"
 echo "======================================"
 echo ""
 echo "如需手动测试，可以使用："
-echo "  - 启动服务器: ./build/rsshub-go"
+echo "  - 启动服务器: ./build/syndi"
 echo "  - 测试路由: curl 'http://localhost:1200/academia/topic/Urban_History'"
 echo "  - 查看文档: curl 'http://localhost:1200/docs'"
 echo ""

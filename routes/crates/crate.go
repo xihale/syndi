@@ -35,7 +35,7 @@ func CratesCrateHandler(c *ctxpkg.Context) (*models.Feed, error) {
 
 	// crates.io rejects empty User-Agent; a polite custom identity is required.
 	var response CratesVersionsResponse
-	if err := disguise.Custom("rsshub-go/0.1 (+https://github.com/xihale/syndi)").Fetch(url).GetJSON(ctx, c.Client(), &response); err != nil {
+	if err := disguise.Custom("Syndi/0.0.1 (+https://github.com/xihale/syndi)").Fetch(url).GetJSON(ctx, c.Client(), &response); err != nil {
 		return nil, err
 	}
 

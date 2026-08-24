@@ -1,6 +1,6 @@
 # Migration Guide: From Middleware to Handler-Level Caching
 
-This guide shows how rsshub-go was migrated from middleware-level caching to handler-level caching.
+This guide shows how Syndi was migrated from middleware-level caching to handler-level caching.
 
 ## Overview of Changes
 

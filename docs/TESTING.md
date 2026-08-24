@@ -22,7 +22,7 @@
 make build
 
 # 或直接使用 go build
-go build -o build/rsshub-go ./cmd
+go build -o build/syndi ./cmd
 ```
 
 ### 2. 单元测试（全部）
@@ -43,7 +43,7 @@ go test -v ./routes/academia
 
 ```bash
 # 启动服务器
-./build/rsshub-go
+./build/syndi
 
 # 查看日志输出中的路由注册信息
 # 应该看到：
@@ -330,7 +330,7 @@ func TestAcademiaTopicHandler_Integration(t *testing.T) {
 
 ```bash
 # 方式 1: 使用编译好的二进制
-./build/rsshub-go
+./build/syndi
 
 # 方式 2: 直接运行
 go run ./cmd

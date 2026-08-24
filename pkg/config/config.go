@@ -81,17 +81,17 @@ func DefaultConfig() *Config {
 // Load loads configuration from a YAML file
 // If configPath is empty, it tries to find config.yaml in:
 // 1. ./config.yaml (current directory)
-// 2. /etc/rsshub-go/config.yaml (system-wide config)
+// 2. /etc/syndi/config.yaml (system-wide config)
 func Load(configPath string) (*Config, error) {
 	cfg := DefaultConfig()
 	// If no path specified, try default locations
 	if configPath == "" {
 		// Try environment variable first
-		if envPath := os.Getenv("RSSHUB_CONFIG"); envPath != "" {
+		if envPath := os.Getenv("SYNDI_CONFIG"); envPath != "" {
 			configPath = envPath
 		} else {
 			// Try default locations in order of precedence
-			for _, path := range []string{"config.yaml", "/etc/rsshub-go/config.yaml"} {
+			for _, path := range []string{"config.yaml", "/etc/syndi/config.yaml"} {
 				if _, err := os.Stat(path); err == nil {
 					configPath = path
 					break
@@ -208,16 +208,16 @@ func (c *Config) IsProduction() bool {
 // GetConfigPath returns the absolute path to the config file
 func GetConfigPath(configPath string) (string, error) {
 	if configPath == "" {
-		if envPath := os.Getenv("RSSHUB_CONFIG"); envPath != "" {
+		if envPath := os.Getenv("SYNDI_CONFIG"); envPath != "" {
 			configPath = envPath
 		} else {
 			// Return first existing default config
-			for _, path := range []string{"config.yaml", "/etc/rsshub-go/config.yaml"} {
+			for _, path := range []string{"config.yaml", "/etc/syndi/config.yaml"} {
 				if _, err := os.Stat(path); err == nil {
 					return filepath.Abs(path)
 				}
 			}
-			return "", fmt.Errorf("no config file found, tried config.yaml and /etc/rsshub-go/config.yaml")
+			return "", fmt.Errorf("no config file found, tried config.yaml and /etc/syndi/config.yaml")
 		}
 	}
 	absPath, err := filepath.Abs(configPath)

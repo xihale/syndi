@@ -1,6 +1,6 @@
-# Caching in rsshub-go
+# Caching in Syndi
 
-rsshub-go provides two approaches for caching RSS feed responses:
+Syndi provides two approaches for caching RSS feed responses:
 
 ## Table of Contents
 
