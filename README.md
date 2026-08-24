@@ -34,7 +34,7 @@ ZHIHU_COOKIES='z_c0=xxx; d_c0=yyy' ./build/syndi
 
 ## 与 RSSHub 的关系
 
-本项目不是 fork：没有复用 RSSHub 的源代码，但路由定义、路径设计与产品形态源自 [RSSHub](https://github.com/DIYgod/RSSHub)（AGPL-3.0），属于其衍生作品，故同样以 AGPL-3.0 发行。感谢 RSSHub 及其所有贡献者。
+Syndi 是 [RSSHub](https://github.com/DIYgod/RSSHub)（AGPL-3.0）的衍生作品：不仅大量路由直接移植自 RSSHub 的同名实现，缓存策略、请求伪装等关键逻辑也参照并翻译自 RSSHub 的设计。因此 Syndi 同样以 AGPL-3.0 发行。感谢 RSSHub 及其所有贡献者。
 
 ## 协议
 
