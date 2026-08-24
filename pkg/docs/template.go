@@ -87,15 +87,10 @@ const baseTemplate = `
         .container { max-width: 920px; margin: 0 auto; padding: 0 40px; }
         a { color: inherit; text-decoration: none; }
 
-        header { padding: 64px 0 44px; }
-        header h1 { font-size: 62px; font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
-        header nav { margin-top: 20px; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
-        header nav a { margin-right: 28px; transition: color .12s; }
-        header nav a:hover { color: var(--accent); }
-
+        
         .label { font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
 
-        .search-box { padding: 40px 0 4px; }
+        .search-box { padding: 72px 0 4px; }
         .search-box input {
             width: 100%;
             border: none;
@@ -114,7 +109,7 @@ const baseTemplate = `
         .ns-header {
             display: flex; justify-content: space-between; align-items: baseline;
         }
-        #routesContainer .namespace { margin-top: 48px; }
+        #routesContainer .namespace { margin-top: 24px; }
         #routesContainer .namespace:first-child { margin-top: 44px; }
         .ns-header h2 { font-size: 24px; font-weight: 700; letter-spacing: -0.01em; }
         .count { font-size: 13px; color: var(--muted); }
@@ -142,7 +137,7 @@ const baseTemplate = `
         .r-meta .ttl { color: var(--muted); }
 
         /* ---- detail page ---- */
-        .crumbs { margin: 40px 0 24px; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
+        .crumbs { margin: 64px 0 28px; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
         .crumbs a { transition: color .12s; }
         .crumbs a:hover { color: var(--accent); }
         .crumbs .sep { margin: 0 10px; }
@@ -232,13 +227,14 @@ const baseTemplate = `
         footer {
             margin-top: 120px;
             padding: 0 0 56px;
-            display: flex; justify-content: space-between;
+            display: flex; justify-content: space-between; align-items: baseline;
             font-size: 12px; color: var(--muted);
         }
+        footer nav { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; }
+        footer nav a { margin-left: 24px; transition: color .12s; }
+        footer nav a:hover { color: var(--accent); }
         @media (max-width: 720px) {
             .container { padding: 0 20px; }
-            header { padding: 40px 0 28px; }
-            header h1 { font-size: 40px; }
             .route { grid-template-columns: 1fr; gap: 4px; }
             .r-meta { text-align: left; }
             .kv { grid-template-columns: 1fr; gap: 2px 0; }
@@ -247,18 +243,6 @@ const baseTemplate = `
     </style>
 </head>
 <body>
-    <header>
-        <div class="container">
-            <h1>RSSHub Go</h1>
-            <nav>
-                <a href="/">routes</a>
-                <a href="/api/routes">api</a>
-                <a href="/robots.txt">robots.txt</a>
-                <a href="https://github.com/xihale/rsshub-go">github</a>
-            </nav>
-        </div>
-    </header>
-
     <div class="container">
         {{template "content" .}}
     </div>
@@ -266,7 +250,12 @@ const baseTemplate = `
     <footer>
         <div class="container" style="display:flex;justify-content:space-between;width:100%;">
             <span>RSSHub Go</span>
-            <span>github.com/xihale/rsshub-go</span>
+            <nav>
+                <a href="/">routes</a>
+                <a href="/api/routes">api</a>
+                <a href="/robots.txt">robots.txt</a>
+                <a href="https://github.com/xihale/rsshub-go">github</a>
+            </nav>
         </div>
     </footer>
 </body>
