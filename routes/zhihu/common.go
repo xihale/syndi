@@ -34,7 +34,7 @@ func init() {
 		Description: "配置后解锁需登录的知乎路由",
 		Scope:       "部分路由（登录类）",
 		Fields: []registry.EnvField{
-			{Name: "z_c0", Note: "知乎登录凭证。浏览器登录知乎后，开发者工具 → 应用 → Cookie 中复制其值"},
+			{Name: "z_c0", Note: "浏览器登录知乎后，在 DevTools → Cookies 里复制"},
 		},
 	})
 }

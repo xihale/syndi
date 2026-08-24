@@ -136,13 +136,18 @@ const baseTemplate = `
         .d-desc { margin-top: 20px; font-size: 16px; color: #333; max-width: 640px; }
         .d-cats { margin-top: 14px; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; }
         .d-cats .ttl { color: var(--muted); }
-        .cred-box { border-left: 3px solid var(--accent); padding: 4px 0 4px 20px; margin-top: 16px; }
-        .cred-head { display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap; }
-        .cred-fields { display: grid; grid-template-columns: 120px 1fr; gap: 6px 24px; margin-top: 14px; font-size: 13px; }
-        .cred-fields dt { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-weight: 600; color: var(--accent); }
-        .cred-fields dd { color: #444; }
-        .cred-hint { margin-top: 14px; font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 12px; background: #f5f5f5; padding: 10px 14px; display: inline-block; }
-        .cred-hint b { color: var(--accent); font-weight: 600; }
+        .cred { margin-top: 20px; }
+        .cred-status { margin-left: 14px; font-size: 13px; }
+        .cred-note { margin-top: 10px; font-size: 13px; color: #444; }
+        .cred-note code {
+            font-family: "SF Mono", ui-monospace, Menlo, monospace;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--accent);
+            background: #f5f5f5;
+            padding: 2px 8px;
+            margin-right: 10px;
+        }
         section { padding: 30px 0; border-bottom: 1px solid var(--hairline); }
         section .label { display: block; margin-bottom: 14px; }
         pre.example {
@@ -278,24 +283,16 @@ const routeContent = `
 <div class="d-cats">{{range .Route.Categories}}<span class="cat-{{catclass .}}">{{.}}</span>&ensp;{{end}}<span class="ttl">缓存 {{.Route.CacheTTL}}</span></div>
 
 {{if .RouteEnvStatuses}}
-<section style="border-bottom: none; padding-bottom: 6px;">
+<section>
+    <span class="label">Credentials</span>
     {{range .RouteEnvStatuses}}
-    <div class="cred-box">
-        <div class="cred-head">
-            <span class="env-key">{{.Key}}</span>
-            {{if .Configured}}<span class="yes">已配置</span>{{else}}<span class="no">未设置</span>{{end}}
-            <span class="env-scope">{{.Scope}} · {{.Description}}</span>
-        </div>
-        {{if .Fields}}
-        <dl class="cred-fields">
-            {{range .Fields}}
-            <dt>{{.Name}}</dt>
-            <dd>{{.Note}}</dd>
-            {{end}}
-        </dl>
-        {{end}}
+    <div class="cred">
+        <span class="env-key">{{.Key}}</span><span class="cred-status {{if .Configured}}yes{{else}}no{{end}}">{{if .Configured}}已配置{{else}}未设置{{end}}</span>
         {{if not .Configured}}
-        <div class="cred-hint"><b>export</b> {{.Key}}='{{range $i, $f := .Fields}}{{if $i}}, {{end}}{{$f.Name}}=&lt;值&gt;{{end}}'</div>
+<pre class="example" style="margin-top:12px;">export {{.Key}}='{{range $i, $f := .Fields}}{{if $i}}, {{end}}{{$f.Name}}=&lt;值&gt;{{end}}'</pre>
+        {{end}}
+        {{range .Fields}}
+        <p class="cred-note"><code>{{.Name}}</code>{{.Note}}</p>
         {{end}}
     </div>
     {{end}}
