@@ -123,9 +123,9 @@ func Generate() *DocData {
 // routeToDoc converts a Route to RouteDoc
 func routeToDoc(route *models.Route) *RouteDoc {
 	// Build example URL
-	exampleURL := route.Path
+	exampleURL := "/rss" + route.Path
 	if route.Example != "" {
-		exampleURL = "/" + route.Example
+		exampleURL = "/rss/" + route.Example
 	}
 
 	// Build parameters

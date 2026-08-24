@@ -200,9 +200,8 @@ func setupGinRoutes(engine *gin.Engine, routeRegistry *registry.Registry, cacheI
 				return handlercache.DefaultShouldCache(c, feed)
 			},
 		}
-		// Convert route path to Gin pattern (e.g., "/github/repos/:username" stays the same)
-		// The route already contains :param syntax which Gin understands
-		ginPath := route.Path
+		// All feeds are mounted under /rss so root paths belong to the docs UI.
+		ginPath := "/rss" + route.Path
 
 		// Create handler wrapper
 		handler := func(c *gin.Context) (*models.Feed, error) {

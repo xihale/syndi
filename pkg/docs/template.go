@@ -276,7 +276,7 @@ const indexContent = `
         <span class="count">{{.RouteCount}}</span>
     </div>
     {{range .Routes}}
-    <div class="route{{if .Unavailable}} off{{end}}" data-k="{{lower .Name}} {{lower .Description}} {{lower .Path}}"{{if .Unavailable}} title="缺少 {{range .MissingDeps}}{{.}} {{end}}配置"{{end}} onclick="location.href='/docs/route?path={{.Path}}'">
+    <div class="route{{if .Unavailable}} off{{end}}" data-k="{{lower .Name}} {{lower .Description}} {{lower .Path}}"{{if .Unavailable}} title="缺少 {{range .MissingDeps}}{{.}} {{end}}配置"{{end}} onclick="location.href='{{.Path}}'">
         <span class="r-path">{{pathHTML .Path}}</span>
         <span class="r-name">{{.Name}}</span>
         <span class="r-meta"><span class="ttl">{{.CacheTTL}}</span></span>
@@ -314,7 +314,7 @@ function filterRoutes() {
 
 const routeContent = `
 {{define "content"}}
-<nav class="crumbs"><a href="/">index</a>{{with seg1 .Route.Path}}<span class="sep">/</span><a href="/?ns={{urlquery .}}">{{.}}</a>{{end}}<span class="sep">/</span><span class="cur">{{.Route.Name}}</span></nav>
+<nav class="crumbs"><a href="/">index</a>{{with seg1 .Route.Path}}<span class="sep">/</span><a href="/{{.}}">{{.}}</a>{{end}}<span class="sep">/</span><span class="cur">{{.Route.Name}}</span></nav>
 
 <div class="d-path">{{pathHTML .Route.Path}}</div>
 <p class="d-desc">{{.Route.Description}}</p>
@@ -366,7 +366,7 @@ const routeContent = `
     <span class="label">Related</span>
     <ul class="plain">
     {{range .Related}}
-        <li{{if .Unavailable}} class="off" title="缺少 {{range .MissingDeps}}{{.}} {{end}}配置"{{end}} onclick="location.href='/docs/route?path={{.Path}}'">
+        <li{{if .Unavailable}} class="off" title="缺少 {{range .MissingDeps}}{{.}} {{end}}配置"{{end}} onclick="location.href='{{.Path}}'">
             <span class="r-path">{{pathHTML .Path}}</span><span class="r-name">{{.Name}}</span>
         </li>
     {{end}}

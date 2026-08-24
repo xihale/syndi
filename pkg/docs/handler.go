@@ -54,8 +54,7 @@ func NewHandler() (*Handler, error) {
 func (h *Handler) RegisterRoutes(engine *gin.Engine) {
 	// HTML documentation; root serves the index like upstream RSSHub.
 	engine.GET("/", h.IndexHandler)
-	engine.GET("/docs", h.IndexHandler)
-	engine.GET("/docs/route", h.RouteHandler)
+	engine.NoRoute(h.DocsHandler)
 
 	// Plain-text endpoints
 	engine.GET("/robots.txt", h.RobotsHandler)
@@ -81,6 +80,8 @@ func (h *Handler) RobotsHandler(c *gin.Context) {
 }
 
 func renderHTML(c *gin.Context, status int, tmpl *template.Template, data any) {
+	// gin presets 404 for NoRoute handlers; make the intended status explicit.
+	c.Status(status)
 	c.Header("Content-Type", "text/html; charset=utf-8")
 	if err := tmpl.Execute(c.Writer, data); err != nil {
 		// Headers may already be written; log and fall back to a plain error.
@@ -88,19 +89,30 @@ func renderHTML(c *gin.Context, status int, tmpl *template.Template, data any) {
 	}
 }
 
-// IndexHandler serves the main documentation page (also mounted at "/")
+// IndexHandler serves the main documentation page at "/".
+// Legacy /?ns=x URLs redirect to /x.
 func (h *Handler) IndexHandler(c *gin.Context) {
-	namespaces := h.docData.Namespaces
 	if ns := c.Query("ns"); ns != "" {
+		c.Redirect(http.StatusMovedPermanently, "/"+ns)
+		return
+	}
+	h.renderIndex(c, "")
+}
+
+func (h *Handler) renderIndex(c *gin.Context, onlyNS string) {
+	namespaces := h.docData.Namespaces
+	if onlyNS != "" {
 		var filtered []*NamespaceDoc
 		for _, n := range namespaces {
-			if strings.EqualFold(n.Name, ns) {
+			if strings.EqualFold(n.Name, onlyNS) {
 				filtered = append(filtered, n)
 			}
 		}
-		if len(filtered) > 0 {
-			namespaces = filtered
+		if len(filtered) == 0 {
+			c.String(http.StatusNotFound, "404 namespace not found: %s", onlyNS)
+			return
 		}
+		namespaces = filtered
 	}
 
 	title := "All Routes"
@@ -115,54 +127,131 @@ func (h *Handler) IndexHandler(c *gin.Context) {
 		Categories:  h.docData.Categories,
 	}
 
-	c.Header("Content-Type", "text/html; charset=utf-8")
 	renderHTML(c, http.StatusOK, h.indexTmpl, pageData)
 }
 
-// RouteHandler serves a single route documentation page
-func (h *Handler) RouteHandler(c *gin.Context) {
-	path := c.Query("path")
-	if path == "" {
-		c.Redirect(http.StatusFound, "/docs")
+// DocsHandler catches every non-API path and serves it as documentation:
+//
+//	/{ns}                       -> namespace overview
+//	/{ns}/route/...             -> route doc (:id style params match literally)
+//	/docs, /docs/route?path=    -> legacy redirects
+func (h *Handler) DocsHandler(c *gin.Context) {
+	p := c.Request.URL.Path
+
+	switch p {
+	case "/docs":
+		c.Redirect(http.StatusMovedPermanently, "/")
+		return
+	case "/docs/route":
+		if q := c.Query("path"); q != "" {
+			c.Redirect(http.StatusMovedPermanently, q)
+			return
+		}
+		c.Redirect(http.StatusMovedPermanently, "/")
 		return
 	}
 
-	route := GetByPath(path)
+	segs := splitSegs(p)
+	if len(segs) == 0 {
+		h.IndexHandler(c)
+		return
+	}
+
+	ns := segs[0]
+	if !h.hasNamespace(ns) {
+		c.String(http.StatusNotFound, "404 page not found: %s", p)
+		return
+	}
+	if len(segs) == 1 {
+		h.renderIndex(c, ns)
+		return
+	}
+
+	route := h.matchDocRoute("/" + strings.Join(segs, "/"))
 	if route == nil {
-		c.String(http.StatusNotFound, "404 route not found: %s", path)
+		c.String(http.StatusNotFound, "404 route not found: %s", p)
 		return
 	}
+	h.renderRoutePage(c, route)
+}
 
-	// Find related routes (same namespace or category)
-	related := make([]*RouteDoc, 0)
-	for _, r := range h.docData.Routes {
-		if r.Path != path {
-			// Same namespace (first path segment)
-			if strings.Split(r.Path, "/")[1] == strings.Split(path, "/")[1] {
-				related = append(related, r)
-			}
+func splitSegs(p string) []string {
+	parts := strings.Split(strings.Trim(p, "/"), "/")
+	out := make([]string, 0, len(parts))
+	for _, s := range parts {
+		if s != "" {
+			out = append(out, s)
 		}
 	}
+	return out
+}
 
-	// Credential requirements declared by this route's namespace.
+func (h *Handler) hasNamespace(name string) bool {
+	for _, n := range h.docData.Namespaces {
+		if strings.EqualFold(n.Name, name) {
+			return true
+		}
+	}
+	return false
+}
+
+// matchDocRoute finds the route whose pattern matches a concrete doc path,
+// where :param matches any single segment and *wild matches the rest.
+func (h *Handler) matchDocRoute(path string) *RouteDoc {
+	for _, r := range h.docData.Routes {
+		if matchPattern(r.Path, path) {
+			return r
+		}
+	}
+	return nil
+}
+
+func matchPattern(pattern, path string) bool {
+	ps := strings.Split(strings.Trim(pattern, "/"), "/")
+	xs := strings.Split(strings.Trim(path, "/"), "/")
+	for i, seg := range ps {
+		if strings.HasPrefix(seg, "*") {
+			return true
+		}
+		if i >= len(xs) {
+			return false
+		}
+		if strings.HasPrefix(seg, ":") {
+			continue
+		}
+		if seg != xs[i] {
+			return false
+		}
+	}
+	return len(ps) == len(xs)
+}
+
+// renderRoutePage renders the detail page for a route doc.
+func (h *Handler) renderRoutePage(c *gin.Context, route *RouteDoc) {
+	path := route.Path
+
+	related := make([]*RouteDoc, 0)
+	for _, r := range h.docData.Routes {
+		if r.Path != path && strings.Split(r.Path, "/")[1] == strings.Split(path, "/")[1] {
+			related = append(related, r)
+		}
+	}
+	if len(related) > 5 {
+		related = related[:5]
+	}
+
 	ns := strings.Split(path, "/")[1]
 	routeEnvStatuses := make([]CredStatus, 0)
 	for _, req := range registry.NamespaceEnvReqs(ns) {
 		cs := CredStatus{Key: req.Key}
 		value := os.Getenv(req.Key)
 		for _, f := range req.Fields {
-			// Cookie strings look like "z_c0=xxx; other=yyy".
 			cs.Fields = append(cs.Fields, CredField{
 				Name:    f.Name,
 				Present: strings.Contains(value, f.Name+"="),
 			})
 		}
 		routeEnvStatuses = append(routeEnvStatuses, cs)
-	}
-
-	// Limit to 5 related routes
-	if len(related) > 5 {
-		related = related[:5]
 	}
 
 	pageData := RoutePageData{
@@ -172,7 +261,6 @@ func (h *Handler) RouteHandler(c *gin.Context) {
 		RouteEnvStatuses: routeEnvStatuses,
 	}
 
-	c.Header("Content-Type", "text/html; charset=utf-8")
 	renderHTML(c, http.StatusOK, h.routeTmpl, pageData)
 }
 
