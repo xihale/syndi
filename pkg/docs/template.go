@@ -27,248 +27,137 @@ type RoutePageData struct {
 
 const baseTemplate = `
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{.Title}} - RSSHub Go</title>
+    <title>{{.Title}} — RSSHub Go</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root { --accent: #e00000; --hairline: #e8e8e8; --muted: #8a8a8a; }
         body {
-            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
-            line-height: 1.5;
-            color: #c5c8c6;
-            background: #1d1f21;
-            font-size: 14px;
+            font-family: "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+            color: #111;
+            background: #fff;
+            font-size: 15px;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
         }
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 20px 30px;
-        }
-        header {
-            border-bottom: 1px solid #373b41;
-            padding: 30px 0;
-            margin-bottom: 30px;
-        }
-        header h1 {
-            font-size: 1.5em;
-            font-weight: 600;
-            color: #f0f0f0;
-            margin-bottom: 5px;
-        }
-        header p {
-            color: #969896;
-            font-size: 0.9em;
-        }
-        .search-box {
-            margin-bottom: 30px;
-        }
+        .mono { font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace; }
+        .container { max-width: 920px; margin: 0 auto; padding: 0 40px; }
+        a { color: inherit; text-decoration: none; }
+
+        header { padding: 64px 0 36px; border-bottom: 2px solid #111; }
+        header h1 { font-size: 62px; font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
+        header nav { margin-top: 20px; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
+        header nav a { margin-right: 28px; transition: color .12s; }
+        header nav a:hover { color: var(--accent); }
+
+        .label { font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
+
+        .stats { display: flex; gap: 72px; padding: 36px 0; border-bottom: 1px solid var(--hairline); }
+        .stat b { display: block; font-size: 34px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; }
+
+        .env-section { padding: 28px 0; border-bottom: 1px solid var(--hairline); }
+        .env-section .label { display: block; margin-bottom: 12px; }
+        .env-row { display: flex; align-items: baseline; gap: 20px; padding: 5px 0; font-size: 14px; flex-wrap: wrap; }
+        .env-key { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 13px; font-weight: 600; min-width: 160px; }
+        .yes { color: #0a7d33; }
+        .no { color: var(--accent); }
+        .env-scope { font-size: 12px; color: var(--muted); }
+        .env-desc { width: 100%; font-size: 13px; color: var(--muted); padding-left: 180px; }
+
+        .search-box { padding: 40px 0 4px; }
         .search-box input {
             width: 100%;
-            padding: 10px;
-            background: #282a2e;
-            border: 1px solid #373b41;
-            color: #c5c8c6;
-            font-family: inherit;
-            font-size: 14px;
-        }
-        .search-box input:focus {
-            outline: none;
-            border-color: #81a2be;
-        }
-        .stats {
-            display: flex;
-            gap: 30px;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #373b41;
-        }
-        .stat {
-            color: #969896;
-        }
-        .stat strong {
-            color: #81a2be;
-            font-size: 1.2em;
-        }
-        .namespace {
-            margin-bottom: 30px;
-        }
-        .namespace-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            border: none;
+            border-bottom: 1px solid #111;
+            border-radius: 0;
+            background: transparent;
+            font: inherit;
+            font-size: 19px;
             padding: 10px 0;
-            border-bottom: 1px solid #373b41;
-            margin-bottom: 10px;
+            outline: none;
         }
-        .namespace-header h2 {
-            font-size: 1.1em;
-            color: #f0f0f0;
-            font-weight: 600;
+        .search-box input:focus { border-bottom: 1px solid var(--accent); }
+        .search-box input::placeholder { color: #bbb; }
+
+        .namespace { padding-top: 48px; }
+        .ns-header {
+            display: flex; justify-content: space-between; align-items: baseline;
+            padding-bottom: 10px; border-bottom: 2px solid #111;
         }
-        .namespace-header .count {
-            color: #969896;
-            font-size: 0.9em;
-        }
+        .ns-header h2 { font-size: 24px; font-weight: 700; letter-spacing: -0.01em; }
+        .count { font-size: 13px; color: var(--muted); }
+
         .route {
-            padding: 15px 0;
-            border-bottom: 1px solid #282a2e;
-        }
-        .route:last-child {
-            border-bottom: none;
-        }
-        .route-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 8px;
-            gap: 15px;
-        }
-        .route-title h3 {
-            font-size: 1em;
-            color: #81a2be;
-            font-weight: 600;
-            margin-bottom: 3px;
-        }
-        .route-title .path {
-            font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
-            background: #282a2e;
-            padding: 2px 6px;
-            font-size: 0.85em;
-            color: #b294bb;
-        }
-        .route-meta {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            font-size: 0.9em;
-        }
-        .badge {
-            padding: 2px 6px;
-            font-size: 0.75em;
-        }
-        .badge-category { color: #8abeb7; }
-        .badge-cache { color: #de935f; }
-        .route-desc {
-            color: #969896;
-            margin: 8px 0;
-            font-size: 0.9em;
-        }
-        .route-example {
-            background: #282a2e;
-            color: #b5bd68;
-            padding: 10px;
-            font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
-            font-size: 0.8em;
-            overflow-x: auto;
-            margin-top: 8px;
-        }
-        .params {
-            margin-top: 8px;
-        }
-        .param {
-            display: inline-block;
-            background: #282a2e;
-            color: #cc6666;
-            padding: 2px 6px;
-            font-size: 0.8em;
-            margin-right: 5px;
-            margin-bottom: 3px;
-        }
-        .param .required {
-            color: #de935f;
-        }
-        .back-link {
-            display: inline-block;
-            margin-bottom: 20px;
-            color: #81a2be;
-            text-decoration: none;
-        }
-        .back-link:hover {
-            text-decoration: underline;
-        }
-        footer {
-            text-align: center;
-            padding: 30px 0;
-            color: #969896;
-            border-top: 1px solid #373b41;
-            margin-top: 50px;
-            font-size: 0.85em;
-        }
-        .query-params {
-            background: #282a2e;
-            padding: 12px;
-            margin-top: 12px;
-        }
-        .query-params h4 {
-            margin-bottom: 8px;
-            color: #f0f0f0;
-            font-size: 0.9em;
-        }
-        .query-param {
-            margin-bottom: 6px;
-            font-size: 0.85em;
-            color: #969896;
-        }
-        .query-param code {
-            background: #1d1f21;
-            padding: 2px 5px;
-            color: #b294bb;
-        }
-        .env-panel {
-            background: #282a2e;
-            border: 1px solid #373b41;
-            padding: 15px;
-            margin-bottom: 30px;
-        }
-        .env-panel h3 {
-            color: #f0f0f0;
-            font-size: 0.95em;
-            margin-bottom: 10px;
-        }
-        .env-group {
-            margin-bottom: 10px;
-        }
-        .env-group:last-child {
-            margin-bottom: 0;
-        }
-        .env-item {
-            display: flex;
-            gap: 8px;
+            display: grid;
+            grid-template-columns: minmax(240px, 5fr) 4fr minmax(120px, 3fr);
+            gap: 24px;
             align-items: baseline;
-            padding: 3px 0;
-            font-size: 0.85em;
+            padding: 13px 4px;
+            border-bottom: 1px solid var(--hairline);
+            cursor: pointer;
+            transition: background .1s;
         }
-        .env-key {
-            color: #b294bb;
-            font-weight: 600;
+        .route:hover { background: #fafafa; }
+        .r-path { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 13px; word-break: break-all; }
+        .r-name { font-size: 15px; color: #333; }
+        .r-meta {
+            text-align: right;
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--muted);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
-        .env-state-yes { color: #b5bd68; }
-        .env-state-no { color: #cc6666; }
-        .env-scope { color: #de935f; }
-        .env-desc { color: #969896; }
-        code {
-            font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+
+        /* ---- detail page ---- */
+        .back { display: inline-block; margin: 40px 0 24px; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
+        .back:hover { color: var(--accent); }
+        .d-title { font-size: 42px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; }
+        .d-path { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 15px; color: var(--accent); margin-top: 10px; word-break: break-all; }
+        .d-desc { margin-top: 20px; font-size: 16px; color: #333; max-width: 640px; }
+        .d-cats { margin-top: 14px; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+        section { padding: 30px 0; border-bottom: 1px solid var(--hairline); }
+        section .label { display: block; margin-bottom: 14px; }
+        pre.example {
+            background: #f5f5f5;
+            padding: 16px 20px;
+            font-family: "SF Mono", ui-monospace, Menlo, monospace;
+            font-size: 13px;
+            line-height: 1.7;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
         }
-        a {
-            color: #81a2be;
-            text-decoration: none;
+        .kv { display: grid; grid-template-columns: 170px 1fr; gap: 10px 28px; font-size: 14px; }
+        .kv dt { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 13px; font-weight: 600; }
+        .kv dd { color: #444; }
+        .kv dd code { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 13px; color: var(--accent); }
+        ul.plain { list-style: none; }
+        ul.plain li { padding: 10px 0; border-bottom: 1px solid var(--hairline); cursor: pointer; }
+        ul.plain li:last-child { border-bottom: none; }
+        ul.plain li:hover { background: #fafafa; }
+        ul.plain .r-path { margin-right: 16px; }
+
+        footer {
+            margin-top: 96px;
+            padding: 26px 0 56px;
+            border-top: 2px solid #111;
+            display: flex; justify-content: space-between;
+            font-size: 12px; color: var(--muted);
         }
-        a:hover {
-            text-decoration: underline;
-        }
-        @media (max-width: 768px) {
-            .container {
-                padding: 15px;
-            }
-            .route-header {
-                flex-direction: column;
-            }
-            .stats {
-                flex-direction: column;
-                gap: 10px;
-            }
+        @media (max-width: 720px) {
+            .container { padding: 0 20px; }
+            header { padding: 40px 0 28px; }
+            header h1 { font-size: 40px; }
+            .stats { gap: 36px; }
+            .route { grid-template-columns: 1fr; gap: 4px; }
+            .r-meta { text-align: left; }
+            .env-desc { padding-left: 0; }
+            .kv { grid-template-columns: 1fr; gap: 2px 0; }
+            .kv dd { margin-bottom: 10px; }
         }
     </style>
 </head>
@@ -276,7 +165,12 @@ const baseTemplate = `
     <header>
         <div class="container">
             <h1>RSSHub Go</h1>
-            <p><a href="/">/</a> · <a href="/robots.txt">/robots.txt</a> · <a href="/api/routes">/api/routes</a></p>
+            <nav>
+                <a href="/">routes</a>
+                <a href="/api/routes">api</a>
+                <a href="/robots.txt">robots.txt</a>
+                <a href="https://github.com/xihale/rsshub-go">github</a>
+            </nav>
         </div>
     </header>
 
@@ -285,7 +179,10 @@ const baseTemplate = `
     </div>
 
     <footer>
-        <p>github.com/xihale/rsshub-go</p>
+        <div class="container" style="display:flex;justify-content:space-between;width:100%;">
+            <span>RSSHub Go</span>
+            <span>github.com/xihale/rsshub-go</span>
+        </div>
     </footer>
 </body>
 </html>
@@ -293,97 +190,61 @@ const baseTemplate = `
 
 const indexContent = `
 {{define "content"}}
-<div class="search-box">
-    <input type="text" id="searchInput" placeholder="search routes..." onkeyup="filterRoutes()">
-</div>
-
 <div class="stats">
-    <div class="stat"><strong>{{.TotalRoutes}}</strong> routes</div>
-    <div class="stat"><strong>{{len .Namespaces}}</strong> namespaces</div>
-    <div class="stat"><strong>{{len .Categories}}</strong> categories</div>
+    <div class="stat"><b>{{.TotalRoutes}}</b><span class="label">routes</span></div>
+    <div class="stat"><b>{{len .Namespaces}}</b><span class="label">namespaces</span></div>
+    <div class="stat"><b>{{len .Categories}}</b><span class="label">categories</span></div>
 </div>
 
 {{if .EnvStatuses}}
-<div class="env-panel">
-    <h3>CREDENTIALS / 配置状态</h3>
+<div class="env-section">
+    <span class="label">Credentials</span>
     {{range $ns, $statuses := .EnvStatuses}}
-    <div class="env-group">
-        {{range $statuses}}
-        <div class="env-item">
-            <span class="env-key">{{.Key}}</span>
-            {{if .Configured}}<span class="env-state-yes">✓ 已配置</span>{{else}}<span class="env-state-no">✗ 未设置</span>{{end}}
-            <span class="env-scope">[{{$ns}} · {{.Scope}}]</span>
-            <span class="env-desc">{{.Description}}</span>
-        </div>
-        {{end}}
+    {{range $statuses}}
+    <div class="env-row">
+        <span class="env-key">{{.Key}}</span>
+        {{if .Configured}}<span class="yes">已配置</span>{{else}}<span class="no">未设置</span>{{end}}
+        <span class="env-scope">{{$ns}} · {{.Scope}}</span>
+        {{if not .Configured}}<span class="env-desc">{{.Description}}</span>{{end}}
     </div>
     {{end}}
-    <div class="env-desc" style="margin-top: 8px;">状态为服务进程运行时实时检测，仅显示是否配置，不回显值。</div>
+    {{end}}
 </div>
 {{end}}
+
+<div class="search-box">
+    <input type="text" id="q" placeholder="搜索路由" autocomplete="off" oninput="filterRoutes()">
+</div>
 
 <div id="routesContainer">
 {{range .Namespaces}}
 <div class="namespace" data-namespace="{{.Name}}">
-    <div class="namespace-header">
+    <div class="ns-header">
         <h2>{{.Name}}</h2>
         <span class="count">{{.RouteCount}}</span>
     </div>
-    <div class="route-list">
     {{range .Routes}}
-    <div class="route" data-name="{{lower .Name}} {{lower .Description}} {{lower .Path}}">
-        <div class="route-header">
-            <div class="route-title">
-                <h3>{{.Name}}</h3>
-                <span class="path">{{.Path}}</span>
-            </div>
-            <div class="route-meta">
-                {{range .Categories}}
-                <span class="badge badge-category">{{.}}</span>
-                {{end}}
-                <span class="badge badge-cache">{{.CacheTTL}}</span>
-            </div>
-        </div>
-        <p class="route-desc">{{.Description}}</p>
-        {{if .Parameters}}
-        <div class="params">
-            {{range .Parameters}}
-            <span class="param">{{.Name}}{{if .Required}} <span class="required">*</span>{{end}}</span>
-            {{end}}
-        </div>
-        {{end}}
-        <div class="route-example">{{.CurlExample}}</div>
+    <div class="route" data-k="{{lower .Name}} {{lower .Description}} {{lower .Path}}" onclick="location.href='/docs/route?path={{.Path}}'">
+        <span class="r-path">{{.Path}}</span>
+        <span class="r-name">{{.Name}}</span>
+        <span class="r-meta">{{range .Categories}}{{.}} {{end}}· {{.CacheTTL}}</span>
     </div>
     {{end}}
-    </div>
 </div>
 {{end}}
 </div>
 
 <script>
 function filterRoutes() {
-    const input = document.getElementById('searchInput');
-    const filter = input.value.toLowerCase();
-    const routes = document.querySelectorAll('.route');
-
-    routes.forEach(route => {
-        const searchText = route.getAttribute('data-name');
-        if (searchText.includes(filter)) {
-            route.style.display = '';
-        } else {
-            route.style.display = 'none';
-        }
-    });
-
-    const namespaces = document.querySelectorAll('.namespace');
-    namespaces.forEach(ns => {
-        const visibleRoutes = ns.querySelectorAll('.route[style=""]');
-        if (visibleRoutes.length === 0 && filter !== '') {
-            const allHidden = Array.from(ns.querySelectorAll('.route')).every(r => r.style.display === 'none');
-            ns.style.display = allHidden ? 'none' : '';
-        } else {
-            ns.style.display = '';
-        }
+    const q = document.getElementById('q').value.trim().toLowerCase();
+    document.querySelectorAll('.namespace').forEach(ns => {
+        let visible = 0;
+        ns.querySelectorAll('.route').forEach(r => {
+            const hit = !q || r.getAttribute('data-k').includes(q);
+            r.style.display = hit ? '' : 'none';
+            if (hit) visible++;
+        });
+        ns.style.display = visible > 0 ? '' : 'none';
     });
 }
 </script>
@@ -392,86 +253,67 @@ function filterRoutes() {
 
 const routeContent = `
 {{define "content"}}
-<a href="/docs" class="back-link">← back</a>
+<a class="back" href="/">&larr; 所有路由</a>
 
-<div class="namespace">
-    <div class="namespace-header">
-        <h2>{{.Route.Name}}</h2>
-        <div class="route-meta">
-            {{range .Route.Categories}}
-            <span class="badge badge-category">{{.}}</span>
-            {{end}}
-            <span class="badge badge-cache">{{.Route.CacheTTL}}</span>
-        </div>
+<h1 class="d-title">{{.Route.Name}}</h1>
+<div class="d-path">{{.Route.Path}}</div>
+<p class="d-desc">{{.Route.Description}}</p>
+<div class="d-cats">{{range .Route.Categories}}{{.}}&ensp;{{end}}· 缓存 {{.Route.CacheTTL}}</div>
+
+{{if .RouteEnvStatuses}}
+<section>
+    <span class="label">Credentials</span>
+    {{range .RouteEnvStatuses}}
+    <div class="env-row">
+        <span class="env-key">{{.Key}}</span>
+        {{if .Configured}}<span class="yes">已配置</span>{{else}}<span class="no">未设置</span>{{end}}
+        <span class="env-scope">{{.Scope}}</span>
+        <span class="env-desc">{{.Description}}</span>
     </div>
-    <div class="route">
-        <p class="route-desc" style="font-size: 1em; margin-bottom: 20px;">{{.Route.Description}}</p>
+    {{end}}
+</section>
+{{end}}
 
-        {{if .RouteEnvStatuses}}
-        <div class="env-panel" style="margin-bottom: 20px;">
-            <h3>CREDENTIALS / 本路由凭据状态</h3>
-            {{range .RouteEnvStatuses}}
-            <div class="env-item">
-                <span class="env-key">{{.Key}}</span>
-                {{if .Configured}}<span class="env-state-yes">✓ 已配置</span>{{else}}<span class="env-state-no">✗ 未设置（相关路由将报错）</span>{{end}}
-                <span class="env-scope">[{{.Scope}}]</span>
-                <span class="env-desc">{{.Description}}</span>
-            </div>
-            {{end}}
-        </div>
+<section>
+    <span class="label">Example</span>
+    <pre class="example">{{.Route.CurlExample}}</pre>
+</section>
+
+{{if .Route.Parameters}}
+<section>
+    <span class="label">Params</span>
+    <dl class="kv">
+        {{range .Route.Parameters}}
+        <dt>{{.Name}}{{if .Required}} <span class="no">*</span>{{end}}</dt>
+        <dd>{{.Description}}</dd>
         {{end}}
+    </dl>
+</section>
+{{end}}
 
-        <h3 style="margin-bottom: 10px; color: #f0f0f0; font-size: 0.95em;">PATH</h3>
-        <div class="route-example" style="margin-bottom: 20px;">{{.Route.Path}}</div>
-
-        {{if .Route.Parameters}}
-        <h3 style="margin-bottom: 10px; color: #f0f0f0; font-size: 0.95em;">PARAMS</h3>
-        <div class="params" style="margin-bottom: 20px;">
-            {{range .Route.Parameters}}
-            <span class="param">{{.Name}}{{if .Required}} <span class="required">*</span>{{end}} - {{.Description}}</span>
-            {{end}}
-        </div>
+{{if .Route.QueryParams}}
+<section>
+    <span class="label">Query Params</span>
+    <dl class="kv">
+        {{range .Route.QueryParams}}
+        <dt>{{.Name}}</dt>
+        <dd>{{.Description}}<br><code>{{.Example}}</code></dd>
         {{end}}
-
-        <h3 style="margin-bottom: 10px; color: #f0f0f0; font-size: 0.95em;">EXAMPLE</h3>
-        <div class="route-example" style="margin-bottom: 20px;">{{.Route.CurlExample}}</div>
-
-        {{if .Route.QueryParams}}
-        <div class="query-params">
-            <h4>QUERY PARAMS</h4>
-            {{range .Route.QueryParams}}
-            <div class="query-param">
-                <strong>{{.Name}}:</strong> {{.Description}}<br>
-                <code>{{.Example}}</code>
-            </div>
-            {{end}}
-        </div>
-        {{end}}
-
-        {{if .Route.Features}}
-        <div style="margin-top: 20px;">
-            {{if .Route.Features.SupportRadar}}<span style="color: #b5bd68; font-size: 0.85em;">✓ radar</span>{{end}}
-            {{if .Route.Features.AntiCrawler}}<span style="color: #b5bd68; font-size: 0.85em;">✓ anti-crawler</span>{{end}}
-        </div>
-        {{end}}
-    </div>
-</div>
+    </dl>
+</section>
+{{end}}
 
 {{if .Related}}
-<h3 style="margin-top: 30px; margin-bottom: 15px; color: #f0f0f0; font-size: 0.95em;">RELATED</h3>
-<div class="route-list">
-{{range .Related}}
-<div class="route" style="cursor: pointer;" onclick="window.location.href='/docs/route?path={{.Path}}'">
-    <div class="route-header">
-        <div class="route-title">
-            <h3>{{.Name}}</h3>
-            <span class="path">{{.Path}}</span>
-        </div>
-    </div>
-    <p class="route-desc">{{.Description}}</p>
-</div>
-{{end}}
-</div>
+<section>
+    <span class="label">Related</span>
+    <ul class="plain">
+    {{range .Related}}
+        <li onclick="location.href='/docs/route?path={{.Path}}'">
+            <span class="r-path">{{.Path}}</span><span class="r-name">{{.Name}}</span>
+        </li>
+    {{end}}
+    </ul>
+</section>
 {{end}}
 {{end}}
 `
