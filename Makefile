@@ -113,10 +113,6 @@ install-config:
 	@echo "Configuration file installed to $(CONFIG_DIR)/config.yaml"
 	@echo "Edit this file to customize your RSSHub Go configuration"
 
-# Generate route list (example CLI tool)
-gen-routes:
-	go run ./examples/cli/list-routes
-
 # Help
 help:
 	@echo "Available targets:"

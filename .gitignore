@@ -5,3 +5,4 @@ server.log
 server.pid
 test_cache_db/
 tmp/
+RSSHub-ref
