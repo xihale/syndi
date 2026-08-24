@@ -6,7 +6,7 @@ This document describes how `client` settings in `config.yaml` are applied at ru
 
 ```yaml
 client:
-  user_agent: "RSSHub-Go/1.0 (+https://github.com/xihale/rsshub-go)"
+  user_agent: "RSSHub-Go/1.0 (+https://github.com/xihale/syndi)"
   timeout: 30s
   max_redirects: 10
   proxy: ""

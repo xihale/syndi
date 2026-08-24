@@ -15,7 +15,7 @@
 ## 用法（路由内一行接入）
 
 ```go
-import "github.com/xihale/rsshub-go/internal/disguise"
+import "github.com/xihale/syndi/internal/disguise"
 
 // HTML 抓取
 doc, err := disguise.Chrome().Lang("zh-CN").

@@ -92,9 +92,9 @@ package $package_name
 import (
 	"time"
 
-	"github.com/xihale/rsshub-go/internal/routeutils"
-	ctxpkg "github.com/xihale/rsshub-go/pkg/context"
-	"github.com/xihale/rsshub-go/pkg/models"
+	"github.com/xihale/syndi/internal/routeutils"
+	ctxpkg "github.com/xihale/syndi/pkg/context"
+	"github.com/xihale/syndi/pkg/models"
 )
 
 var $route_var_name = routeutils.RouteSpec{
@@ -139,7 +139,7 @@ if [[ ! -f "$routes_file" ]]; then
 	cat >"$routes_file" <<EOF
 package $package_name
 
-import "github.com/xihale/rsshub-go/internal/routeutils"
+import "github.com/xihale/syndi/internal/routeutils"
 
 // Routes lists all $namespace route specs in this package.
 var Routes = []routeutils.RouteSpec{
