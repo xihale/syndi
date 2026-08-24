@@ -77,16 +77,8 @@ const baseTemplate = `
         --hover-bg: #1a1a1a;
         --path: #7aa7ff;
 
-        --cat-programming: #8ab4ff; --cat-technology: #4dd0c4; --cat-science: #66bb6a;
-        --cat-social_media: #c084fc; --cat-picture: #f472b6; --cat-game: #fb923c;
-        --cat-finance: #e0a458; --cat-new_media: #ff6b60; --cat-study: #62b0e8;
-        --cat-dev: #a78bfa; --cat-blog: #a8a29e;
     }
 }
-        /* category hues */
-        .cat-programming { color: var(--cat-programming); }
-        .cat-technology { color: var(--cat-technology); }
-        .cat-science { color: var(--cat-science); }
         .cat-social-media { color: var(--cat-social_media); }
         .cat-picture { color: var(--cat-picture); }
         .cat-game { color: var(--cat-game); }
@@ -281,7 +273,7 @@ const indexContent = `
     <div class="route{{if .Unavailable}} off{{end}}" data-k="{{lower .Name}} {{lower .Description}} {{lower .Path}}"{{if .Unavailable}} title="缺少 {{range .MissingDeps}}{{.}} {{end}}配置"{{end}} onclick="location.href='/docs/route?path={{.Path}}'">
         <span class="r-path">{{pathHTML .Path}}</span>
         <span class="r-name">{{.Name}}</span>
-        <span class="r-meta">{{range .Categories}}<span class="cat-{{catclass .}}">{{.}}</span>&ensp;{{end}}<span class="ttl">{{.CacheTTL}}</span></span>
+        <span class="r-meta">{{range .Categories}}{{.}}&ensp;{{end}}<span class="ttl">{{.CacheTTL}}</span></span>
     </div>
     {{end}}
 </div>
@@ -321,7 +313,7 @@ const routeContent = `
 <h1 class="d-title">{{.Route.Name}}</h1>
 <div class="d-path">{{pathHTML .Route.Path}}</div>
 <p class="d-desc">{{.Route.Description}}</p>
-<div class="d-cats">{{range .Route.Categories}}<span class="cat-{{catclass .}}">{{.}}</span>&ensp;{{end}}<span class="ttl">缓存 {{.Route.CacheTTL}}</span></div>
+<div class="d-cats"><span>{{range .Route.Categories}}{{.}}&ensp;{{end}}</span><span class="ttl">缓存 {{.Route.CacheTTL}}</span></div>
 
 {{if .RouteEnvStatuses}}
 <section>
@@ -372,11 +364,6 @@ func join(strs []string, sep string) string {
 	return strings.Join(strs, sep)
 }
 
-// catclass maps a category name to its CSS hue class.
-func catclass(cat string) string {
-	return strings.ToLower(strings.ReplaceAll(cat, " ", "_"))
-}
-
 // pathHTML highlights parameter segments (:id, *path) inside a route path.
 func pathHTML(path string) template.HTML {
 	segs := strings.Split(path, "/")
@@ -393,7 +380,6 @@ func ParseTemplates() (*template.Template, *template.Template) {
 	funcMap := template.FuncMap{
 		"lower":    strings.ToLower,
 		"join":     join,
-		"catclass": catclass,
 		"pathHTML": pathHTML,
 	}
 
