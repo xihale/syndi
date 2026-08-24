@@ -84,6 +84,7 @@ import (
 	routepkg77 "github.com/xihale/rsshub-go/routes/wikipedia"
 	routepkg78 "github.com/xihale/rsshub-go/routes/xkcd"
 	routepkg79 "github.com/xihale/rsshub-go/routes/yandere"
+	routepkg80 "github.com/xihale/rsshub-go/routes/zhihu"
 )
 
 func registerRoutePackages() {
@@ -167,4 +168,5 @@ func registerRoutePackages() {
 	routeutils.MustRegisterRoutesWithBase("wikipedia", routepkg77.Routes)
 	routeutils.MustRegisterRoutesWithBase("xkcd", routepkg78.Routes)
 	routeutils.MustRegisterRoutesWithBase("yandere", routepkg79.Routes)
+	routeutils.MustRegisterRoutesWithBase("zhihu", routepkg80.Routes)
 }

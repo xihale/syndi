@@ -1,6 +1,6 @@
 # Route Catalog
 
-Total registered paths: **102** across 80 namespaces.
+Total registered paths: **112** across 81 namespaces.
 
 Status from last full live verification (`scripts/verify-all.sh`):
 
@@ -108,3 +108,15 @@ Status from last full live verification (`scripts/verify-all.sh`):
 | `/wikipedia/featured/:date` | Wikipedia Featured Content | `wikipedia/featured/2026-08-23` | OK(5) |
 | `/xkcd/latest` | xkcd Latest Comics | `xkcd/latest` | OK(10) |
 | `/yandere/post` | yande.re Posts | `yandere/post` | OK(20) |
+| `/zhihu/hot` | 知乎热榜 | `zhihu/hot?limit=30` | OK(30) |
+| `/zhihu/daily` | 知乎日报 | `zhihu/daily` | OK(4) |
+| `/zhihu/daily/section/:sectionId` | 知乎日报 - 合集 | `zhihu/daily/section/2` | OK(20) |
+| `/zhihu/zhuanlan/:id` | 知乎专栏 | `zhihu/zhuanlan/googledevelopers` | OK(20)* |
+| `/zhihu/question/:questionId` | 知乎问题回答 | `zhihu/question/59895982?sort_by=default` | OK(20)* |
+| `/zhihu/people/answers/:id` | 知乎用户回答 | `zhihu/people/answers/diygod` | OK(7)* |
+| `/zhihu/posts/:usertype/:id` | 知乎用户文章 | `zhihu/posts/people/frederchen` | OK(15)* |
+| `/zhihu/people/activities/:id` | 知乎用户动态 | `zhihu/people/activities/kaifulee` | OK(7)* |
+| `/zhihu/collection/:id` | 知乎收藏夹 | `zhihu/collection/26444956?limit=20` | OK(20)* |
+| `/zhihu/weekly` | 知乎周刊 | `zhihu/weekly` | OK(15) |
+
+\* 需要环境变量 `ZHIHU_COOKIES`（登录 cookie，至少含 `z_c0`）。未配置时这些路由返回明确的错误提示，其余路由匿名可用。上游 `topic`、`timeline`、`all-collections`、`pins` 因依赖 x-zse-96 请求签名暂未移植（见 `routes/zhihu/routes.go` 注释）。
