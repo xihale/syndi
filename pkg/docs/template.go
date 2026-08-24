@@ -142,8 +142,11 @@ const baseTemplate = `
         .r-meta .ttl { color: var(--muted); }
 
         /* ---- detail page ---- */
-        .back { display: inline-block; margin: 40px 0 24px; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
-        .back:hover { color: var(--accent); }
+        .crumbs { margin: 40px 0 24px; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
+        .crumbs a { transition: color .12s; }
+        .crumbs a:hover { color: var(--accent); }
+        .crumbs .sep { margin: 0 10px; }
+        .crumbs .cur { color: var(--fg); }
         .d-title { font-size: 42px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; }
         .d-path { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 15px; margin-top: 10px; word-break: break-all; color: var(--path); }
         .d-desc { margin-top: 20px; font-size: 16px; color: var(--fg-soft); max-width: 640px; }
@@ -323,7 +326,7 @@ function filterRoutes() {
 
 const routeContent = `
 {{define "content"}}
-<a class="back" href="/">&larr; 所有路由</a>
+<nav class="crumbs"><a href="/">index</a>{{with seg1 .Route.Path}}<span class="sep">/</span><span>{{.}}</span>{{end}}<span class="sep">/</span><span class="cur">{{.Route.Name}}</span></nav>
 
 <h1 class="d-title">{{.Route.Name}}</h1>
 <div class="d-path">{{pathHTML .Route.Path}}</div>
@@ -428,6 +431,15 @@ func join(strs []string, sep string) string {
 	return strings.Join(strs, sep)
 }
 
+// seg1 returns the first path segment (the namespace) of a route path.
+func seg1(path string) string {
+	parts := strings.SplitN(strings.Trim(path, "/"), "/", 2)
+	if len(parts) > 0 && parts[0] != "" {
+		return parts[0]
+	}
+	return ""
+}
+
 // pathHTML highlights parameter segments (:id, *path) inside a route path.
 func pathHTML(path string) template.HTML {
 	segs := strings.Split(path, "/")
@@ -443,6 +455,7 @@ func pathHTML(path string) template.HTML {
 func ParseTemplates() (*template.Template, *template.Template) {
 	funcMap := template.FuncMap{
 		"lower":    strings.ToLower,
+		"seg1":     seg1,
 		"join":     join,
 		"pathHTML": pathHTML,
 	}
