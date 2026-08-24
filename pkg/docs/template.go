@@ -118,6 +118,7 @@ const baseTemplate = `
         }
         .route:hover { background: #fafafa; }
         .r-path { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 13px; word-break: break-all; }
+        .r-path .p, .d-path .p { color: var(--accent); }
         .r-name { font-size: 15px; color: #333; }
         .r-meta {
             text-align: right;
@@ -132,7 +133,7 @@ const baseTemplate = `
         .back { display: inline-block; margin: 40px 0 24px; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
         .back:hover { color: var(--accent); }
         .d-title { font-size: 42px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; }
-        .d-path { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 15px; color: var(--accent); margin-top: 10px; word-break: break-all; }
+        .d-path { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 15px; margin-top: 10px; word-break: break-all; }
         .d-desc { margin-top: 20px; font-size: 16px; color: #333; max-width: 640px; }
         .d-cats { margin-top: 14px; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; }
         .d-cats .ttl { color: var(--muted); }
@@ -238,7 +239,7 @@ const indexContent = `
     </div>
     {{range .Routes}}
     <div class="route" data-k="{{lower .Name}} {{lower .Description}} {{lower .Path}}" onclick="location.href='/docs/route?path={{.Path}}'">
-        <span class="r-path">{{.Path}}</span>
+        <span class="r-path">{{pathHTML .Path}}</span>
         <span class="r-name">{{.Name}}</span>
         <span class="r-meta">{{range .Categories}}<span class="cat-{{catclass .}}">{{.}}</span>&ensp;{{end}}<span class="ttl">{{.CacheTTL}}</span></span>
     </div>
@@ -278,7 +279,7 @@ const routeContent = `
 <a class="back" href="/">&larr; 所有路由</a>
 
 <h1 class="d-title">{{.Route.Name}}</h1>
-<div class="d-path">{{.Route.Path}}</div>
+<div class="d-path">{{pathHTML .Route.Path}}</div>
 <p class="d-desc">{{.Route.Description}}</p>
 <div class="d-cats">{{range .Route.Categories}}<span class="cat-{{catclass .}}">{{.}}</span>&ensp;{{end}}<span class="ttl">缓存 {{.Route.CacheTTL}}</span></div>
 
@@ -334,7 +335,7 @@ const routeContent = `
     <ul class="plain">
     {{range .Related}}
         <li onclick="location.href='/docs/route?path={{.Path}}'">
-            <span class="r-path">{{.Path}}</span><span class="r-name">{{.Name}}</span>
+            <span class="r-path">{{pathHTML .Path}}</span><span class="r-name">{{.Name}}</span>
         </li>
     {{end}}
     </ul>
@@ -353,12 +354,24 @@ func catclass(cat string) string {
 	return strings.ToLower(strings.ReplaceAll(cat, " ", "_"))
 }
 
+// pathHTML highlights parameter segments (:id, *path) inside a route path.
+func pathHTML(path string) template.HTML {
+	segs := strings.Split(path, "/")
+	for i, s := range segs {
+		if strings.HasPrefix(s, ":") || strings.HasPrefix(s, "*") {
+			segs[i] = `<span class="p">` + template.HTMLEscapeString(s) + `</span>`
+		}
+	}
+	return template.HTML(strings.Join(segs, "/"))
+}
+
 // ParseTemplates parses and returns the HTML templates
 func ParseTemplates() (*template.Template, *template.Template) {
 	funcMap := template.FuncMap{
 		"lower":    strings.ToLower,
 		"join":     join,
 		"catclass": catclass,
+		"pathHTML": pathHTML,
 	}
 
 	// Index template
