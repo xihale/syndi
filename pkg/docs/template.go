@@ -314,7 +314,7 @@ function filterRoutes() {
 
 const routeContent = `
 {{define "content"}}
-<nav class="crumbs"><a href="/">index</a>{{with seg1 .Route.Path}}<span class="sep">/</span><span>{{.}}</span>{{end}}<span class="sep">/</span><span class="cur">{{.Route.Name}}</span></nav>
+<nav class="crumbs"><a href="/">index</a>{{with seg1 .Route.Path}}<span class="sep">/</span><a href="/?ns={{urlquery .}}">{{.}}</a>{{end}}<span class="sep">/</span><span class="cur">{{.Route.Name}}</span></nav>
 
 <div class="d-path">{{pathHTML .Route.Path}}</div>
 <p class="d-desc">{{.Route.Description}}</p>

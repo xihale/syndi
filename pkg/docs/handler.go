@@ -90,9 +90,27 @@ func renderHTML(c *gin.Context, status int, tmpl *template.Template, data any) {
 
 // IndexHandler serves the main documentation page (also mounted at "/")
 func (h *Handler) IndexHandler(c *gin.Context) {
+	namespaces := h.docData.Namespaces
+	if ns := c.Query("ns"); ns != "" {
+		var filtered []*NamespaceDoc
+		for _, n := range namespaces {
+			if strings.EqualFold(n.Name, ns) {
+				filtered = append(filtered, n)
+			}
+		}
+		if len(filtered) > 0 {
+			namespaces = filtered
+		}
+	}
+
+	title := "All Routes"
+	if len(namespaces) == 1 {
+		title = namespaces[0].Name
+	}
+
 	pageData := PageData{
-		Title:       "All Routes",
-		Namespaces:  h.docData.Namespaces,
+		Title:       title,
+		Namespaces:  namespaces,
 		TotalRoutes: h.docData.Total,
 		Categories:  h.docData.Categories,
 	}
