@@ -23,8 +23,25 @@ cache:
   cleanup_interval: 5m
   # Cache time-to-live for feeds
   ttl: 15m
-  # Memory cache size (number of items, only used if type is "memory")
+  # Memory cache size (number of items)
   memory_size: 10000
+  # --- Badger memory tuning (0 = built-in default) ---
+  # Per-memtable budget; total memtable memory ~= memtable_mb * num_memtables
+  memtable_mb: 16
+  num_memtables: 4
+  # Data block cache budget
+  block_cache_mb: 32
+  # Index cache budget; 0 lets Badger size it automatically
+  index_cache_mb: 0
+  # Max size of one value-log file; smaller files rewrite faster during GC
+  vlog_file_mb: 128
+  # --- Disk reclamation ---
+  # How often to rewrite value-log files that hold mostly stale data.
+  # Without this, deleted/expired entries never return their disk space.
+  # Set to 0s to disable (not recommended for long-running instances).
+  gc_interval: 10m
+  # Fraction of garbage a value-log file must contain before rewrite
+  gc_discard_ratio: 0.5
 
 # HTTP client settings
 client:

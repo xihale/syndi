@@ -27,6 +27,14 @@ type Config struct {
 		CleanupInterval time.Duration `yaml:"cleanup_interval"`
 		TTL             time.Duration `yaml:"ttl"`
 		MemorySize      int           `yaml:"memory_size"`
+		// Badger tuning (bytes/counts; 0 = tuned default, see pkg/cache)
+		MemtableMB     int           `yaml:"memtable_mb"`      // per-memtable memory budget
+		NumMemtables   int           `yaml:"num_memtables"`    // max in-memory memtables
+		BlockCacheMB   int           `yaml:"block_cache_mb"`   // data block cache budget
+		IndexCacheMB   int           `yaml:"index_cache_mb"`   // 0 = Badger auto-size
+		VlogFileMB     int           `yaml:"vlog_file_mb"`     // max value-log file size
+		GCInterval     time.Duration `yaml:"gc_interval"`      // value-log GC cadence; 0 disables
+		GCDiscardRatio float64       `yaml:"gc_discard_ratio"` // garbage fraction required before rewrite
 	} `yaml:"cache"`
 	// Client settings
 	Client struct {
@@ -63,6 +71,13 @@ func DefaultConfig() *Config {
 	cfg.Cache.TTL = 15 * time.Minute
 	cfg.Cache.CleanupInterval = 5 * time.Minute
 	cfg.Cache.MemorySize = 10000
+	// Badger tuning defaults (small-deployment friendly; see pkg/cache)
+	cfg.Cache.MemtableMB = 16
+	cfg.Cache.NumMemtables = 4
+	cfg.Cache.BlockCacheMB = 32
+	cfg.Cache.VlogFileMB = 128
+	cfg.Cache.GCInterval = 10 * time.Minute
+	cfg.Cache.GCDiscardRatio = 0.5
 	// Client defaults
 	cfg.Client.UserAgent = "Syndi/0.0.1 (+https://github.com/xihale/syndi)"
 	cfg.Client.Timeout = 30 * time.Second

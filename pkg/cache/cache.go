@@ -1,8 +1,6 @@
 package cache
 
 import (
-	"bytes"
-	"encoding/gob"
 	"sync"
 	"time"
 
@@ -19,18 +17,21 @@ type Cache interface {
 	Close() error
 }
 
-// MemoryCache implements an in-memory LRU cache
+// MemoryCache implements an in-memory LRU cache.
+// Values are stored decoded: no serialization happens on the hot path.
+// Callers must treat retrieved values as read-only; the same instance is
+// shared across Gets until eviction or expiry (same contract as promoteToMemory).
 type MemoryCache struct {
 	mu    sync.RWMutex
 	cache *lru.Cache[string, cacheValue]
 }
 
 type cacheValue struct {
-	data []byte // gob-encoded data
-	exp  time.Time
+	value interface{}
+	exp   time.Time
 }
 
-// cacheEntry wraps the value for gob encoding
+// cacheEntry wraps the value for gob encoding in the persistent layer.
 type cacheEntry struct {
 	Value interface{}
 	Exp   time.Time
@@ -38,52 +39,38 @@ type cacheEntry struct {
 
 // NewMemoryCache creates a new LRU memory cache
 func NewMemoryCache(size int) *MemoryCache {
-	lru, _ := lru.New[string, cacheValue](size)
+	lruCache, _ := lru.New[string, cacheValue](size)
 	return &MemoryCache{
-		cache: lru,
+		cache: lruCache,
 	}
 }
 
 func (c *MemoryCache) Get(key string) (interface{}, bool) {
 	c.mu.RLock()
-	defer c.mu.RUnlock()
-
 	val, ok := c.cache.Get(key)
+
 	if !ok {
+		c.mu.RUnlock()
 		return nil, false
 	}
-
 	// Check expiration
 	if time.Now().After(val.exp) {
+		c.mu.RUnlock()
+		c.Delete(key)
 		return nil, false
 	}
+	c.mu.RUnlock()
 
-	// Decode gob-encoded data into cacheEntry wrapper
-	var entry cacheEntry
-	if err := gob.NewDecoder(bytes.NewReader(val.data)).Decode(&entry); err != nil {
-		return nil, false
-	}
-
-	return entry.Value, true
+	return val.value, true
 }
 
 func (c *MemoryCache) Set(key string, value interface{}, ttl time.Duration) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	// Encode value using gob - wrap in struct to preserve type information
-	entry := cacheEntry{
-		Value: value,
-		Exp:   time.Now().Add(ttl),
-	}
-	var buf bytes.Buffer
-	if err := gob.NewEncoder(&buf).Encode(entry); err != nil {
-		return
-	}
-
 	c.cache.Add(key, cacheValue{
-		data: buf.Bytes(),
-		exp:  entry.Exp,
+		value: value,
+		exp:   time.Now().Add(ttl),
 	})
 }
 

@@ -3,15 +3,50 @@ package cache
 import (
 	"bytes"
 	"encoding/gob"
-	"encoding/json"
+	"errors"
 	"sync"
 	"time"
 
 	"github.com/dgraph-io/badger/v4"
 )
 
+// Tuning defaults sized for small deployments (<=512MB RAM VPS).
+// Badger's out-of-the-box defaults assume a dedicated database server
+// (64MB memtables x5, 256MB block cache) which is wasteful here.
+const (
+	defaultMemtableSize       int64  = 16 << 20 // 16MB
+	defaultNumMemtables              = 4
+	defaultBlockCacheSize     int64  = 32 << 20  // 32MB
+	defaultValueLogFileSize   int64  = 128 << 20 // 128MB
+	defaultValueLogMaxEntries uint32 = 50000
+	defaultGCDiscardRatio            = 0.5
+	maxGCCyclesPerTick               = 8 // bound GC work per interval
+)
+
+// Options configures the two-tier cache.
+// Zero values select the tuned defaults above.
+type Options struct {
+	Path               string        // Badger data directory (required)
+	MemoryEntries      int           // LRU capacity of the hot layer
+	DefaultTTL         time.Duration // TTL used by Set when callers pass one
+	CleanupInterval    time.Duration // Periodic scan that physically deletes expired keys
+	GCInterval         time.Duration // Value-log GC cadence; 0 disables (not recommended for long runs)
+	GCDiscardRatio     float64       // Fraction of garbage in a vlog file required before rewrite; 0 -> 0.5
+	MemTableSizeBytes  int64         // Per-memtable memory budget
+	NumMemtables       int           // Max in-memory memtables before flush/stall
+	BlockCacheSize     int64         // Block (data) cache budget
+	IndexCacheSize     int64         // Index cache budget; 0 lets Badger auto-size
+	ValueLogFileSize   int64         // Max size of a single value-log file
+	ValueLogMaxEntries uint32        // Max entries per vlog file before rotation
+}
+
 // BadgerCache implements a persistent cache using BadgerDB
 // It works as a two-tier cache: Memory (hot) + Badger (cold/persistent)
+//
+// Expiration is delegated to Badger's native entry TTL: expired items are
+// invisible to reads and physically reclaimed by compaction. The periodic
+// cleanup scan only accelerates reclamation by deleting expired keys eagerly,
+// and the value-log GC loop reclaims the disk space deletions leave behind.
 type BadgerCache struct {
 	mu              sync.RWMutex
 	memory          *MemoryCache  // Hot cache (LRU)
@@ -19,43 +54,63 @@ type BadgerCache struct {
 	badgerPath      string        // Path for Badger data
 	defaultTTL      time.Duration // Default TTL for Set operations
 	cleanupInterval time.Duration // Interval for periodic cleanup
-	stopCleanup     chan struct{} // Channel to stop background cleanup
+	stopBackground  chan struct{} // Channel to stop background workers
 	wg              sync.WaitGroup
+	opts            Options
 }
 
-// badgerCacheEntry is stored in Badger with metadata
-type badgerCacheEntry struct {
-	Value     []byte // gob-encoded value
-	ExpiresAt int64  // Unix timestamp (nanoseconds)
-}
-
-// NewBadgerCache creates a new two-tier cache (Memory + Badger)
+// NewBadgerCache creates a new two-tier cache (Memory + Badger) with tuned defaults.
+// Kept for backward compatibility; prefer NewBadgerCacheWithOptions.
 func NewBadgerCache(memorySize int, badgerPath string, defaultTTL time.Duration, cleanupInterval time.Duration) (*BadgerCache, error) {
-	// Initialize Badger
-	opts := badger.DefaultOptions(badgerPath)
-	opts.ValueLogFileSize = 256 << 20 // 256MB
-	opts.ValueLogMaxEntries = 50000
+	return NewBadgerCacheWithOptions(Options{
+		Path:            badgerPath,
+		MemoryEntries:   memorySize,
+		DefaultTTL:      defaultTTL,
+		CleanupInterval: cleanupInterval,
+	})
+}
 
-	db, err := badger.Open(opts)
+// NewBadgerCacheWithOptions creates a new two-tier cache from explicit options.
+func NewBadgerCacheWithOptions(opts Options) (*BadgerCache, error) {
+	if opts.Path == "" {
+		return nil, errors.New("cache: badger path must not be empty")
+	}
+	if opts.GCDiscardRatio <= 0 || opts.GCDiscardRatio >= 1 {
+		opts.GCDiscardRatio = defaultGCDiscardRatio
+	}
+
+	badgerOpts := badger.DefaultOptions(opts.Path).
+		WithLoggingLevel(badger.ERROR). // silence per-op chatter; errors still surface
+		WithMemTableSize(orDefaultI64(opts.MemTableSizeBytes, defaultMemtableSize)).
+		WithNumMemtables(orDefaultInt(opts.NumMemtables, defaultNumMemtables)).
+		WithBlockCacheSize(orDefaultI64(opts.BlockCacheSize, defaultBlockCacheSize)).
+		WithValueLogFileSize(orDefaultI64(opts.ValueLogFileSize, defaultValueLogFileSize)).
+		WithValueLogMaxEntries(orDefaultU32(opts.ValueLogMaxEntries, defaultValueLogMaxEntries))
+	if opts.IndexCacheSize > 0 {
+		badgerOpts = badgerOpts.WithIndexCacheSize(opts.IndexCacheSize)
+	}
+
+	db, err := badger.Open(badgerOpts)
 	if err != nil {
 		return nil, err
 	}
 
-	// Initialize memory cache
-	memory := NewMemoryCache(memorySize)
-
 	c := &BadgerCache{
-		memory:          memory,
+		memory:          NewMemoryCache(opts.MemoryEntries),
 		badger:          db,
-		badgerPath:      badgerPath,
-		defaultTTL:      defaultTTL,
-		cleanupInterval: cleanupInterval,
-		stopCleanup:     make(chan struct{}),
+		badgerPath:      opts.Path,
+		defaultTTL:      opts.DefaultTTL,
+		cleanupInterval: opts.CleanupInterval,
+		stopBackground:  make(chan struct{}),
+		opts:            opts,
 	}
 
-	// Start background cleanup goroutine
 	c.wg.Add(1)
-	go c.cleanupExpired()
+	go c.cleanupLoop()
+	if opts.GCInterval > 0 {
+		c.wg.Add(1)
+		go c.valueLogGCLoop()
+	}
 
 	return c, nil
 }
@@ -72,12 +127,16 @@ func (c *BadgerCache) Get(key string) (interface{}, bool) {
 	c.mu.RLock()
 
 	var result interface{}
-	var expiresAt int64
+	var remainingTTL time.Duration
 	var expired bool
 	err := c.badger.View(func(txn *badger.Txn) error {
 		item, err := txn.Get([]byte(key))
 		if err != nil {
 			return err
+		}
+		if item.IsDeletedOrExpired() {
+			expired = true
+			return badger.ErrKeyNotFound
 		}
 
 		valCopy, err := item.ValueCopy(nil)
@@ -85,41 +144,27 @@ func (c *BadgerCache) Get(key string) (interface{}, bool) {
 			return err
 		}
 
-		var entry badgerCacheEntry
-		if err := json.Unmarshal(valCopy, &entry); err != nil {
+		// Decode gob payload (single decode; no outer wrapper since v2 format)
+		var entry cacheEntry
+		if err := gob.NewDecoder(bytes.NewReader(valCopy)).Decode(&entry); err != nil {
 			return err
 		}
 
-		// Check expiration
-		if time.Now().UnixNano() > entry.ExpiresAt {
-			expired = true
-			return nil
-		}
-
-		// Decode gob data
-		var cacheEntry cacheEntry
-		if err := gob.NewDecoder(bytes.NewReader(entry.Value)).Decode(&cacheEntry); err != nil {
-			return err
-		}
-
-		result = cacheEntry.Value
-		expiresAt = entry.ExpiresAt
+		result = entry.Value
+		remainingTTL = time.Until(entry.Exp)
 		return nil
 	})
 	c.mu.RUnlock()
 
 	if err != nil || result == nil {
 		if expired {
-			c.deleteFromBadger(key)
+			c.deleteExpiredKey(key)
 		}
 		return nil, false
 	}
 
 	// Promote to memory cache (async, don't block)
-	if expiresAt > 0 {
-		remainingTTL := time.Duration(expiresAt - time.Now().UnixNano())
-		go c.promoteToMemory(key, result, remainingTTL)
-	}
+	go c.promoteToMemory(key, result, remainingTTL)
 
 	return result, true
 }
@@ -141,12 +186,9 @@ func (c *BadgerCache) Set(key string, value interface{}, ttl time.Duration) {
 	c.setInBadger(key, value, ttl)
 }
 
-// setInBadger stores a value in Badger
+// setInBadger stores a gob-encoded value with Badger-native TTL
 func (c *BadgerCache) setInBadger(key string, value interface{}, ttl time.Duration) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	// Encode value using gob
+	// Encode value using gob - wrap in struct to preserve type information
 	var buf bytes.Buffer
 	entry := cacheEntry{
 		Value: value,
@@ -156,29 +198,31 @@ func (c *BadgerCache) setInBadger(key string, value interface{}, ttl time.Durati
 		return
 	}
 
-	badgerEntry := badgerCacheEntry{
-		Value:     buf.Bytes(),
-		ExpiresAt: time.Now().Add(ttl).UnixNano(),
-	}
+	e := badger.NewEntry([]byte(key), buf.Bytes()).WithTTL(ttl)
 
-	data, err := json.Marshal(badgerEntry)
-	if err != nil {
-		return
-	}
-
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	// Best-effort: a failed cold write only costs a future cache miss.
 	_ = c.badger.Update(func(txn *badger.Txn) error {
-		return txn.Set([]byte(key), data)
+		return txn.SetEntry(e)
+	})
+}
+
+// deleteExpiredKey physically removes an expired key so its space can be
+// reclaimed by compaction/value-log GC ahead of the next cleanup pass.
+func (c *BadgerCache) deleteExpiredKey(key string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// Best-effort; the periodic cleanup will retry if this fails.
+	_ = c.badger.Update(func(txn *badger.Txn) error {
+		return txn.Delete([]byte(key))
 	})
 }
 
 // deleteFromBadger removes a key from Badger
 func (c *BadgerCache) deleteFromBadger(key string) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	_ = c.badger.Update(func(txn *badger.Txn) error {
-		return txn.Delete([]byte(key))
-	})
+	c.deleteExpiredKey(key)
 }
 
 // Exists checks if a key exists in either Memory or Badger
@@ -188,36 +232,25 @@ func (c *BadgerCache) Exists(key string) bool {
 		return true
 	}
 
-	// Check badger
+	// Check badger: txn.Get already filters deleted/expired versions;
+	// detect the expired case separately to physically delete it.
 	c.mu.RLock()
 
-	var exists bool
-	var expired bool
+	exists := false
+	expired := false
 	_ = c.badger.View(func(txn *badger.Txn) error {
 		item, err := txn.Get([]byte(key))
-		if err != nil {
+		switch {
+		case err != nil:
 			return nil
-		}
-
-		valCopy, err := item.ValueCopy(nil)
-		if err != nil {
-			return nil
-		}
-
-		var entry badgerCacheEntry
-		if err := json.Unmarshal(valCopy, &entry); err != nil {
-			return nil
-		}
-
-		// Check expiration
-		if time.Now().UnixNano() <= entry.ExpiresAt {
-			exists = true
-		} else {
+		case item.IsDeletedOrExpired():
 			expired = true
+		default:
+			exists = true
 		}
 		return nil
 	})
-	c.mu.RUnlock()
+	c.mu.RUnlock() // release before deleteFromBadger takes the write lock
 
 	if expired {
 		c.deleteFromBadger(key)
@@ -257,8 +290,8 @@ func (c *BadgerCache) Clear() {
 	})
 }
 
-// cleanupExpired periodically removes expired entries from Badger
-func (c *BadgerCache) cleanupExpired() {
+// cleanupLoop periodically removes expired entries from Badger
+func (c *BadgerCache) cleanupLoop() {
 	defer c.wg.Done()
 
 	ticker := time.NewTicker(c.cleanupInterval) // Clean at configured interval
@@ -268,38 +301,66 @@ func (c *BadgerCache) cleanupExpired() {
 		select {
 		case <-ticker.C:
 			c.cleanupBadger()
-		case <-c.stopCleanup:
+		case <-c.stopBackground:
 			return
 		}
 	}
 }
 
-// cleanupBadger removes all expired entries from Badger
+// valueLogGCLoop rewrites value-log files whose contents are mostly stale.
+// Without this, vlog files grow monotonically under a churn of Set/Delete:
+// deletions only mark keys gone, the space comes back only via RunValueLogGC.
+func (c *BadgerCache) valueLogGCLoop() {
+	defer c.wg.Done()
+
+	ticker := time.NewTicker(c.opts.GCInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			c.runValueLogGC()
+		case <-c.stopBackground:
+			return
+		}
+	}
+}
+
+// runValueLogGC performs up to maxGCCyclesPerTick rewrites, stopping as soon
+// as no file qualifies. Each call rewrites at most one vlog file.
+func (c *BadgerCache) runValueLogGC() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	for i := 0; i < maxGCCyclesPerTick; i++ {
+		err := c.badger.RunValueLogGC(c.opts.GCDiscardRatio)
+		if err != nil {
+			// ErrNoRewrite: nothing worth reclaiming right now. Any other
+			// error is transient (concurrent rewrite, DB busy); retry next tick.
+			return
+		}
+	}
+}
+
+// cleanupBadger removes all expired entries from Badger.
+// Reads only item metadata (no value copies) to keep the scan cheap.
 func (c *BadgerCache) cleanupBadger() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	now := time.Now().UnixNano()
+	iterOpts := badger.DefaultIteratorOptions
+	iterOpts.PrefetchValues = false
+
 	var keysToDelete [][]byte
 
 	_ = c.badger.View(func(txn *badger.Txn) error {
-		iter := txn.NewIterator(badger.DefaultIteratorOptions)
+		iter := txn.NewIterator(iterOpts)
 		defer iter.Close()
 
 		for iter.Seek(nil); iter.Valid(); iter.Next() {
 			item := iter.Item()
-			valCopy, err := item.ValueCopy(nil)
-			if err != nil {
-				continue
-			}
-
-			var entry badgerCacheEntry
-			if err := json.Unmarshal(valCopy, &entry); err != nil {
-				continue
-			}
-
-			if now > entry.ExpiresAt {
-				keysToDelete = append(keysToDelete, item.Key())
+			if item.IsDeletedOrExpired() {
+				keysToDelete = append(keysToDelete, item.KeyCopy(nil))
 			}
 		}
 		return nil
@@ -317,9 +378,9 @@ func (c *BadgerCache) cleanupBadger() {
 	}
 }
 
-// Close closes the Badger database and stops cleanup goroutine
+// Close stops background workers and closes the Badger database
 func (c *BadgerCache) Close() error {
-	close(c.stopCleanup)
+	close(c.stopBackground)
 	c.wg.Wait()
 	return c.badger.Close()
 }
@@ -344,4 +405,25 @@ func (c *BadgerCache) GetStats() (memorySize, badgerSize int64) {
 	})
 
 	return memorySize, badgerSize
+}
+
+func orDefaultI64(v, def int64) int64 {
+	if v > 0 {
+		return v
+	}
+	return def
+}
+
+func orDefaultU32(v, def uint32) uint32 {
+	if v > 0 {
+		return v
+	}
+	return def
+}
+
+func orDefaultInt(v, def int) int {
+	if v > 0 {
+		return v
+	}
+	return def
 }

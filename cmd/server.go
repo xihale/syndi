@@ -55,7 +55,19 @@ func main() {
 	badgerPath := cfg.GetBadgerPath()
 
 	if cfg.GetCacheType() == "badger" {
-		badgerCache, err := cache.NewBadgerCache(cfg.GetMemoryCacheSize(), badgerPath, cfg.GetCacheTTL(), cfg.GetCacheCleanupInterval())
+		badgerCache, err := cache.NewBadgerCacheWithOptions(cache.Options{
+			Path:              badgerPath,
+			MemoryEntries:     cfg.GetMemoryCacheSize(),
+			DefaultTTL:        cfg.GetCacheTTL(),
+			CleanupInterval:   cfg.GetCacheCleanupInterval(),
+			GCInterval:        cfg.Cache.GCInterval,
+			GCDiscardRatio:    cfg.Cache.GCDiscardRatio,
+			MemTableSizeBytes: int64(cfg.Cache.MemtableMB) << 20,
+			NumMemtables:      cfg.Cache.NumMemtables,
+			BlockCacheSize:    int64(cfg.Cache.BlockCacheMB) << 20,
+			IndexCacheSize:    int64(cfg.Cache.IndexCacheMB) << 20, // 0 = auto
+			ValueLogFileSize:  int64(cfg.Cache.VlogFileMB) << 20,
+		})
 		if err != nil {
 			logger.Error("Failed to initialize badger cache, falling back to memory", zap.Error(err))
 			cacheInstance = cache.NewMemoryCache(cfg.GetMemoryCacheSize())
@@ -64,7 +76,10 @@ func main() {
 			cacheInstance = badgerCache
 			logger.Info("Using two-tier cache (memory + badger)",
 				zap.Int("memory_size", cfg.GetMemoryCacheSize()),
-				zap.String("badger_path", badgerPath))
+				zap.String("badger_path", badgerPath),
+				zap.Int("memtable_mb", cfg.Cache.MemtableMB),
+				zap.Int("block_cache_mb", cfg.Cache.BlockCacheMB),
+				zap.Duration("gc_interval", cfg.Cache.GCInterval))
 		}
 	} else {
 		cacheInstance = cache.NewMemoryCache(cfg.GetMemoryCacheSize())
