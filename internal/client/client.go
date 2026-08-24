@@ -1,6 +1,7 @@
 package client
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"encoding/xml"
@@ -374,6 +375,21 @@ func (c *Client) Post(ctx context.Context, urlStr string, body io.Reader) ([]byt
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	return c.doRequestWithRetry(ctx, req)
+}
+
+// PostWithHeaders performs a POST request with a full body and explicit headers.
+func (c *Client) PostWithHeaders(ctx context.Context, urlStr string, body []byte, headers map[string]string) ([]byte, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, urlStr, bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
+	if req.Header.Get("Content-Type") == "" {
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	}
 	return c.doRequestWithRetry(ctx, req)
 }
 
