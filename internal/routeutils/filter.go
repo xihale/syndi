@@ -11,12 +11,6 @@ import (
 	"github.com/xihale/syndi/pkg/models"
 )
 
-// ApplyOptions contains options for ApplyParameters
-type ApplyOptions struct {
-	// UseRegex determines whether to use regex or RE2
-	UseRegex bool
-}
-
 // FilterItems keeps items matching pattern in specified fields
 // If caseSensitive is false, matching is case-insensitive
 func FilterItems(items []models.Item, pattern string, caseSensitive bool, fields ...string) ([]models.Item, error) {
@@ -66,9 +60,9 @@ func FilterByTime(items []models.Item, seconds int64) []models.Item {
 	return result
 }
 
-// SortByPubDate sorts items by pubDate
+// SortByPubDate sorts items by pubDate in place — the caller's backing
+// array is modified, so cached/shared slices must be copied first.
 func SortByPubDate(items []models.Item, descending bool) {
-	// Create a copy to avoid modifying the original
 	sort.Slice(items, func(i, j int) bool {
 		// Handle zero dates
 		if items[i].PubDate.IsZero() {
@@ -95,7 +89,7 @@ func ApplyLimit(items []models.Item, limit int) []models.Item {
 
 // ApplyParameters applies query parameters to filter items
 // Supports: limit, filter, filterout, filter_time, sorted
-func ApplyParameters(items []models.Item, query url.Values, opts ApplyOptions) ([]models.Item, error) {
+func ApplyParameters(items []models.Item, query url.Values) ([]models.Item, error) {
 	result := items
 
 	// 1. Filter by time window
@@ -112,8 +106,7 @@ func ApplyParameters(items []models.Item, query url.Values, opts ApplyOptions) (
 		var err error
 		result, err = FilterItems(result, filter, false, "title", "description", "author", "category")
 		if err != nil {
-			// Invalid regex, log and continue
-			return result, nil
+			return result, fmt.Errorf("invalid filter regex %q: %w", filter, err)
 		}
 	}
 
@@ -122,8 +115,7 @@ func ApplyParameters(items []models.Item, query url.Values, opts ApplyOptions) (
 		var err error
 		result, err = FilterOutItems(result, filterOut, false, "title", "description", "author", "category")
 		if err != nil {
-			// Invalid regex, log and continue
-			return result, nil
+			return result, fmt.Errorf("invalid filterout regex %q: %w", filterOut, err)
 		}
 	}
 

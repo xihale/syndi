@@ -232,15 +232,13 @@ func TestCacheFeed(t *testing.T) {
 		t.Errorf("CacheFeed() callCount = %v, want %v", callCount, 1)
 	}
 
-	// Second call - cache hit
+	// Second call - cache hit: the fetch function must NOT run again.
 	feed2, err := CacheFeed(cache, key, ttl, fetchFn)
 	if err != nil {
 		t.Fatalf("CacheFeed() error = %v", err)
 	}
-	if callCount != 2 {
-		// Note: Simple implementation doesn't cache properly in tests
-		// This is expected for the basic implementation
-		t.Logf("CacheFeed() callCount = %v (caching behavior may vary)", callCount)
+	if callCount != 1 {
+		t.Errorf("CacheFeed() callCount after cache hit = %v, want %v", callCount, 1)
 	}
 
 	if feed1.Title != feed2.Title {
@@ -367,16 +365,53 @@ func TestNormalizeURL(t *testing.T) {
 func TestCleanDescription(t *testing.T) {
 	opts := DefaultCleanOptions()
 
-	// Test with simple HTML
-	html := `<p>Hello &amp; world</p>`
-	cleaned, err := CleanDescription(html, "https://example.com", opts)
-	if err != nil {
-		t.Fatalf("CleanDescription() error = %v", err)
-	}
+	t.Run("keeps entity-escaped text escaped", func(t *testing.T) {
+		html := `<p>Hello &amp; world</p>`
+		cleaned, err := CleanDescription(html, "https://example.com", opts)
+		if err != nil {
+			t.Fatalf("CleanDescription() error = %v", err)
+		}
+		if !contains(cleaned, "Hello &amp; world") {
+			t.Errorf("CleanDescription() = %q, want entity-escaped text preserved", cleaned)
+		}
+		if contains(cleaned, "<html") || contains(cleaned, "<body") {
+			t.Errorf("CleanDescription() = %q, must not wrap fragments in html/body", cleaned)
+		}
+	})
 
-	// Should decode entities
-	if !contains(cleaned, "Hello & world") && !contains(cleaned, "Hello &amp; world") {
-		t.Logf("CleanDescription() result: %v", cleaned)
+	t.Run("does not activate escaped markup", func(t *testing.T) {
+		// Escaped markup in source must stay escaped: decoding entities
+		// before the HTML passes below would turn this into a live tag.
+		html := `&lt;img src=x onerror=alert(1)&gt;`
+		cleaned, err := CleanDescription(html, "https://example.com", opts)
+		if err != nil {
+			t.Fatalf("CleanDescription() error = %v", err)
+		}
+		if contains(cleaned, "<img") {
+			t.Errorf("CleanDescription() = %q, escaped markup was activated", cleaned)
+		}
+	})
+}
+
+func TestSanitizeHTMLAttributes(t *testing.T) {
+	// Event handlers and script-capable URL schemes must be filtered even
+	// when the tag itself is allowed.
+	in := `<a href="javascript:alert(1)" onclick="steal()" title="ok">c</a>`
+	got, err := SanitizeHTML(in, []string{"a"}, nil)
+	if err != nil {
+		t.Fatalf("SanitizeHTML() error = %v", err)
+	}
+	if contains(got, "onclick") || contains(got, "javascript:") {
+		t.Errorf("SanitizeHTML() = %q, dangerous attributes survived", got)
+	}
+	if !contains(got, `title="ok"`) || !contains(got, ">c</a>") {
+		t.Errorf("SanitizeHTML() = %q, safe attributes/content must survive", got)
+	}
+}
+
+func TestStripHTMLRemovesScriptContent(t *testing.T) {
+	if got := ExtractText("<script>var a=1;</script>ok"); got != "ok" {
+		t.Errorf("ExtractText() = %q, want %q (script body must not leak)", got, "ok")
 	}
 }
 

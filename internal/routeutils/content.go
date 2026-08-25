@@ -46,17 +46,26 @@ func DecodeHTMLEntities(s string) string {
 }
 
 // SanitizeHTML removes dangerous tags/attributes (XSS protection)
-// If allowedTags is nil, all HTML is stripped (plain text only)
+// If allowedTags is nil, all HTML is stripped (plain text only).
+// allowedAttrs whitelists element attributes (nil selects a small safe
+// default); URL-valued attributes additionally reject script-capable schemes.
 func SanitizeHTML(htmlStr string, allowedTags []string, allowedAttrs []string) (string, error) {
 	if len(allowedTags) == 0 {
 		// Strip all HTML, return plain text
 		return stripHTML(htmlStr), nil
 	}
 
-	// Build allowed set
+	// Build allowed sets
 	allowed := make(map[string]bool)
 	for _, tag := range allowedTags {
 		allowed[tag] = true
+	}
+	attrs := make(map[string]bool)
+	if len(allowedAttrs) == 0 {
+		allowedAttrs = defaultAllowedAttrs
+	}
+	for _, attr := range allowedAttrs {
+		attrs[strings.ToLower(attr)] = true
 	}
 
 	// Parse and sanitize
@@ -66,8 +75,26 @@ func SanitizeHTML(htmlStr string, allowedTags []string, allowedAttrs []string) (
 	}
 
 	var buf bytes.Buffer
-	sanitizeNode(doc, &buf, allowed)
+	sanitizeNode(doc, &buf, allowed, attrs)
 	return buf.String(), nil
+}
+
+// defaultAllowedAttrs is used when AllowedAttrs is not provided: enough to
+// keep links/images working while dropping event handlers and styling.
+var defaultAllowedAttrs = []string{"href", "src", "alt", "title", "width", "height"}
+
+// sanitizeURL reports whether a URL-valued attribute value is safe.
+func sanitizeURL(u string) bool {
+	u = strings.TrimSpace(strings.ToLower(u))
+	if i := strings.IndexAny(u, "?#"); i >= 0 {
+		u = u[:i] // scheme must appear before any query/fragment
+	}
+	for _, prefix := range []string{"javascript:", "vbscript:", "data:"} {
+		if strings.HasPrefix(u, prefix) {
+			return false
+		}
+	}
+	return true
 }
 
 // DefaultSanitize uses safe defaults (no tags allowed)
@@ -77,9 +104,16 @@ func DefaultSanitize(htmlStr string) (string, error) {
 
 // stripHTML removes all HTML tags and returns plain text
 func stripHTML(htmlStr string) string {
+	// Drop script/style blocks including their text content first, so the
+	// tag-only removal below cannot leak raw JS/CSS into "plain text".
+	scriptRe := regexp.MustCompile(`(?is)<script\b[^>]*>.*?(?:</script\s*>|\z)`)
+	styleRe := regexp.MustCompile(`(?is)<style\b[^>]*>.*?(?:</style\s*>|\z)`)
+	cleaned := scriptRe.ReplaceAllString(htmlStr, "")
+	cleaned = styleRe.ReplaceAllString(cleaned, "")
+
 	// Quick and dirty HTML tag removal
 	re := regexp.MustCompile(`<[^>]*>`)
-	cleaned := re.ReplaceAllString(htmlStr, "")
+	cleaned = re.ReplaceAllString(cleaned, "")
 
 	// Decode entities
 	cleaned = htmlentity.UnescapeString(cleaned)
@@ -89,7 +123,7 @@ func stripHTML(htmlStr string) string {
 }
 
 // sanitizeNode recursively sanitizes HTML nodes
-func sanitizeNode(n *htmlnode.Node, buf *bytes.Buffer, allowed map[string]bool) {
+func sanitizeNode(n *htmlnode.Node, buf *bytes.Buffer, allowed map[string]bool, allowedAttrs map[string]bool) {
 	if n == nil {
 		return
 	}
@@ -101,15 +135,23 @@ func sanitizeNode(n *htmlnode.Node, buf *bytes.Buffer, allowed map[string]bool) 
 		if allowed[n.Data] {
 			// Write opening tag
 			buf.WriteString("<" + n.Data)
-			// Write attributes (could filter by allowedAttrs here)
+			// Write attributes, filtered by the whitelist; URL-valued
+			// attributes additionally reject script-capable schemes.
 			for _, attr := range n.Attr {
+				key := strings.ToLower(attr.Key)
+				if !allowedAttrs[key] {
+					continue
+				}
+				if (key == "href" || key == "src") && !sanitizeURL(attr.Val) {
+					continue
+				}
 				fmt.Fprintf(buf, ` %s="%s"`, attr.Key, htmlentity.EscapeString(attr.Val))
 			}
 			buf.WriteString(">")
 
 			// Recursively process children
 			for c := n.FirstChild; c != nil; c = c.NextSibling {
-				sanitizeNode(c, buf, allowed)
+				sanitizeNode(c, buf, allowed, allowedAttrs)
 			}
 
 			// Write closing tag
@@ -117,14 +159,24 @@ func sanitizeNode(n *htmlnode.Node, buf *bytes.Buffer, allowed map[string]bool) 
 		} else {
 			// Tag not allowed, just process children
 			for c := n.FirstChild; c != nil; c = c.NextSibling {
-				sanitizeNode(c, buf, allowed)
+				sanitizeNode(c, buf, allowed, allowedAttrs)
 			}
 		}
 	case htmlnode.DocumentNode:
 		for c := n.FirstChild; c != nil; c = c.NextSibling {
-			sanitizeNode(c, buf, allowed)
+			sanitizeNode(c, buf, allowed, allowedAttrs)
 		}
 	}
+}
+
+// fragmentHTML serializes only the body contents of a parsed document, so
+// fragments passed through the pipeline don't gain <html><head><body>
+// wrappers (goquery.Html() on the document node emits the whole document).
+func fragmentHTML(doc *parser.Document) (string, error) {
+	if body := doc.Find("body"); body.Length() > 0 {
+		return body.Html()
+	}
+	return doc.Html()
 }
 
 // FixLazyImages replaces data-src, data-original with src attribute
@@ -146,7 +198,7 @@ func FixLazyImages(htmlStr, baseURL string) (string, error) {
 	}
 
 	// Return the modified HTML
-	return doc.Html()
+	return fragmentHTML(doc)
 }
 
 // RemoveScripts removes all <script> tags completely
@@ -166,7 +218,7 @@ func RemoveScripts(htmlStr string) (string, error) {
 		sel.Remove()
 	})
 
-	return doc.Html()
+	return fragmentHTML(doc)
 }
 
 // AddReferrerPolicy adds referrerpolicy="no-referrer" to links, images, iframes
@@ -184,7 +236,7 @@ func AddReferrerPolicy(htmlStr string) (string, error) {
 		})
 	}
 
-	return doc.Html()
+	return fragmentHTML(doc)
 }
 
 // ResolveLinksInHTML finds all relative links and makes them absolute
@@ -212,7 +264,7 @@ func ResolveLinksInHTML(htmlStr, baseURL string) (string, error) {
 		}
 	})
 
-	return doc.Html()
+	return fragmentHTML(doc)
 }
 
 // ResolveImages resolves src attributes in <img>, <video>, <source>, <iframe>
@@ -244,17 +296,19 @@ func ResolveImages(htmlStr, baseURL string) (string, error) {
 		}
 	})
 
-	return doc.Html()
+	return fragmentHTML(doc)
 }
 
 // CleanDescription applies full pipeline for content cleaning
 func CleanDescription(htmlStr, baseURL string, opts CleanOptions) (string, error) {
 	result := htmlStr
 
-	// 1. Decode HTML entities
-	result = DecodeHTMLEntities(result)
+	// Note: deliberately no entity decoding up front. Decoding before the
+	// HTML passes below would turn escaped text like &lt;img onerror=…&gt;
+	// into live tags. Entities are only decoded on plain-text output paths
+	// (stripHTML).
 
-	// 2. Remove scripts
+	// 1. Remove scripts
 	if opts.RemoveScripts {
 		var err error
 		result, err = RemoveScripts(result)
@@ -309,20 +363,9 @@ func CleanDescription(htmlStr, baseURL string, opts CleanOptions) (string, error
 
 // ExtractText strips HTML and returns plain text with normalized whitespace
 func ExtractText(htmlStr string) string {
-	// Remove all HTML tags
-	text := stripHTML(htmlStr)
-
-	// Normalize whitespace
-	lines := strings.Split(text, "\n")
-	var result []string
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line != "" {
-			result = append(result, line)
-		}
-	}
-
-	return strings.Join(result, "\n")
+	// stripHTML already removes script/style content, strips tags, decodes
+	// entities and collapses whitespace.
+	return stripHTML(htmlStr)
 }
 
 // normalizeWhitespace collapses multiple whitespace characters into single spaces
@@ -346,16 +389,21 @@ func normalizeWhitespace(s string) string {
 	return strings.TrimSpace(buf.String())
 }
 
-// Truncate truncates text to maxLength and adds suffix
+// Truncate truncates text to maxLength runes and adds suffix.
+// maxLength counts runes, not bytes (byte slicing would split multi-byte
+// characters); negative maxLength returns the text unchanged.
 func Truncate(text string, maxLength int, suffix string) string {
-	if len(text) <= maxLength {
+	if maxLength < 0 {
+		return text
+	}
+	runes := []rune(text)
+	if len(runes) <= maxLength {
 		return text
 	}
 
 	// Try to truncate at word boundary
-	truncated := text[:maxLength]
-	lastSpace := strings.LastIndex(truncated, " ")
-	if lastSpace > 0 {
+	truncated := string(runes[:maxLength])
+	if lastSpace := strings.LastIndex(truncated, " "); lastSpace > 0 {
 		truncated = truncated[:lastSpace]
 	}
 

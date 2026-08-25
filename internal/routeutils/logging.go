@@ -94,6 +94,9 @@ func LogFetchError(logger *zap.Logger, url string, err error, statusCode int) {
 func WithTiming(logger *zap.Logger, routeName string) func() {
 	start := time.Now()
 	return func() {
+		if logger == nil {
+			return
+		}
 		duration := time.Since(start)
 		logger.Debug("Route timing",
 			zap.String("route", routeName),
