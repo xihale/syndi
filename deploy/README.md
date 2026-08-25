@@ -43,6 +43,33 @@ checks plus the docker0 gateway so containers (FreshRSS via
 `host.docker.internal`) can reach it. The instance is therefore not exposed on
 the public interface regardless of cloud security-group rules.
 
+## Public access
+
+If the instance must be reachable from the public internet, do **not** bind
+`0.0.0.0` — put a reverse proxy in front of the loopback listener and put auth
+at the proxy. Syndi itself has no authentication (the `middleware.access_key`
+option is not enforced), so HTTP Basic Auth at the proxy is the recommended
+minimal setup. Feed readers support it natively (FreshRSS: feed URL
+`https://user:pass@syndi.example.com/rss/<route>`).
+
+Caddy example (for `rss.example.com`):
+
+```caddyfile
+rss.example.com {
+	basic_auth {          # Caddy < 2.7 spells this directive "basicauth"
+		syndi <bcrypt-hash>   # caddy hash-password
+	}
+	reverse_proxy 127.0.0.1:1200
+}
+```
+
+```bash
+caddy hash-password --plaintext '...'          # bcrypt hash for the block above
+caddy validate --config /etc/caddy/Caddyfile   # then
+systemctl reload caddy                         # zero-downtime reload
+curl -u syndi:... https://rss.example.com/rss/zhihu/hot
+```
+
 ## FreshRSS cutover
 
 FreshRSS ran in docker and reached RSSHub via the compose network alias
