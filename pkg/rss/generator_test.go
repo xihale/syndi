@@ -302,34 +302,6 @@ func TestGenerateAtom_WithCategories(t *testing.T) {
 	}
 }
 
-func TestEscapeHTML(t *testing.T) {
-	tests := []struct {
-		name     string
-		input    string
-		expected string
-	}{
-		{
-			name:     "basic HTML",
-			input:    `<p>Hello & goodbye</p>`,
-			expected: `&lt;p&gt;Hello &amp; goodbye&lt;/p&gt;`,
-		},
-		{
-			name:     "special chars",
-			input:    `<>&"'`,
-			expected: `&lt;&gt;&amp;&#34;&#39;`,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := EscapeHTML(tt.input)
-			if result != tt.expected {
-				t.Errorf("expected %q, got %q", tt.expected, result)
-			}
-		})
-	}
-}
-
 func TestGenerateRSS_EmptyFeed(t *testing.T) {
 	feed := &models.Feed{
 		Title:       "Empty Feed",

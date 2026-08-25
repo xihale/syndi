@@ -1,28 +1,27 @@
 package rss
 
 import (
+	"bytes"
 	"encoding/xml"
 	"fmt"
-	"html"
 	"strings"
 	"time"
 
 	"github.com/xihale/syndi/pkg/models"
 )
 
-// Namespace defines RSS/Atom namespaces for XML
+// Namespace URIs used by the generators
 const (
-	NSRSS     = "http://purl.org/rss/1.0/modules/content/"
 	NSAtom    = "http://www.w3.org/2005/Atom"
-	NSDC      = "http://purl.org/dc/elements/1.1/"
 	NSContent = "http://purl.org/rss/1.0/modules/content/"
 )
 
 // Feed represents RSS 2.0 structure
 type RSSFeed struct {
-	XMLName xml.Name    `xml:"rss"`
-	Version string      `xml:"version,attr"`
-	Channel *RSSChannel `xml:"channel"`
+	XMLName      xml.Name    `xml:"rss"`
+	Version      string      `xml:"version,attr"`
+	XmlnsContent string      `xml:"xmlns:content,attr"`
+	Channel      *RSSChannel `xml:"channel"`
 }
 
 type RSSChannel struct {
@@ -40,18 +39,21 @@ type RSSChannel struct {
 }
 
 type RSSItem struct {
-	Title       string     `xml:"title"`
-	Link        string     `xml:"link"`
-	Description string     `xml:"description,omitempty"`
-	GUID        string     `xml:"guid"`
-	PubDate     string     `xml:"pubDate,omitempty"`
-	Author      string     `xml:"author,omitempty"`
-	Categories  []string   `xml:"category,omitempty"`
-	Content     RSSContent `xml:"content,omitempty"`
+	Title       string      `xml:"title"`
+	Link        string      `xml:"link"`
+	Description string      `xml:"description,omitempty"`
+	GUID        string      `xml:"guid"`
+	PubDate     string      `xml:"pubDate,omitempty"`
+	Author      string      `xml:"author,omitempty"`
+	Categories  []string    `xml:"category,omitempty"`
+	Content     *RSSContent `xml:"encoded,omitempty"`
 }
 
+// RSSContent is the item full-text element: the standard content module's
+// <content:encoded> (recognized by Feedly/Inoreader/FreshRSS et al.), not a
+// bare <content>.
 type RSSContent struct {
-	XMLName xml.Name `xml:"content"`
+	XMLName xml.Name `xml:"http://purl.org/rss/1.0/modules/content/ encoded"`
 	Type    string   `xml:"type,attr"`
 	Content string   `xml:",chardata"`
 }
@@ -101,14 +103,15 @@ type AtomContent struct {
 
 // GenerateRSS creates an RSS 2.0 feed
 func GenerateRSS(feed *models.Feed) ([]byte, error) {
+	updated := feedUpdated(feed)
 	rss := &RSSFeed{
-		Version: "2.0",
+		Version:      "2.0",
+		XmlnsContent: NSContent,
 		Channel: &RSSChannel{
-			Title:         feed.Title,
-			Link:          feed.Link,
-			Description:   feed.Description,
-			LastBuildDate: time.Now().Format(time.RFC1123Z),
-			Generator:     "Syndi/0.0.1 (+https://github.com/xihale/syndi)",
+			Title:       feed.Title,
+			Link:        feed.Link,
+			Description: feed.Description,
+			Generator:   "Syndi/0.0.1 (+https://github.com/xihale/syndi)",
 		},
 	}
 
@@ -116,7 +119,11 @@ func GenerateRSS(feed *models.Feed) ([]byte, error) {
 		rss.Channel.ManagingEditor = feed.Author.Email
 	}
 
-	if feed.Updated != nil {
+	if !updated.IsZero() {
+		rss.Channel.LastBuildDate = updated.UTC().Format(time.RFC1123Z)
+	}
+
+	if feed.Updated != nil && !feed.Updated.IsZero() {
 		rss.Channel.PubDate = feed.Updated.Format(time.RFC1123Z)
 	}
 
@@ -141,7 +148,7 @@ func GenerateRSS(feed *models.Feed) ([]byte, error) {
 		}
 
 		if item.Description != "" {
-			rssItem.Content = RSSContent{
+			rssItem.Content = &RSSContent{
 				Type:    "html",
 				Content: item.Description,
 			}
@@ -157,23 +164,66 @@ func GenerateRSS(feed *models.Feed) ([]byte, error) {
 		return nil, err
 	}
 
-	return []byte(fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
+	return withContentPrefix([]byte(fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
 <!-- generator="Syndi/0.0.1" -->
-%s`, buf.String())), nil
+%s`, buf.String()))), nil
+}
+
+// withContentPrefix rewrites the content module element from the
+// default-namespace form encoding/xml can emit (<encoded xmlns="…">) to the
+// conventional prefixed <content:encoded>. Item text is entity-escaped, so
+// these literals cannot occur inside content.
+func withContentPrefix(doc []byte) []byte {
+	doc = bytes.ReplaceAll(doc,
+		[]byte(`<encoded xmlns="`+NSContent+`"`),
+		[]byte(`<content:encoded`))
+	return bytes.ReplaceAll(doc, []byte(`</encoded>`), []byte(`</content:encoded>`))
+}
+
+// feedUpdated returns the effective last-modified time of a feed: its own
+// Updated timestamp, else the newest item PubDate. It is derived from feed
+// data (never time.Now()) so the same cached feed always serializes to
+// identical bytes and ETags stay stable across requests.
+func feedUpdated(feed *models.Feed) time.Time {
+	if feed.Updated != nil && !feed.Updated.IsZero() {
+		return *feed.Updated
+	}
+	var newest time.Time
+	for _, item := range feed.Items {
+		if item.PubDate.After(newest) {
+			newest = item.PubDate
+		}
+	}
+	return newest
+}
+
+// entryUpdated returns the effective updated time of an Atom entry.
+func entryUpdated(item *models.Item, fallback time.Time) time.Time {
+	if item.Updated != nil && !item.Updated.IsZero() {
+		return item.Updated.UTC()
+	}
+	if !item.PubDate.IsZero() {
+		return item.PubDate.UTC()
+	}
+	return fallback.UTC()
 }
 
 // GenerateAtom creates an Atom 1.0 feed
 func GenerateAtom(feed *models.Feed) ([]byte, error) {
+	updated := feedUpdated(feed)
 	atom := &AtomFeed{
 		XMLNs:     NSAtom,
 		Title:     feed.Title,
 		ID:        feed.Link,
-		Updated:   time.Now().UTC().Format(time.RFC3339),
 		Generator: "Syndi/0.0.1 (+https://github.com/xihale/syndi)",
 		Links: []AtomLink{
 			{Rel: "self", Href: feed.Link, Type: "application/atom+xml"},
 			{Rel: "alternate", Href: feed.Link, Type: "text/html"},
 		},
+	}
+
+	if !updated.IsZero() {
+		atom.Updated = updated.UTC().Format(time.RFC3339)
 	}
 
 	if feed.Author != nil {
@@ -191,7 +241,7 @@ func GenerateAtom(feed *models.Feed) ([]byte, error) {
 		entry := AtomEntry{
 			Title:   item.Title,
 			ID:      item.GUID,
-			Updated: time.Now().UTC().Format(time.RFC3339),
+			Updated: entryUpdated(&item, updated).Format(time.RFC3339),
 			Link:    []AtomLink{{Rel: "alternate", Href: item.Link}},
 			Summary: item.Description,
 		}
@@ -235,9 +285,4 @@ func GenerateAtom(feed *models.Feed) ([]byte, error) {
 	return []byte(fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
 <!-- generator="Syndi/0.0.1" -->
 %s`, buf.String())), nil
-}
-
-// EscapeHTML escapes HTML special characters
-func EscapeHTML(s string) string {
-	return html.EscapeString(s)
 }
