@@ -47,7 +47,7 @@ func (e *KDLEncoder) EncodeEntry(entry zapcore.Entry, fields []zapcore.Field) (*
 	buf.AppendString(entry.Level.String())
 	buf.AppendByte(' ')
 	buf.AppendByte('"')
-	buf.AppendString(entry.Message)
+	buf.AppendString(escapeKDLString(entry.Message))
 	buf.AppendByte('"')
 
 	// Check if we need to add properties
@@ -66,7 +66,7 @@ func (e *KDLEncoder) EncodeEntry(entry zapcore.Entry, fields []zapcore.Field) (*
 		// Add logger name
 		if entry.LoggerName != "" {
 			buf.AppendString(`    logger="`)
-			buf.AppendString(entry.LoggerName)
+			buf.AppendString(escapeKDLString(entry.LoggerName))
 			buf.AppendString("\"\n")
 		}
 
@@ -92,7 +92,7 @@ func (e *KDLEncoder) EncodeEntry(entry zapcore.Entry, fields []zapcore.Field) (*
 			buf.AppendString("    ")
 			buf.AppendString(key)
 			buf.AppendString(`="`)
-			buf.AppendString(value)
+			buf.AppendString(escapeKDLString(value))
 			buf.AppendString("\"\n")
 		}
 		e.mu.Unlock()
@@ -107,10 +107,9 @@ func (e *KDLEncoder) EncodeEntry(entry zapcore.Entry, fields []zapcore.Field) (*
 
 	buf.AppendString("\n")
 
-	// Clear stored fields after encoding
-	e.mu.Lock()
-	e.fields = make(map[string]string)
-	e.mu.Unlock()
+	// Note: e.fields must NOT be cleared here. zap's ioCore.With(fields)
+	// clones the encoder once and expects the With fields to appear on every
+	// subsequent entry; clearing them drops the context after the first log.
 
 	return buf, nil
 }
@@ -548,6 +547,31 @@ func encodeFieldToKDL(buf *buffer.Buffer, field zapcore.Field) {
 			buf.AppendByte('"')
 			buf.AppendString(escapeKDLString(err.Error()))
 			buf.AppendByte('"')
+		}
+
+	case zapcore.DurationType:
+		// Durations are stored in field.Integer (nanoseconds), not String.
+		buf.AppendByte('"')
+		buf.AppendString(time.Duration(field.Integer).String())
+		buf.AppendByte('"')
+
+	case zapcore.TimeType:
+		// Time is stored in field.Interface (with layout in field.String).
+		if t, ok := field.Interface.(time.Time); ok {
+			buf.AppendByte('"')
+			buf.AppendString(t.Format(time.RFC3339))
+			buf.AppendByte('"')
+		} else {
+			buf.AppendString("null")
+		}
+
+	case zapcore.ReflectType:
+		if field.Interface != nil {
+			buf.AppendByte('"')
+			buf.AppendString(escapeKDLString(fmt.Sprintf("%+v", field.Interface)))
+			buf.AppendByte('"')
+		} else {
+			buf.AppendString("null")
 		}
 
 	default:
