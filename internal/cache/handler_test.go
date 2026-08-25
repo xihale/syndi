@@ -237,11 +237,11 @@ func TestDefaultKeyGenerator(t *testing.T) {
 			expected: "feed:/test/path",
 		},
 		{
-			name:     "with format",
+			name:     "with format (format excluded: raw feed is format-independent)",
 			path:     "/test/path",
 			format:   "atom",
 			limit:    "",
-			expected: "feed:/test/path:atom",
+			expected: "feed:/test/path",
 		},
 		{
 			name:     "with limit (limit is intentionally excluded from cache key)",
@@ -251,11 +251,11 @@ func TestDefaultKeyGenerator(t *testing.T) {
 			expected: "feed:/test/path",
 		},
 		{
-			name:     "with format and limit (limit is intentionally excluded from cache key)",
+			name:     "with format and limit (both intentionally excluded from cache key)",
 			path:     "/test/path",
 			format:   "atom",
 			limit:    "10",
-			expected: "feed:/test/path:atom",
+			expected: "feed:/test/path",
 		},
 	}
 

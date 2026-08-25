@@ -4,7 +4,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -213,18 +212,11 @@ type CachedResponse struct {
 
 // DefaultKeyGenerator generates a cache key from the request context
 func DefaultKeyGenerator(c *gin.Context) string {
-	path := c.Request.URL.Path
-	format := c.Query("format")
-	// Note: we intentionally exclude 'limit' from cache key so that
-	// different limit requests can share the same full feed cache
-
-	// Build cache key: feed:path:format
-	key := fmt.Sprintf("feed:%s", path)
-	if format != "" {
-		key += ":" + format
-	}
-
-	return key
+	// The raw (pre-parameter) feed is cached and serialized per request, so
+	// the key covers only the path. Query parameters (limit/filter/format/…)
+	// are applied per request and deliberately excluded — including format,
+	// which also avoids ambiguity with ":" inside path parameters.
+	return "feed:" + c.Request.URL.Path
 }
 
 // DefaultShouldCache determines if a response should be cached

@@ -39,6 +39,11 @@ type cacheEntry struct {
 
 // NewMemoryCache creates a new LRU memory cache
 func NewMemoryCache(size int) *MemoryCache {
+	if size <= 0 {
+		// lru.New errors (and returns nil) for non-positive sizes; fall back
+		// to a small default instead of storing a nil cache.
+		size = 1024
+	}
 	lruCache, _ := lru.New[string, cacheValue](size)
 	return &MemoryCache{
 		cache: lruCache,

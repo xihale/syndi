@@ -294,7 +294,11 @@ func (c *BadgerCache) Clear() {
 func (c *BadgerCache) cleanupLoop() {
 	defer c.wg.Done()
 
-	ticker := time.NewTicker(c.cleanupInterval) // Clean at configured interval
+	interval := c.cleanupInterval
+	if interval <= 0 {
+		return // physical cleanup disabled; Badger TTLs still hide expired keys
+	}
+	ticker := time.NewTicker(interval) // Clean at configured interval
 	defer ticker.Stop()
 
 	for {

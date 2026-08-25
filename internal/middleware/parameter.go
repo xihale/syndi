@@ -48,6 +48,11 @@ func Parameter() gin.HandlerFunc {
 // ProcessFeed applies all query parameter transformations to a feed's items
 // This function can be called directly by caching handlers
 func ProcessFeed(c *gin.Context, items []models.Item) []models.Item {
+	// Work on a copy: the input may be the shared cached feed (MemoryCache
+	// returns the same instance across Gets) and transformations below
+	// mutate elements in place (e.g. brief truncation).
+	items = copyItems(items)
+
 	// 1. Filter by time window
 	if filterTime := c.Query(paramFilterTime); filterTime != "" {
 		items = filterByTime(items, filterTime)
@@ -83,6 +88,14 @@ func ProcessFeed(c *gin.Context, items []models.Item) []models.Item {
 	}
 
 	return items
+}
+
+// copyItems returns a shallow copy of items so element field writes below
+// never reach the caller's backing array (which the cache may share).
+func copyItems(items []models.Item) []models.Item {
+	out := make([]models.Item, len(items))
+	copy(out, items)
+	return out
 }
 
 // filterItems filters items based on regex pattern
@@ -189,12 +202,20 @@ func applyBriefMode(items []models.Item, briefStr string) []models.Item {
 	}
 
 	for i := range items {
-		if len(items[i].Description) > maxLength {
-			items[i].Description = items[i].Description[:maxLength] + "..."
-		}
+		items[i].Description = truncateRunes(items[i].Description, maxLength)
 	}
 
 	return items
+}
+
+// truncateRunes shortens text to at most maxLength characters (runes, not
+// bytes — byte slicing would split multi-byte characters) appending "...".
+func truncateRunes(text string, maxLength int) string {
+	runes := []rune(text)
+	if len(runes) <= maxLength {
+		return text
+	}
+	return string(runes[:maxLength]) + "..."
 }
 
 // sortItemsByPubDate sorts items by publication date (newest first)
