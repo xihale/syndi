@@ -232,6 +232,11 @@ func WithRateLimit(host string, rps float64, burst int) ClientOption {
 	}
 }
 
+// maxResponseBodyBytes caps how much of an upstream response is buffered.
+// Feeds are at most a few MB; a hostile/looping upstream must not be able to
+// exhaust memory via an unbounded body.
+const maxResponseBodyBytes = 32 << 20 // 32MB
+
 // doRequestWithRetry performs an HTTP request with exponential backoff retry
 func (c *Client) doRequestWithRetry(ctx context.Context, req *http.Request) ([]byte, error) {
 	// Set default headers
@@ -308,7 +313,7 @@ func (c *Client) doRequestWithRetry(ctx context.Context, req *http.Request) ([]b
 		}
 
 		if resp.StatusCode != http.StatusOK {
-			bodyBytes, readErr := io.ReadAll(resp.Body)
+			bodyBytes, readErr := io.ReadAll(io.LimitReader(resp.Body, 1<<20)) // first 1MB for the error message
 			if readErr == nil && len(bodyBytes) > 0 {
 				lastErr = fmt.Errorf("failed to fetch %s: status %s, response: %s", req.URL.String(), resp.Status, string(bodyBytes))
 			} else {
@@ -322,7 +327,7 @@ func (c *Client) doRequestWithRetry(ctx context.Context, req *http.Request) ([]b
 			return nil, lastErr
 		}
 
-		body, err := io.ReadAll(resp.Body)
+		body, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseBodyBytes))
 		_ = resp.Body.Close()
 		if err != nil {
 			lastErr = fmt.Errorf("failed to read response body: %w", err)
@@ -410,10 +415,9 @@ func (c *Client) checkRedirect(req *http.Request, via []*http.Request) error {
 		return errors.New("stopped after too many redirects")
 	}
 
-	// Copy User-Agent from original request
-	if len(via) > 0 {
-		req.Header.Set("User-Agent", c.userAgent)
-	}
+	// Note: User-Agent (and other headers) are inherited from the initial
+	// request by net/http's redirect copying. Do NOT reset them here: custom
+	// UAs set via GetWithHeaders/disguise must survive redirects.
 	return nil
 }
 
@@ -468,10 +472,15 @@ func (c *Client) SetCookie(domain, name, value string) {
 
 // ClearCookies clears all cookies
 func (c *Client) ClearCookies() {
-	if c.cookieJar != nil {
-		c.cookieJar = nil
-		jar, _ := cookiejar.New(nil)
-		c.cookieJar = jar
+	// Replace the jar on the live client too — http.Client holds its own
+	// reference, so only swapping c.cookieJar would leave old cookies in use.
+	jar, err := cookiejar.New(nil)
+	if err != nil {
+		return
+	}
+	c.cookieJar = jar
+	if c.client != nil {
+		c.client.Jar = jar
 	}
 }
 
