@@ -105,9 +105,10 @@ func main() {
 
 	// Apply middleware in order (outermost first)
 	engine.Use(
-		middleware.Recovery(), // 1. Panic recovery (OUTERMOST)
-		middleware.Logger(),   // 2. Request logging
-		middleware.Header(cfg.GetCacheTTL(), cfg.GetAllowOrigin()), // 3. HTTP headers (CORS, ETag, Cache-Control)
+		middleware.Recovery(),                                      // 1. Panic recovery (OUTERMOST)
+		middleware.Logger(),                                        // 2. Request logging
+		middleware.AccessKey(cfg.GetAccessKey()),                   // 3. Access key gate (no-op when unset)
+		middleware.Header(cfg.GetCacheTTL(), cfg.GetAllowOrigin()), // 4. HTTP headers (CORS, ETag, Cache-Control)
 		// Note: Parameter handling moved into handler-level caching
 	)
 
@@ -128,10 +129,11 @@ func main() {
 
 	// Start server
 	server := &http.Server{
-		Handler:      engine,
-		ReadTimeout:  cfg.Server.ReadTimeout,
-		WriteTimeout: cfg.Server.WriteTimeout,
-		IdleTimeout:  cfg.Server.IdleTimeout,
+		Handler:           engine,
+		ReadTimeout:       cfg.Server.ReadTimeout,
+		ReadHeaderTimeout: 10 * time.Second, // slowloris mitigation
+		WriteTimeout:      cfg.Server.WriteTimeout,
+		IdleTimeout:       cfg.Server.IdleTimeout,
 	}
 
 	// Graceful shutdown
@@ -154,16 +156,18 @@ func main() {
 
 	logger.Info("Shutting down server...")
 
-	// Close cache (badger needs to be closed properly)
-	if err := cacheInstance.Close(); err != nil {
-		logger.Error("Failed to close cache", zap.Error(err))
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	// Drain in-flight requests first: they may still touch the cache.
 	if err := server.Shutdown(ctx); err != nil {
 		logger.Fatal("Server forced to shutdown", zap.Error(err))
+	}
+
+	// Close cache only after the server has drained (badger must be closed
+	// properly).
+	if err := cacheInstance.Close(); err != nil {
+		logger.Error("Failed to close cache", zap.Error(err))
 	}
 
 	logger.Info("Server exiting")
@@ -216,8 +220,10 @@ func setupGinRoutes(engine *gin.Engine, routeRegistry *registry.Registry, cacheI
 			TTL:          ttl,
 			ETagEnabled:  true,
 			ShouldCache: func(c *gin.Context, feed *models.Feed) bool {
-				if errorCode, exists := c.Get("error_code"); exists && errorCode.(int) >= 400 {
-					return false
+				if errorCode, exists := c.Get("error_code"); exists {
+					if code, ok := errorCode.(int); ok && code >= 400 {
+						return false
+					}
 				}
 				return handlercache.DefaultShouldCache(c, feed)
 			},

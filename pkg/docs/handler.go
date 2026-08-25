@@ -91,7 +91,7 @@ func renderHTML(c *gin.Context, status int, tmpl *template.Template, data any) {
 // IndexHandler serves the main documentation page at "/".
 // Legacy /?ns=x URLs redirect to /x.
 func (h *Handler) IndexHandler(c *gin.Context) {
-	if ns := c.Query("ns"); ns != "" {
+	if ns := c.Query("ns"); ns != "" && isNamespaceName(ns) {
 		c.Redirect(http.StatusMovedPermanently, "/"+ns)
 		return
 	}
@@ -130,6 +130,22 @@ func (h *Handler) renderIndex(c *gin.Context, onlyNS string) {
 	renderHTML(c, http.StatusOK, h.indexTmpl, pageData)
 }
 
+// isNamespaceName reports whether s is a plain namespace name (no path
+// separators, scheme, or control characters), so that "/"+s can only ever
+// produce a site-relative redirect target.
+func isNamespaceName(s string) bool {
+	return s != "" && !strings.ContainsAny(s, "/\\:%?#")
+}
+
+// isSafeRedirectPath reports whether target is a site-relative path that is
+// safe to redirect to: it must start with a single "/", rejecting absolute
+// URLs and protocol-relative "//host" forms (open redirect vectors).
+func isSafeRedirectPath(target string) bool {
+	return strings.HasPrefix(target, "/") &&
+		!strings.HasPrefix(target, "//") &&
+		!strings.HasPrefix(target, `/\`)
+}
+
 // DocsHandler catches every non-API path and serves it as documentation:
 //
 //	/{ns}                       -> namespace overview
@@ -143,7 +159,7 @@ func (h *Handler) DocsHandler(c *gin.Context) {
 		c.Redirect(http.StatusMovedPermanently, "/")
 		return
 	case "/docs/route":
-		if q := c.Query("path"); q != "" {
+		if q := c.Query("path"); q != "" && isSafeRedirectPath(q) {
 			c.Redirect(http.StatusMovedPermanently, q)
 			return
 		}

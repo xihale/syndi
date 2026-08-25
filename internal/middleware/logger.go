@@ -1,6 +1,8 @@
 package middleware
 
 import (
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -36,9 +38,9 @@ func Logger() gin.HandlerFunc {
 			zap.String("ip", c.ClientIP()),
 		}
 
-		// Add query string if present
+		// Add query string if present (credential-looking values redacted)
 		if raw != "" {
-			fields = append(fields, zap.String("query", raw))
+			fields = append(fields, zap.String("query", redactQuery(raw)))
 		}
 
 		// Add user agent if meaningful
@@ -68,6 +70,42 @@ func Logger() gin.HandlerFunc {
 			logger.Info("Request completed", fields...)
 		}
 	}
+}
+
+// redactQuery masks the values of credential-looking query parameters
+// (tokens, keys, passwords, cookies) before they hit the logs.
+func redactQuery(raw string) string {
+	vals, err := url.ParseQuery(raw)
+	if err != nil {
+		return raw
+	}
+	redacted := false
+	for k, vs := range vals {
+		if isSensitiveParam(k) {
+			for i := range vs {
+				vs[i] = "[REDACTED]"
+			}
+			redacted = true
+		}
+	}
+	if !redacted {
+		return raw
+	}
+	return vals.Encode()
+}
+
+func isSensitiveParam(key string) bool {
+	switch strings.ToLower(key) {
+	case "key", "access_key", "apikey", "api_key", "accesskey":
+		return true
+	}
+	k := strings.ToLower(key)
+	for _, frag := range []string{"token", "secret", "password", "passwd", "cookie", "credential"} {
+		if strings.Contains(k, frag) {
+			return true
+		}
+	}
+	return false
 }
 
 // colorForStatus returns ANSI color code for status (console logging)
