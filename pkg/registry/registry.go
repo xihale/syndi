@@ -12,7 +12,6 @@ import (
 type Registry struct {
 	mu         sync.RWMutex
 	routes     map[string]*models.Route
-	catches    map[string][]*models.Route
 	namespaces map[string]*Namespace
 }
 
@@ -32,7 +31,6 @@ func GetRegistry() *Registry {
 	once.Do(func() {
 		globalRegistry = &Registry{
 			routes:     make(map[string]*models.Route),
-			catches:    make(map[string][]*models.Route),
 			namespaces: make(map[string]*Namespace),
 		}
 	})
@@ -71,10 +69,6 @@ func (r *Registry) Register(route *models.Route) error {
 		}
 	}
 
-	// Add to catch map
-	r.catches[namespace] = append(r.catches[namespace], route)
-
-	fmt.Printf("Registered route: %s - %s\n", route.Path, route.Name)
 	return nil
 }
 
@@ -119,26 +113,4 @@ func (r *Registry) GetAllNamespaces() []*Namespace {
 		namespaces = append(namespaces, ns)
 	}
 	return namespaces
-}
-
-// FindRoutes finds routes matching a path pattern
-func (r *Registry) FindRoutes(path string) []*models.Route {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	var matches []*models.Route
-	for _, route := range r.routes {
-		if matchPath(route.Path, path) {
-			matches = append(matches, route)
-		}
-	}
-	return matches
-}
-
-func matchPath(pattern, path string) bool {
-	if pattern == path {
-		return true
-	}
-	// Simple pattern matching - could be enhanced with regex
-	return strings.HasPrefix(path, pattern)
 }
