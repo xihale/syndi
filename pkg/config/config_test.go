@@ -14,6 +14,10 @@ func TestDefaultConfig(t *testing.T) {
 		t.Errorf("expected default port '1200', got %s", cfg.Server.Port)
 	}
 
+	if cfg.Server.Host != "127.0.0.1" {
+		t.Errorf("expected default host '127.0.0.1', got %s", cfg.Server.Host)
+	}
+
 	if cfg.Server.Env != "production" {
 		t.Errorf("expected default env 'production', got %s", cfg.Server.Env)
 	}
@@ -41,6 +45,35 @@ func TestDefaultConfig(t *testing.T) {
 
 	if cfg.GetEnv() != "production" {
 		t.Errorf("GetEnv() expected 'production', got %s", cfg.GetEnv())
+	}
+}
+
+func TestGetListenAddrs(t *testing.T) {
+	tests := []struct {
+		name string
+		host string
+		want []string
+	}{
+		{"default loopback", "127.0.0.1", []string{"127.0.0.1:1200"}},
+		{"empty binds all", "", []string{":1200"}},
+		{"multiple hosts", "127.0.0.1, 172.17.0.1", []string{"127.0.0.1:1200", "172.17.0.1:1200"}},
+		{"ipv6", "::1", []string{"[::1]:1200"}},
+		{"trailing comma ignored", "127.0.0.1,", []string{"127.0.0.1:1200"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := DefaultConfig()
+			cfg.Server.Host = tt.host
+			got := cfg.GetListenAddrs()
+			if len(got) != len(tt.want) {
+				t.Fatalf("GetListenAddrs() = %v, want %v", got, tt.want)
+			}
+			for i := range got {
+				if got[i] != tt.want[i] {
+					t.Fatalf("GetListenAddrs() = %v, want %v", got, tt.want)
+				}
+			}
+		})
 	}
 }
 

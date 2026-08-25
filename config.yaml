@@ -3,6 +3,11 @@
 
 # Server settings
 server:
+  # Listen address(es), comma-separated to bind several interfaces.
+  # Empty string binds all interfaces. Keep loopback-only unless the instance
+  # is meant to be public; containers reach it via the docker bridge IP, e.g.
+  # "127.0.0.1,172.17.0.1"
+  host: "127.0.0.1"
   # Port to listen on
   port: "1200"
   # Environment: production, development, or test

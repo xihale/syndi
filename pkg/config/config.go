@@ -2,16 +2,20 @@ package config
 
 import (
 	"fmt"
-	"gopkg.in/yaml.v3"
+	"net"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
+
+	"gopkg.in/yaml.v3"
 )
 
 // Config holds application configuration
 type Config struct {
 	// Server settings
 	Server struct {
+		Host         string        `yaml:"host"`
 		Port         string        `yaml:"port"`
 		Env          string        `yaml:"env"`
 		ReadTimeout  time.Duration `yaml:"read_timeout"`
@@ -60,6 +64,7 @@ type Config struct {
 func DefaultConfig() *Config {
 	cfg := &Config{}
 	// Server defaults
+	cfg.Server.Host = "127.0.0.1"
 	cfg.Server.Port = "1200"
 	cfg.Server.Env = "production"
 	cfg.Server.ReadTimeout = 30 * time.Second
@@ -139,6 +144,23 @@ func LoadOrPanic(configPath string) *Config {
 // GetPort returns the server port (for backward compatibility)
 func (c *Config) GetPort() string {
 	return c.Server.Port
+}
+
+// GetListenAddrs returns the listen addresses as host:port pairs.
+// Host may be a comma-separated list (e.g. "127.0.0.1,172.17.0.1") to bind
+// several interfaces; an empty host means all interfaces (":port").
+func (c *Config) GetListenAddrs() []string {
+	host := strings.TrimSpace(c.Server.Host)
+	if host == "" {
+		return []string{":" + c.Server.Port}
+	}
+	addrs := make([]string, 0, 2)
+	for _, h := range strings.Split(host, ",") {
+		if h = strings.TrimSpace(h); h != "" {
+			addrs = append(addrs, net.JoinHostPort(h, c.Server.Port))
+		}
+	}
+	return addrs
 }
 
 // GetEnv returns the environment (for backward compatibility)

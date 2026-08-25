@@ -35,6 +35,14 @@ ssh <host> 'loginctl enable-linger $USER'   # survive reboots without a login se
 Feeds are served at `http://<host>:1200/rss/<route>` (note the `/rss` prefix;
 the old RSSHub served `/<route>`).
 
+## Listening / exposure
+
+`server.host` (default `127.0.0.1`) controls the bind addresses; there is no
+built-in auth. On a typical private deployment it is set to `127.0.0.1,172.17.0.1` — loopback for local
+checks plus the docker0 gateway so containers (FreshRSS via
+`host.docker.internal`) can reach it. The instance is therefore not exposed on
+the public interface regardless of cloud security-group rules.
+
 ## FreshRSS cutover
 
 FreshRSS ran in docker and reached RSSHub via the compose network alias

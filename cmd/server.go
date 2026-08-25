@@ -5,6 +5,7 @@ import (
 	"encoding/gob"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -127,7 +128,6 @@ func main() {
 
 	// Start server
 	server := &http.Server{
-		Addr:         ":" + cfg.GetPort(),
 		Handler:      engine,
 		ReadTimeout:  cfg.Server.ReadTimeout,
 		WriteTimeout: cfg.Server.WriteTimeout,
@@ -135,11 +135,18 @@ func main() {
 	}
 
 	// Graceful shutdown
-	go func() {
-		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logger.Fatal("Server failed to start", zap.Error(err))
+	for _, addr := range cfg.GetListenAddrs() {
+		ln, err := net.Listen("tcp", addr)
+		if err != nil {
+			logger.Fatal("Server failed to listen", zap.String("addr", addr), zap.Error(err))
 		}
-	}()
+		logger.Info("Listening", zap.String("addr", addr))
+		go func(l net.Listener) {
+			if err := server.Serve(l); err != nil && err != http.ErrServerClosed {
+				logger.Fatal("Server failed", zap.Error(err))
+			}
+		}(ln)
+	}
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
