@@ -6,9 +6,17 @@ import (
 	"bytes"
 	"encoding/xml"
 	"fmt"
+	"html"
 	"io"
 	"strings"
 	"time"
+
+	"golang.org/x/text/encoding"
+	"golang.org/x/text/encoding/charmap"
+	"golang.org/x/text/encoding/japanese"
+	"golang.org/x/text/encoding/korean"
+	"golang.org/x/text/encoding/simplifiedchinese"
+	"golang.org/x/text/encoding/traditionalchinese"
 
 	"github.com/xihale/syndi/pkg/models"
 	dateutil "github.com/xihale/syndi/pkg/utils/date"
@@ -178,7 +186,9 @@ func convertItem(ri rawItem) *models.Item {
 		}
 	}
 	if enc := firstEnclosure(ri.Enclosure); enc != "" {
-		img := fmt.Sprintf(`<img src="%s" alt="enclosure"/><br/>`, enc)
+		// Escape the URL: Description is HTML, and the URL comes from an
+		// arbitrary upstream feed (attribute injection via " and &).
+		img := fmt.Sprintf(`<img src="%s" alt="enclosure"/><br/>`, html.EscapeString(enc))
 		item.Description = img + item.Description
 	}
 	return item
@@ -285,17 +295,40 @@ func cleanHTML(s string) string {
 	return strings.TrimSpace(out.String())
 }
 
+// charsetReader returns a reader converting the declared XML charset to
+// UTF-8. encoding/xml calls this for the encoding declared in the prolog;
+// without real conversion, non-UTF-8 feeds (GBK etc., still common for
+// Chinese sources) fail wholesale with "invalid UTF-8".
 func charsetReader(charset string, input io.Reader) (io.Reader, error) {
 	charset = strings.ToLower(strings.TrimSpace(charset))
+	var dec encoding.Encoding
 	switch charset {
 	case "", "utf-8", "utf8", "us-ascii", "ascii":
 		return input, nil
-	case "gbk", "gb2312", "gb18030", "big5", "shift_jis", "sjis", "euc-jp", "euc-kr", "windows-1252", "latin1", "iso-8859-1", "iso8859-1", "koi8-r":
-		// Best-effort: treat as UTF-8 passthrough. Most modern feeds are UTF-8;
-		// strict decoding is disabled above so invalid bytes become replacement runes
-		// rather than hard errors.
-		return input, nil
+	case "gbk", "gb2312":
+		dec = simplifiedchinese.GBK
+	case "gb18030":
+		dec = simplifiedchinese.GB18030
+	case "big5":
+		dec = traditionalchinese.Big5
+	case "shift_jis", "sjis", "shift-jis":
+		dec = japanese.ShiftJIS
+	case "euc-jp":
+		dec = japanese.EUCJP
+	case "iso-2022-jp":
+		dec = japanese.ISO2022JP
+	case "euc-kr":
+		dec = korean.EUCKR
+	case "windows-1252", "cp1252":
+		dec = charmap.Windows1252
+	case "latin1", "iso-8859-1", "iso8859-1":
+		dec = charmap.ISO8859_1
+	case "koi8-r":
+		dec = charmap.KOI8R
 	default:
+		// Unknown charset: pass through; the tolerant decoder turns invalid
+		// bytes into replacement runes instead of hard errors.
 		return input, nil
 	}
+	return dec.NewDecoder().Reader(input), nil
 }
