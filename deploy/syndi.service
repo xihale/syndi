@@ -1,0 +1,25 @@
+# Syndi — systemd user service
+# Install to ~/.config/systemd/user/syndi.service, then:
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now syndi
+#   loginctl enable-linger "$USER"   # start at boot without login (needs root or polkit)
+#
+# Note: user units must be WantedBy=default.target — multi-user.target is not
+# pulled in by the user manager, so a unit enabled only for it never starts.
+
+[Unit]
+Description=Syndi - RSSHub Go rewrite (RSS feed server)
+Documentation=https://github.com/xihale/syndi
+
+[Service]
+Type=simple
+# Adjust to your install location; config.yaml and data/ live next to the binary.
+ExecStart=%h/syndi/syndi
+WorkingDirectory=%h/syndi
+# Route credentials (e.g. ZHIHU_COOKIES). See syndi.env.example; chmod 600.
+EnvironmentFile=%h/syndi/syndi.env
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

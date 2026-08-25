@@ -54,6 +54,25 @@ func TestGitHubPullLive(t *testing.T) {
 	t.Logf("got %d items, first: %s", len(feed.Items), feed.Items[0].Title)
 }
 
+func TestGitHubActivityLive(t *testing.T) {
+	if os.Getenv("LIVE") == "" {
+		t.Skip("set LIVE=1 to run live fetch test")
+	}
+	feed, err := testutil.RunHandler(GitHubActivityHandler, map[string]string{"user": "torvalds"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(feed.Items) == 0 {
+		t.Fatal("expected items")
+	}
+	for _, item := range feed.Items {
+		if item.Link == "" {
+			t.Fatalf("item missing link: %+v", item)
+		}
+	}
+	t.Logf("got %d items, first: %s", len(feed.Items), feed.Items[0].Title)
+}
+
 func TestGitHubGistsLive(t *testing.T) {
 	if os.Getenv("LIVE") == "" {
 		t.Skip("set LIVE=1 to run live fetch test")
