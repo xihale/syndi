@@ -47,9 +47,13 @@ the public interface regardless of cloud security-group rules.
 
 If the instance must be reachable from the public internet, do **not** bind
 `0.0.0.0` — put a reverse proxy in front of the loopback listener and put auth
-at the proxy. Syndi itself has no authentication (the `middleware.access_key`
-option is not enforced), so HTTP Basic Auth at the proxy is the recommended
-minimal setup. Feed readers support it natively (FreshRSS: feed URL
+at the proxy. Syndi's built-in `middleware.access_key` is enforced when set:
+every request must then present the key via the `key` query parameter or the
+`X-Access-Key` header (constant-time compare), with only `/status` exempt —
+note this also gates the docs UI and `/api/*`. It is a single shared key
+(keys passed as a query parameter can leak into logs), so HTTP Basic Auth at
+the proxy remains the recommended setup for public instances. Feed readers
+support it natively (FreshRSS: feed URL
 `https://user:pass@syndi.example.com/rss/<route>`).
 
 Caddy example (for `rss.example.com`):

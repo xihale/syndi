@@ -16,7 +16,7 @@
 
 ## 项目状态
 
-已移植 **112 条路由 / 83 个命名空间**，全部经 `make verify-all` 实测验证（结果见 [`docs/ROUTES_CATALOG.md`](docs/ROUTES_CATALOG.md)）。
+已移植 **204 条路由 / 121 个命名空间**，经 `make verify-all` 实测验证：184 条正常返回、5 条上游暂空、15 条因凭据缺失或上游拦截失败（结果见 [`docs/ROUTES_CATALOG.md`](docs/ROUTES_CATALOG.md)）。
 
 已知限制：
 
@@ -30,9 +30,9 @@ make build
 ./build/syndi          # 或 go run ./cmd
 ```
 
-配置文件按以下顺序查找 `config.yaml`：
-1. 当前目录
-2. `$XDG_CONFIG_HOME/syndi/config.yaml`
+配置文件按以下顺序查找（先命中先用，全量键见 [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md)）：
+1. `$SYNDI_CONFIG` 环境变量指定的路径
+2. 当前目录 `./config.yaml`
 3. `/etc/syndi/config.yaml`
 
 环境变量凭据示例：
@@ -45,12 +45,15 @@ ZHIHU_COOKIES='z_c0=xxx; d_c0=yyy' ./build/syndi
 
 | 文档 | 内容 |
 |---|---|
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | 架构设计：请求生命周期、包布局、子系统与设计决策 |
+| [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md) | `config.yaml` 全量配置参考 |
 | [`docs/PORTING_GUIDE.md`](docs/PORTING_GUIDE.md) | 新增/移植路由完整指南 |
 | [`docs/TESTING.md`](docs/TESTING.md) | 测试命令与上线检查清单 |
 | [`docs/CACHING.md`](docs/CACHING.md) | 缓存架构与配置 |
 | [`docs/DISGUISE.md`](docs/DISGUISE.md) | 请求伪装 API |
 | [`docs/CLIENT_CONFIG.md`](docs/CLIENT_CONFIG.md) | HTTP 客户端配置项 |
 | [`docs/ROUTES_CATALOG.md`](docs/ROUTES_CATALOG.md) | 全部路由目录与验证状态 |
+| [`deploy/README.md`](deploy/README.md) | 部署：systemd 服务、反向代理与认证 |
 
 ## 与 RSSHub 的关系
 
