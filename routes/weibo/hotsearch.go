@@ -20,7 +20,7 @@ var weiboHotSearchRoute = routeutils.RouteSpec{
 	Categories:  []models.Category{{Name: "social-media"}},
 	Features:    models.Features{SupportRadar: true, EnvDeps: []string{weiboCookiesEnv}},
 	Parameters:  nil,
-	CacheTTL:    15 * time.Minute,
+	CacheTTL:    10 * time.Minute,
 	Handler:     WeiboHotSearchHandler,
 }
 
@@ -84,6 +84,33 @@ func WeiboHotSearchHandler(c *ctxpkg.Context) (*models.Feed, error) {
 	}
 	return feed, nil
 }
+
+// weiboSearchHotRoute serves /weibo/search/hot as a thin alias of the
+// hotsearch board: both paths hit the identical m.weibo.cn realtime-hot
+// container upstream, so they share one handler (upstream's fulltext digest
+// expansion mode is not ported).
+var weiboSearchHotRoute = routeutils.RouteSpec{
+	Path:        "search/hot",
+	Name:        "热搜榜（search/hot）",
+	Example:     "weibo/search/hot",
+	Maintainers: []string{"xihale"},
+	Description: "RSSHub-style alias of /weibo/hotsearch; same board, same items. 上游的 fulltext 摘要展开模式未实现",
+	Categories:  []models.Category{{Name: "social-media"}},
+	Features:    models.Features{SupportRadar: true, EnvDeps: []string{weiboCookiesEnv}},
+	Parameters: []models.Parameter{
+		routeutils.OptionalParam("fulltext", "仅兼容上游路径形状, 当前忽略并返回榜单本体"),
+	},
+	CacheTTL: 10 * time.Minute,
+	Handler:  WeiboHotSearchHandler,
+}
+
+// weiboSearchHotFulltextRoute registers the deeper /search/hot/:fulltext
+// shape so RSSHub-style URLs keep working (gin has no optional segments).
+var weiboSearchHotFulltextRoute = func() routeutils.RouteSpec {
+	clone := weiboSearchHotRoute
+	clone.Path = "search/hot/:fulltext"
+	return clone
+}()
 
 func htmlEscapeText(s string) string {
 	repl := strings.NewReplacer("&", "&amp;", "<", "&lt;", ">", "&gt;")

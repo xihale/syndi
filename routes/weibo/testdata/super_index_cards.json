@@ -1,0 +1,39 @@
+{
+  "ok": 1,
+  "data": {
+    "pageInfo": { "page_title": "Rsshub超话" },
+    "cards": [
+      {
+        "card_type": 9,
+        "mblog": {
+          "id": "5201234567890001",
+          "bid": "Sup11111",
+          "created_at": "昨天",
+          "text": "超话里的第一条帖子",
+          "user": { "id": "3333333333", "screen_name": "超话活跃者" },
+          "reposts_count": 1,
+          "comments_count": 6,
+          "attitudes_count": 9
+        }
+      },
+      {
+        "card_type": 11,
+        "card_group": [
+          {
+            "card_type": 9,
+            "mblog": {
+              "id": "5201234567890002",
+              "bid": "Sup22222",
+              "created_at": "刚刚",
+              "text": "嵌在 card_group 里的第二条帖子",
+              "user": { "id": "4444444444", "screen_name": "路人乙" },
+              "reposts_count": 0,
+              "comments_count": 0,
+              "attitudes_count": 1
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

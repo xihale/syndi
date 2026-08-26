@@ -17,10 +17,16 @@ import (
 	"time"
 
 	"github.com/xihale/syndi/internal/disguise"
+	"github.com/xihale/syndi/internal/routeutils"
+	"github.com/xihale/syndi/pkg/models"
 	"github.com/xihale/syndi/pkg/registry"
 )
 
 const weiboCookiesEnv = "WEIBO_COOKIES"
+
+// weiboMobileAPIBase is the m.weibo.cn origin. Tests swap it for a fixture
+// server; production code must treat it as read-only.
+var weiboMobileAPIBase = "https://m.weibo.cn"
 
 func init() {
 	registry.RegisterNamespaceEnv("weibo", registry.EnvRequirement{
@@ -61,6 +67,62 @@ func weiboAPIProfile(referer string) *disguise.Profile {
 		p = p.Cookie(ck)
 	}
 	return p
+}
+
+// weiboIsLoginWallErr reports whether the request was rejected by the Sina
+// Visitor System (HTTP 432). The HTTP client surfaces the status as a plain
+// error string, so recognition happens on the message.
+func weiboIsLoginWallErr(err error) bool {
+	return err != nil && strings.Contains(err.Error(), "status 432")
+}
+
+// weiboAuthError reports a login-wall (ok == -100) with an actionable hint
+// that differs depending on whether WEIBO_COOKIES is configured at all.
+func weiboAuthError(where string, ok int) error {
+	if weiboCookies() == "" {
+		return fmt.Errorf("weibo: %s 被微博登录墙拦截 (ok=%d)：请设置环境变量 %s 后重试", where, ok, weiboCookiesEnv)
+	}
+	return fmt.Errorf("weibo: %s 不可用 (ok=%d)：WEIBO_COOKIES 可能已过期，请更新", where, ok)
+}
+
+const weiboTitleMaxRunes = 60
+
+// weiboTitleFromHTML derives a plain, length-capped item title from mblog HTML.
+func weiboTitleFromHTML(htmlText string) string {
+	title := plainWeiboText(htmlText)
+	if len([]rune(title)) > weiboTitleMaxRunes {
+		title = string([]rune(title)[:weiboTitleMaxRunes]) + "…"
+	}
+	return title
+}
+
+// mbStatusID returns a stable short identifier (bid preferred) for a post.
+func mbStatusID(mb *weiboMBlog) string {
+	if mb.Bid != "" {
+		return mb.Bid
+	}
+	return mb.ID
+}
+
+// appendWeiboMBlogs maps mblogs to feed items shared by the keyword and
+// super-index feeds. uid pins the post author for permalink building when
+// known; guidPrefix namespaces item GUIDs.
+func appendWeiboMBlogs(feed *models.Feed, uid, guidPrefix string, mblogs []*weiboMBlog) {
+	for _, mb := range mblogs {
+		if mb == nil || (mb.Text == "" && mb.Bid == "" && mb.ID == "") {
+			continue
+		}
+		title := weiboTitleFromHTML(mb.Text)
+		if title == "" {
+			title = "微博动态 " + mbStatusID(mb)
+		}
+		item := routeutils.NewItem(title, weiboStatusLink(uid, mb), buildWeiboDesc(mb), parseWeiboDate(mb.CreatedAt))
+		item.GUID = guidPrefix + mbStatusID(mb)
+		if mb.User != nil && mb.User.ScreenName != "" {
+			routeutils.SetItemAuthor(item, mb.User.ScreenName, "", "")
+		}
+		routeutils.AddItem(feed, item)
+	}
 }
 
 var weiboRelativeRe = regexp.MustCompile(`^(\d+)\s*(分钟|小时|天)前$`)

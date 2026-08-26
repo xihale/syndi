@@ -6,4 +6,10 @@ import "github.com/xihale/syndi/internal/routeutils"
 var Routes = []routeutils.RouteSpec{
 	weiboUserRoute,
 	weiboHotSearchRoute,
+	weiboSearchHotRoute,
+	weiboSearchHotFulltextRoute,
+	weiboKeywordRoute,
+	weiboKeywordParamsRoute,
+	weiboSuperIndexRoute,
+	weiboSuperIndexTypeRoute,
 }

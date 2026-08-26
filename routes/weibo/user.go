@@ -40,11 +40,17 @@ type weiboTabsInfo struct {
 	} `json:"tabs"`
 }
 
+type weiboUserRef struct {
+	ID         string `json:"id"`
+	ScreenName string `json:"screen_name"`
+}
+
 type weiboMBlog struct {
 	ID             string           `json:"id"`
 	Bid            string           `json:"bid"`
 	CreatedAt      string           `json:"created_at"`
 	Text           string           `json:"text"`
+	User           *weiboUserRef    `json:"user"`
 	RepostsCount   int              `json:"reposts_count"`
 	CommentsCount  int              `json:"comments_count"`
 	AttitudesCount int              `json:"attitudes_count"`
@@ -134,12 +140,9 @@ func WeiboUserHandler(c *ctxpkg.Context) (*models.Feed, error) {
 		if !showRetweeted && mb.Retweeted != nil {
 			continue
 		}
-		title := plainWeiboText(mb.Text)
+		title := weiboTitleFromHTML(mb.Text)
 		if title == "" {
 			title = fmt.Sprintf("%s的微博 %s", name, mb.Bid)
-		}
-		if len([]rune(title)) > 60 {
-			title = string([]rune(title)[:60]) + "…"
 		}
 		item := routeutils.NewItem(title, weiboStatusLink(uid, mb), buildWeiboDesc(mb), parseWeiboDate(mb.CreatedAt))
 		if item == nil {
@@ -151,8 +154,13 @@ func WeiboUserHandler(c *ctxpkg.Context) (*models.Feed, error) {
 	return feed, nil
 }
 
-// weiboStatusLink builds the canonical desktop permalink for a post.
+// weiboStatusLink builds the canonical desktop permalink for a post. uid may
+// be empty for keyword/super-index results, in which case the post author id
+// is used as fallback.
 func weiboStatusLink(uid string, mb *weiboMBlog) string {
+	if uid == "" && mb.User != nil {
+		uid = mb.User.ID
+	}
 	bid := mb.Bid
 	if bid == "" {
 		bid = mb.ID
