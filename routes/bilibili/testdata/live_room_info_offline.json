@@ -1,0 +1,17 @@
+{
+ "code": 0,
+ "msg": "ok",
+ "data": {
+  "uid": 11153765,
+  "room_id": 23058,
+  "short_id": 3,
+  "live_status": 1,
+  "title": "哔哩哔哩音悦台",
+  "description": "<p>这里是哔哩哔哩官方音乐台喔！</p><p>一起来听音乐吧ε=ε=(ノ≧∇≦)ノ</p><p>没想到蒸汽配圣诞下装，意外的很暴露呢=3=</p>\n",
+  "keyframe": "http://i0.hdslb.com/live-keyframes/keyframe.jpg",
+  "live_time": "2026-01-01 12:00:00",
+  "area_name": "唱见电台",
+  "parent_area_name": "电台",
+  "tags": ""
+ }
+}

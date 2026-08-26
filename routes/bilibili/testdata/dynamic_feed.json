@@ -1,0 +1,70 @@
+{
+ "_note": "HANDCRAFTED sample of api.bilibili.com/x/polymer/web-dynamic/v1/feed/space response. Live calls currently fail with -352 gaia-gateway risk control without a logged-in cookie; fields follow lib/routes/bilibili/api-interface.d.ts and SocialSisterYi/bilibili-API-collect.",
+ "code": 0,
+ "message": "0",
+ "data": {
+  "has_more": false,
+  "items": [
+   {
+    "id_str": "100000000000000001",
+    "modules": {
+     "module_author": {
+      "mid": 946974,
+      "name": "TaoSama",
+      "pub_ts": 1699999999
+     },
+     "module_dynamic": {
+      "desc": {"text": "发布了一个新视频，欢迎观看。"},
+      "major": {
+       "type": "MAJOR_TYPE_ARCHIVE",
+       "archive": {
+        "aid": "113701",
+        "bvid": "BV1xx411c7XX",
+        "cid": 200001,
+        "title": "视频动态标题样例",
+        "desc": "这是视频简介。",
+        "pic": "//i0.hdslb.com/bfs/archive/dyn.jpg",
+        "duration_text": "02:30"
+       }
+      }
+     }
+    }
+   },
+   {
+    "id_str": "100000000000000002",
+    "modules": {
+     "module_author": {"mid": 946974, "name": "TaoSama", "pub_ts": 1690000000},
+     "module_dynamic": {
+      "desc": {"text": "今天天气很好，配图几张。"},
+      "major": {
+       "type": "MAJOR_TYPE_OPUS",
+       "opus": {
+        "title": "",
+        "summary": {"text": "今天天气很好，配图几张。"},
+        "pics": [
+         {"url": "//i0.hdslb.com/bfs/new_dyn/pic1.jpg", "width": 1080, "height": 1920},
+         {"url": "//i0.hdslb.com/bfs/new_dyn/pic2.jpg", "width": 1080, "height": 1920}
+        ]
+       }
+      }
+     }
+    }
+   },
+   {
+    "id_str": "100000000000000003",
+    "modules": {
+     "module_author": {"mid": 946974, "name": "TaoSama", "pub_ts": 1680000000},
+     "module_dynamic": {
+      "desc": {"text": ""},
+      "major": {
+       "type": "MAJOR_TYPE_LIVE_RCMD",
+       "live_rcmd": {
+        "content": "{\"live_play_info\":{\"title\":\"测试直播标题\",\"cover\":\"//i0.hdslb.com/bfs/live/cover.jpg\",\"area_name\":\"手游\",\"room_id\":23058,\"watched_show\":{\"text_large\":\"1.2万人看过\"}}}"
+       }
+      }
+     }
+    }
+   }
+  ]
+ }
+}

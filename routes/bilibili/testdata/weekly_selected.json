@@ -1,0 +1,44 @@
+{
+ "code": 0,
+ "message": "OK",
+ "ttl": 1,
+ "data": {
+  "config": {
+   "number": 387,
+   "subject": "裴令史的妖异诸事",
+   "status": 2,
+   "label": "第387期(0821更新)",
+   "hint": "",
+   "color": 0,
+   "cover": "",
+   "share_title": "裴令史的妖异诸事｜每周必看第387期",
+   "share_subtitle": "“我这一生最大的罪，是把人写成了妖……”>>",
+   "media_id": 4113421288
+  },
+  "reminder": "每周五晚18:00 更新",
+  "list": [
+   {
+    "title": "我这一生最大的罪，是把人写成了妖……",
+    "param": "117109229094045",
+    "bvid": "BV1rHbY6MEB9",
+    "cover": "http://i0.hdslb.com/bfs/archive/6533ca786585f35bbf352cee7cf74c8df25fcb01.jpg",
+    "rcmd_reason": "情节跌宕，立意高远。",
+    "cover_right_text_1": "26:14",
+    "goto": "av",
+    "uri": "bilibili://video/117109229094045",
+    "card_goto": "av"
+   },
+   {
+    "title": "赛伯朋克之大圣归来：耗时两年半，精品制作，一口气看完。",
+    "param": "117087116728902",
+    "bvid": "BV15xgn6GEjH",
+    "cover": "http://i1.hdslb.com/bfs/archive/1f485ed591088bd2c8dbc107ff5cbecc8ade761c.jpg",
+    "rcmd_reason": "猴哥的修为依旧保值",
+    "cover_right_text_1": "16:21",
+    "goto": "av",
+    "uri": "bilibili://video/117087116728902",
+    "card_goto": "av"
+   }
+  ]
+ }
+}

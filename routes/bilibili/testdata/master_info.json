@@ -1,0 +1,14 @@
+{
+ "code": 0,
+ "data": {
+  "info": {
+   "uid": 11153765,
+   "uname": "3号直播间",
+   "face": "https://i2.hdslb.com/bfs/face/5d35da6e93fbfb1a77ad6d1f1004b08413913f9a.jpg",
+   "official_verify": {
+    "type": 1
+   }
+  },
+  "follower_num": 1000
+ }
+}

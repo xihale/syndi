@@ -1,0 +1,36 @@
+{
+ "_note": "HANDCRAFTED sample of api.bilibili.com/x/space/wbi/arc/search response. Live calls currently fail with -403/-352 risk control unless w_webid from a real browser is supplied; fields follow SocialSisterYi/bilibili-API-collect documentation.",
+ "code": 0,
+ "message": "0",
+ "data": {
+  "list": {
+   "vlist": [
+    {
+     "aid": 113700,
+     "bvid": "BV11x411c7ym",
+     "title": "官方翻译：Just Curious",
+     "description": "关于RSS阅读的一点思考",
+     "pic": "//i2.hdslb.com/bfs/archive/9d5e1bec81a0a6dcea1f2f3bdff58ee7f88e4586.jpg",
+     "created": 1499080991,
+     "length": "08:13",
+     "author": "TaoSama",
+     "mid": 946974,
+     "comment": 82
+    },
+    {
+     "aid": 9469740,
+     "bvid": "",
+     "title": "【中等毒性】视频号（无bvid样本）",
+     "description": "",
+     "pic": "//i0.hdslb.com/bfs/archive/sample.jpg",
+     "created": 1600000000,
+     "length": "03:00",
+     "author": "TaoSama",
+     "mid": 946974,
+     "comment": 1
+    }
+   ]
+  },
+  "page": {"pn": 1, "ps": 30, "count": 2}
+ }
+}

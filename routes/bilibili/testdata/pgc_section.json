@@ -1,0 +1,44 @@
+{
+ "code": 0,
+ "message": "success",
+ "result": {
+  "main_section": {
+   "episodes": [
+    {
+     "id": 183799,
+     "aid": 18281381,
+     "cid": 29892777,
+     "title": "1",
+     "long_title": "兩位孤獨者",
+     "cover": "http://i2.hdslb.com/bfs/archive/ff16158e2f3434cf461606beb235d723ac63a44c.jpg",
+     "share_url": "https://www.bilibili.com/bangumi/play/ep183799",
+     "status": 2
+    },
+    {
+     "id": 183800,
+     "aid": 18520148,
+     "cid": 30219063,
+     "title": "2",
+     "long_title": "連接的意義",
+     "cover": "http://i0.hdslb.com/bfs/archive/86594b935935a4dfbb7ab318e8063779cf7a3757.jpg",
+     "share_url": "https://www.bilibili.com/bangumi/play/ep183800",
+     "status": 2
+    },
+    {
+     "id": 183801,
+     "aid": 18805092,
+     "cid": 30670211,
+     "title": "3",
+     "long_title": "戰鬥人偶",
+     "cover": "http://i0.hdslb.com/bfs/archive/f2f7194e4ac0458cd9b2f5f2ceff1162c6bc1341.jpg",
+     "share_url": "https://www.bilibili.com/bangumi/play/ep183801",
+     "status": 2
+    }
+   ],
+   "id": 30846,
+   "title": "正片",
+   "type": 0
+  },
+  "section": []
+ }
+}

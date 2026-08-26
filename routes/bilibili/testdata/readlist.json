@@ -1,0 +1,54 @@
+{
+ "code": 0,
+ "message": "OK",
+ "ttl": 1,
+ "data": {
+  "list": {
+   "id": 25611,
+   "mid": 8278379,
+   "name": "Galgame",
+   "image_url": "http://i0.hdslb.com/bfs/article/d1b4ff3871674fb8c7cca0e7e7c13061c0067488.png",
+   "update_time": 1776652947,
+   "summary": "",
+   "articles_count": 121
+  },
+  "author": {
+   "name": "SasugaSetsuna",
+   "face": "https://i2.hdslb.com/bfs/face/60456bd834b3ee95cf75c1459ba0673ce23f24b0.jpg"
+  },
+  "articles": [
+   {
+    "id": 142645,
+    "title": "为什么cao猫和万拔镜让辣么多的人入了Galgame的坑？[指尖下的Gal第1期]",
+    "summary": "ETAC/A/ACGETAC/A/Game 就在不久之前，《Nekopara》的OVA动画发售了，广大爱猫人士欢欣鼓舞，让这个圣诞节更加的欢乐。而在2017年7月末，也有一个Galgame十分火热，那",
+    "image_urls": [
+     "https://i0.hdslb.com/bfs/article/633b2128cbbcb811112a0d654e19046abacf5fba.jpg"
+    ],
+    "publish_time": 1515225443,
+    "words": 4911
+   },
+   {
+    "id": 154365,
+    "title": "黄油也不能为所欲为！CERO、软伦等都是什么？[指尖下的Gal第3期]",
+    "summary": "ETAC/A/ACGETAC/A/Game （我知道你们想吐槽封面）正所谓“哪国都有‘有关部门’”，在日本，监管部门也是存在的，只是存在形式比较特殊。在各个领域有不同的监管部门，而在计算机游戏（包括主",
+    "image_urls": [
+     "https://i0.hdslb.com/bfs/article/3c3673a3b364193106b863f8e92a0d9dd092c997.jpg"
+    ],
+    "publish_time": 1515908962,
+    "words": 3733
+   },
+   {
+    "id": 209804,
+    "title": "Galgame推荐1[指尖下的Gal第5期]",
+    "summary": "ETAC/A/ACGETAC/A/Game雪菜今天药吃多了……感觉自己萌！萌！哒！！！最近拖更的原因是断网——光纤断了，之后猫也坏了（可能是最近我吸猫过度导致的），我快要疯了……不过我还是找回了理智。",
+    "image_urls": [
+     "https://i0.hdslb.com/bfs/article/08ba47e750bbb3a65218b01f3eca79c8d88bdf23.jpg",
+     "https://i0.hdslb.com/bfs/article/a26230f82acab2400c2bfb8355d9148c5e56585b.png",
+     "https://i0.hdslb.com/bfs/article/c700c0aed7c77efcde13c2b0aad65dd98999a526.png"
+    ],
+    "publish_time": 1518261389,
+    "words": 6055
+   }
+  ]
+ }
+}

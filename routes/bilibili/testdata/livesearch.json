@@ -1,0 +1,51 @@
+{
+ "code": 0,
+ "data": {
+  "result": {
+   "live_room": [
+    {
+     "roomid": 23410354,
+     "uid": 263240144,
+     "uname": "炉石吕奉先",
+     "uface": "//static.hdslb.com/images/member/noface.gif",
+     "title": "欧耶冒冒的险",
+     "cover": "//i0.hdslb.com/bfs/live-key-frame/keyframe08262345000023410354dpi03g.jpg",
+     "user_cover": "//i0.hdslb.com/bfs/live/new_room_cover/cbc90458e38613e11927b5e4e45cd026d302f265.jpg",
+     "tags": "",
+     "watched_show": {
+      "switch": true,
+      "num": 3,
+      "text_small": "3",
+      "text_large": "3人看过",
+      "icon": "https://i0.hdslb.com/bfs/live/a725a9e61242ef44d764ac911691a7ce07f36c1d.png",
+      "icon_location": "",
+      "icon_web": "https://i0.hdslb.com/bfs/live/8d9d0f33ef8bf6f308742752d13dd0df731df19c.png"
+     },
+     "live_time": "2026-08-26 23:17:01",
+     "area": 3
+    },
+    {
+     "roomid": 7972067,
+     "uid": 4273479,
+     "uname": "凉太i",
+     "uface": "//i2.hdslb.com/bfs/face/ebfbb822005be4a1127fce5b8a888d139a40a0e5.jpg",
+     "title": "开冒",
+     "cover": "//i0.hdslb.com/bfs/live-key-frame/keyframe08262346000007972067fno1vo.jpg",
+     "user_cover": "//i0.hdslb.com/bfs/live/new_room_cover/33b4f5d8b1adc8af591dd19adda1516441f3bca3.jpg",
+     "tags": "",
+     "watched_show": {
+      "switch": true,
+      "num": 3,
+      "text_small": "3",
+      "text_large": "3人看过",
+      "icon": "https://i0.hdslb.com/bfs/live/a725a9e61242ef44d764ac911691a7ce07f36c1d.png",
+      "icon_location": "",
+      "icon_web": "https://i0.hdslb.com/bfs/live/8d9d0f33ef8bf6f308742752d13dd0df731df19c.png"
+     },
+     "live_time": "2026-08-26 12:13:04",
+     "area": 3
+    }
+   ]
+  }
+ }
+}

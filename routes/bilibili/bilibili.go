@@ -5,6 +5,7 @@ import (
 	"html"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/xihale/syndi/internal/disguise"
@@ -95,7 +96,7 @@ func BilibiliPopularHandler(c *ctxpkg.Context) (*models.Feed, error) {
 	}
 
 	feed := routeutils.NewFeed("bilibili 综合热门", bilibiliBaseURL, "bilibili 综合热门")
-	appendBilibiliVideos(feed, resp.Data.List, limit)
+	appendBilibiliVideos(feed, resp.Data.List, limit, "bilibili-video-")
 	return feed, nil
 }
 
@@ -149,12 +150,106 @@ func BilibiliRankingHandler(c *ctxpkg.Context) (*models.Feed, error) {
 	}
 
 	feed := routeutils.NewFeed("bilibili 排行榜", bilibiliBaseURL+"/v/popular/rank/all", "bilibili 排行榜")
-	appendBilibiliVideos(feed, resp.Data.List, limit)
+	appendBilibiliVideos(feed, resp.Data.List, limit, "bilibili-video-")
 	return feed, nil
 }
 
+// bilibiliVideoStats renders the common "stats" line appended to descriptions.
+func bilibiliVideoStats(v *biliVideo) string {
+	return fmt.Sprintf("Views: %d | Danmaku: %d | Likes: %d", v.Stat.View, v.Stat.Danmaku, v.Stat.Like)
+}
+
+// renderBilibiliUGCDescription mirrors upstream renderUGCDescription: an
+// optional embedded player iframe followed by cover image and text.
+// aid/cid/bvid of zero/empty are omitted from the player URL.
+func renderBilibiliUGCDescription(embed bool, img, description string, aid int64, cid int64, bvid string) string {
+	var b strings.Builder
+	if embed && (aid != 0 || bvid != "") {
+		player := "https://www.bilibili.com/blackboard/html5mobileplayer.html?"
+		var q []string
+		if aid != 0 {
+			q = append(q, "aid="+strconv.FormatInt(aid, 10))
+		}
+		if cid != 0 {
+			q = append(q, "cid="+strconv.FormatInt(cid, 10))
+		}
+		if bvid != "" {
+			q = append(q, "bvid="+url.QueryEscape(bvid))
+		}
+		b.WriteString(fmt.Sprintf(`<iframe width="640" height="360" src="%s%s" frameborder="0" allowfullscreen></iframe><br/>`,
+			player, strings.Join(q, "&amp;")))
+	}
+	if img != "" {
+		b.WriteString(fmt.Sprintf(`<img src="%s"/><br/>`, html.EscapeString(img)))
+	}
+	b.WriteString(description)
+	return b.String()
+}
+
+// bilibiliEmbedEnabled reports whether embedded players should be rendered.
+// Follows the upstream convention: an optional path parameter with any value
+// disables embedding; empty means enabled.
+func bilibiliEmbedEnabled(param string) bool {
+	return strings.TrimSpace(param) == ""
+}
+
+// bilibiliFeedImage upgrades an http image URL to https like upstream does.
+func bilibiliFeedImage(raw string) string {
+	return strings.Replace(raw, "http://", "https://", 1)
+}
+
+type bilibiliSpiResp struct {
+	biliResp
+	Data struct {
+		B3 string `json:"b_3"`
+		B4 string `json:"b_4"`
+	} `json:"data"`
+}
+
+// bilibiliBuvidCookie returns a buvid3/buvid4 Cookie pair obtained from the
+// public finger/spi endpoint (cached 24h). Some public endpoints such as web
+// search reject requests without a buvid cookie.
+func bilibiliBuvidCookie(c *ctxpkg.Context) (string, error) {
+	fetch := func() ([2]string, error) {
+		var resp bilibiliSpiResp
+		if err := bilibiliJSONProfile().Fetch("https://api.bilibili.com/x/frontend/finger/spi").
+			GetJSON(c.Parent(), c.Client(), &resp); err != nil {
+			return [2]string{}, err
+		}
+		if err := resp.Err(); err != nil {
+			return [2]string{}, err
+		}
+		return [2]string{resp.Data.B3, resp.Data.B4}, nil
+	}
+
+	var pair [2]string
+	var err error
+	if c.Cache() == nil {
+		pair, err = fetch()
+	} else {
+		var v interface{}
+		v, err = c.CacheTryGet("bilibili-finger-spi", 24*time.Hour, func() (interface{}, error) {
+			return fetch()
+		})
+		if err == nil {
+			var ok bool
+			pair, ok = v.([2]string)
+			if !ok {
+				err = fmt.Errorf("bilibili: invalid cached buvid entry")
+			}
+		}
+	}
+	if err != nil {
+		return "", err
+	}
+	if pair[0] == "" && pair[1] == "" {
+		return "", fmt.Errorf("bilibili: empty buvid from finger/spi")
+	}
+	return fmt.Sprintf("buvid3=%s; buvid4=%s", pair[0], pair[1]), nil
+}
+
 // appendBilibiliVideos maps video records into feed items.
-func appendBilibiliVideos(feed *models.Feed, list []biliVideo, limit int) {
+func appendBilibiliVideos(feed *models.Feed, list []biliVideo, limit int, guidPrefix string) {
 	routeutils.AppendMappedItems(feed, list, limit, func(v biliVideo) *models.Item {
 		if v.Title == "" {
 			return nil
@@ -167,16 +262,15 @@ func appendBilibiliVideos(feed *models.Feed, list []biliVideo, limit int) {
 		if v.Desc != "" {
 			desc += html.EscapeString(v.Desc) + "<br/>"
 		}
-		desc += fmt.Sprintf("Author: %s | Category: %s | Views: %d | Danmaku: %d | Likes: %d",
-			html.EscapeString(v.Owner.Name), html.EscapeString(v.Tname),
-			v.Stat.View, v.Stat.Danmaku, v.Stat.Like)
+		desc += fmt.Sprintf("Author: %s | Category: %s | %s",
+			html.EscapeString(v.Owner.Name), html.EscapeString(v.Tname), bilibiliVideoStats(&v))
 
 		item := routeutils.NewItem(v.Title, link, desc, time.Unix(v.Pubdate, 0))
 		if item == nil {
 			return nil
 		}
 		if v.Aid != 0 {
-			item.GUID = "bilibili-video-" + v.ID()
+			item.GUID = guidPrefix + v.ID()
 		}
 		if v.Owner.Name != "" {
 			routeutils.SetAuthor(item, v.Owner.Name, routeutils.WithAuthorURI(

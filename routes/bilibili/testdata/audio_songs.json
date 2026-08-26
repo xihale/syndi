@@ -1,0 +1,67 @@
+{
+ "code": 0,
+ "data": {
+  "curPage": 1,
+  "pageCount": 1,
+  "totalSize": 16,
+  "pageSize": 16,
+  "data": [
+   {
+    "id": 2478206,
+    "uid": 5669526,
+    "uname": "MitchieM",
+    "author": "初音未来, MEIKO · Mitchie M",
+    "title": "【Mitchie M】Nechusho No!No! (feat. 初音未来 & MEIKO)",
+    "cover": "http://i0.hdslb.com/bfs/music/dee637baa58ec632ebf928312dfd8986611a465b.jpg",
+    "intro": "Nechusho No!No! (feat. 初音未来 & MEIKO) [2020]\nGuest VTuber : 未来明 YuNi, 富士葵",
+    "passtime": 1630341668,
+    "duration": 112,
+    "statistic": {
+     "sid": 2478206,
+     "play": 0,
+     "collect": 0,
+     "comment": 0,
+     "share": 0
+    }
+   },
+   {
+    "id": 2445151,
+    "uid": 341368,
+    "uname": "JUSF周存",
+    "author": "洛天依 · 言和 · JUSF周存",
+    "title": "【洛天依原创】双星伴生",
+    "cover": "http://i0.hdslb.com/bfs/music/2275a75091835859b912a005f2babc677910fcfe.jpg",
+    "intro": "视频地址：BV1bU4y1n7Nx\n是音频哒！",
+    "passtime": 1627116617,
+    "duration": 197,
+    "statistic": {
+     "sid": 2445151,
+     "play": 0,
+     "collect": 0,
+     "comment": 0,
+     "share": 0
+    }
+   },
+   {
+    "id": 2435107,
+    "uid": 1734978373,
+    "uname": "小柔Channel",
+    "author": "小柔Channel",
+    "title": "【小柔】寄り酔い（cover）",
+    "cover": "http://i0.hdslb.com/bfs/music/0900be67223d2bfa0df1637a017ac4d50fcc7761.jpg",
+    "intro": "想要你送我回家...\n\n原唱：和ぬか-寄り酔い\nArrangement：100回嘔吐\nIllustration：某个匿名的瓜\nVocal：小柔Channel\nMix：冰山_hyozan\nMovie:琉璃猫映像",
+    "passtime": 1626745129,
+    "duration": 216,
+    "statistic": {
+     "sid": 2435107,
+     "play": 0,
+     "collect": 0,
+     "comment": 0,
+     "share": 0
+    }
+   }
+  ]
+ },
+ "message": "OK",
+ "msg": "success"
+}

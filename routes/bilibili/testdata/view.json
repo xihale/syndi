@@ -1,0 +1,68 @@
+{
+ "code": 0,
+ "message": "OK",
+ "data": {
+  "bvid": "BV1i7411M7N9",
+  "aid": 91257161,
+  "videos": 6,
+  "tid": 17,
+  "tname": "游戏",
+  "copyright": 1,
+  "pic": "http://i0.hdslb.com/bfs/archive/46b75b48dc4ece91aaeaaf41bafcb0b99cfa033c.jpg",
+  "title": "任天堂明星大乱斗把（bei）群友吊起来打 fit.Cph、汤圆、小金金",
+  "pubdate": 1582511393,
+  "desc": "我是谁？我在哪？我怎么死了？\n\n一起来玩吧，群号：947956902",
+  "owner": {
+   "mid": 2267573,
+   "name": "DIYgod",
+   "face": "https://i2.hdslb.com/bfs/face/9882696336717748a66cb70b0ed3f488f0cc9dad.jpg"
+  },
+  "stat": {
+   "view": 2590,
+   "danmaku": 7,
+   "reply": 31,
+   "like": 58,
+   "favorite": 9,
+   "coin": 31,
+   "share": 6
+  },
+  "pages": [
+   {
+    "cid": 155796740,
+    "page": 1,
+    "part": "小金金、DIYgod、汤圆、Cph",
+    "duration": 377
+   },
+   {
+    "cid": 155812994,
+    "page": 2,
+    "part": "小金金、汤圆、Cph、DIYgod",
+    "duration": 378
+   },
+   {
+    "cid": 155815561,
+    "page": 3,
+    "part": "汤圆、Cph、小金金、DIYgod",
+    "duration": 378
+   },
+   {
+    "cid": 155818137,
+    "page": 4,
+    "part": "Cph、DIYgod、小金金、汤圆",
+    "duration": 377
+   },
+   {
+    "cid": 155820703,
+    "page": 5,
+    "part": "Cph、小金金、DIYgod、汤圆",
+    "duration": 376
+   },
+   {
+    "cid": 155822724,
+    "page": 6,
+    "part": "小金金、DIYgod、汤圆、Cph",
+    "duration": 385
+   }
+  ]
+ }
+}

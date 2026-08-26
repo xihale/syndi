@@ -1,0 +1,24 @@
+{
+ "code": 0,
+ "msg": "success",
+ "message": "success",
+ "data": {
+  "11153765": {
+   "uid": 11153765,
+   "room_id": 23058,
+   "short_id": 3,
+   "live_status": 0,
+   "title": "哔哩哔哩音悦台",
+   "uname": "3号直播间",
+   "face": "https://i2.hdslb.com/bfs/face/5d35da6e93fbfb1a77ad6d1f1004b08413913f9a.jpg",
+   "keyframe": "https://i0.hdslb.com/bfs/live-key-frame/keyframe040916010000000230589l8p96.jpg",
+   "cover_from_user": "",
+   "live_time": 0,
+   "area_name": "唱见舞见",
+   "area_v2_name": "唱见电台",
+   "area_v2_parent_name": "电台",
+   "online": 0,
+   "tags": ""
+  }
+ }
+}

@@ -1,0 +1,97 @@
+{
+ "code": 0,
+ "message": "OK",
+ "ttl": 1,
+ "data": [
+  {
+   "cid": 155796740,
+   "page": 1,
+   "from": "vupload",
+   "part": "小金金、DIYgod、汤圆、Cph",
+   "duration": 377,
+   "vid": "",
+   "weblink": "",
+   "dimension": {
+    "width": 1280,
+    "height": 720,
+    "rotate": 0
+   },
+   "ctime": 1582511393
+  },
+  {
+   "cid": 155812994,
+   "page": 2,
+   "from": "vupload",
+   "part": "小金金、汤圆、Cph、DIYgod",
+   "duration": 378,
+   "vid": "",
+   "weblink": "",
+   "dimension": {
+    "width": 1280,
+    "height": 720,
+    "rotate": 0
+   },
+   "ctime": 1582511393
+  },
+  {
+   "cid": 155815561,
+   "page": 3,
+   "from": "vupload",
+   "part": "汤圆、Cph、小金金、DIYgod",
+   "duration": 378,
+   "vid": "",
+   "weblink": "",
+   "dimension": {
+    "width": 1280,
+    "height": 720,
+    "rotate": 0
+   },
+   "ctime": 1582511393
+  },
+  {
+   "cid": 155818137,
+   "page": 4,
+   "from": "vupload",
+   "part": "Cph、DIYgod、小金金、汤圆",
+   "duration": 377,
+   "vid": "",
+   "weblink": "",
+   "dimension": {
+    "width": 1280,
+    "height": 720,
+    "rotate": 0
+   },
+   "ctime": 1582511394
+  },
+  {
+   "cid": 155820703,
+   "page": 5,
+   "from": "vupload",
+   "part": "Cph、小金金、DIYgod、汤圆",
+   "duration": 376,
+   "vid": "",
+   "weblink": "",
+   "dimension": {
+    "width": 1280,
+    "height": 720,
+    "rotate": 0
+   },
+   "ctime": 1582511394
+  },
+  {
+   "cid": 155822724,
+   "page": 6,
+   "from": "vupload",
+   "part": "小金金、DIYgod、汤圆、Cph",
+   "duration": 385,
+   "vid": "",
+   "weblink": "",
+   "dimension": {
+    "width": 1280,
+    "height": 720,
+    "rotate": 0
+   },
+   "ctime": 1582511394
+  }
+ ]
+}
