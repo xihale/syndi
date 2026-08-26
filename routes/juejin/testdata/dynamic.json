@@ -1,0 +1,64 @@
+{
+  "err_no": 0,
+  "err_msg": "success",
+  "data": {
+    "list": [
+      {
+        "action": 0,
+        "time": 1756000000,
+        "target_type": "article",
+        "user": {
+          "user_id": "3051900006845944",
+          "user_name": "动态用户",
+          "avatar_large": "https://p3-passport.byteacctimg.com/img/user-avatar.png"
+        },
+        "target_data": {
+          "article_id": "7678200303993405491",
+          "article_info": {
+            "article_id": "7678200303993405491",
+            "title": "一篇新文章",
+            "brief_content": "<script>alert(1)</script> 文章摘要",
+            "ctime": "1755999999"
+          },
+          "author_user_info": {
+            "user_name": "动态用户"
+          },
+          "category": { "category_id": "1", "category_name": "后端" },
+          "tags": [ { "tag_name": "Go" } ]
+        }
+      },
+      {
+        "action": 2,
+        "time": 1756000100,
+        "target_type": "short_msg",
+        "target_data": {
+          "msg_id": "7548882523352186915",
+          "topic": { "title": "上班摸鱼" },
+          "msg_Info": {
+            "msg_id": "7548882523352186915",
+            "content": "发一个沸点",
+            "ctime": "1756000099",
+            "pic_list": ["https://p1-juejin.byteimg.com/pic.png"]
+          },
+          "author_user_info": { "user_name": "沸点用户" }
+        }
+      },
+      {
+        "action": 4,
+        "time": 1756000200,
+        "target_type": "user",
+        "target_data": {
+          "user_id": "1697301682482439",
+          "user_name": "mapoio",
+          "description": "简介文本"
+        }
+      },
+      {
+        "action": 9,
+        "time": 1756000300,
+        "target_type": "future_unknown_type",
+        "target_data": {}
+      }
+    ]
+  }
+}

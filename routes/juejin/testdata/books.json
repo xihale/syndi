@@ -1,0 +1,16 @@
+{
+  "err_no": 0,
+  "err_msg": "success",
+  "data": [
+    {
+      "base_info": {
+        "booklet_id": "6844733720226856967",
+        "title": "区块链开发入门：从 0 到 1 构建基于以太坊智能合约的 ICO DApp <script>",
+        "summary": "写给前端开发者的第一本区块链开发入门指南。",
+        "cover_img": "https://p1-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/book-cover.png",
+        "price": 6900,
+        "ctime": 1524478699
+      }
+    }
+  ]
+}

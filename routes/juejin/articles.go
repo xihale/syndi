@@ -91,8 +91,10 @@ func fetchJuejinCategoryBriefs(c *ctxpkg.Context) ([]juejinCategoryBrief, error)
 	return briefs, nil
 }
 
-// mapJuejinEntries converts article entries into feed items.
-func mapJuejinEntries(feed *models.Feed, entries []juejinArticleEntry) {
+// mapJuejinEntries converts article entries into feed items. guidPrefix
+// namespaces item GUIDs per feed kind; pass "" to keep bare article ids
+// (behavior of the original category/trending/posts routes).
+func mapJuejinEntries(feed *models.Feed, entries []juejinArticleEntry, guidPrefix string) {
 	for _, e := range entries {
 		info := e.ArticleInfo
 		title := strings.TrimSpace(info.Title)
@@ -109,7 +111,7 @@ func mapJuejinEntries(feed *models.Feed, entries []juejinArticleEntry) {
 			pubDate = time.Unix(sec, 0)
 		}
 		item := routeutils.NewItem(title, link, desc, pubDate)
-		item.GUID = info.ArticleID
+		item.GUID = guidPrefix + info.ArticleID
 		routeutils.SetItemAuthor(item, e.AuthorUserInfo.UserName, "", "")
 		cats := make([]string, 0, len(e.Tags)+1)
 		if e.Category.CategoryName != "" {
@@ -203,7 +205,7 @@ func JuejinCategoryHandler(c *ctxpkg.Context) (*models.Feed, error) {
 	}
 
 	feed := routeutils.NewFeed("掘金 "+cat.CategoryName, "https://juejin.cn/"+category, "掘金 "+cat.CategoryName+" 分类最新文章")
-	mapJuejinEntries(feed, entries)
+	mapJuejinEntries(feed, entries, "")
 	return feed, nil
 }
 
@@ -289,7 +291,7 @@ func JuejinTrendingHandler(c *ctxpkg.Context) (*models.Feed, error) {
 		fmt.Sprintf("https://juejin.cn/%s?sort=%s", fallbackURL, p.link),
 		"掘金热门文章",
 	)
-	mapJuejinEntries(feed, entries)
+	mapJuejinEntries(feed, entries, "")
 	return feed, nil
 }
 
@@ -333,6 +335,6 @@ func JuejinPostsHandler(c *ctxpkg.Context) (*models.Feed, error) {
 		Description: author.Description,
 		Image:       author.AvatarLarge,
 	})
-	mapJuejinEntries(feed, entries)
+	mapJuejinEntries(feed, entries, "")
 	return feed, nil
 }

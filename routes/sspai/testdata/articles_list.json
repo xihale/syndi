@@ -1,0 +1,27 @@
+{
+  "list": [
+    {
+      "id": 113626,
+      "title": "算法不只是在猜你喜欢：窥探 X「为你推荐」背后的秘密",
+      "released_at": 1787535788,
+      "summary": "X 会从约 3000 条候选推文中筛出屏幕上的几十条推荐内容。",
+      "banner": "2026/08/19/fed7410ddcb867f38742804fa4d43a40.png",
+      "author": {
+        "id": 796518,
+        "slug": "onevcat",
+        "nickname": "onevcat"
+      }
+    },
+    {
+      "id": 113627,
+      "title": "注入测试 <script>alert(1)</script>",
+      "released_at": 1787621691,
+      "summary": "正文含 <img src=x onerror=alert(2)> 需要被转义",
+      "author": {
+        "id": 1,
+        "slug": "",
+        "nickname": "安全研究员"
+      }
+    }
+  ]
+}

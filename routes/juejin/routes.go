@@ -6,7 +6,12 @@ import "github.com/xihale/syndi/internal/routeutils"
 var Routes = []routeutils.RouteSpec{
 	juejinCategoryRoute,
 	juejinTrendingRoute,
+	juejinColumnRoute,
+	juejinTagRoute,
 	juejinPostsRoute,
+	juejinBooksRoute,
+	juejinCollectionRoute,
+	juejinDynamicRoute,
 	juejinPinsRoute,
 	juejinPinsTypeRoute,
 }

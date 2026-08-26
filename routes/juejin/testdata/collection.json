@@ -1,0 +1,35 @@
+{
+  "err_no": 0,
+  "err_msg": "success",
+  "data": {
+    "detail": {
+      "tag_id": "6845242107762835464",
+      "tag_name": "前端收藏"
+    },
+    "create_user": {
+      "user_id": "1697301682482439",
+      "user_name": "mapoio"
+    },
+    "article_list": [
+      {
+        "article_id": "6813709599467763726",
+        "article_info": {
+          "article_id": "6813709599467763726",
+          "title": "深入理解 CSS 布局",
+          "brief_content": "一份关于现代 CSS 布局的系统梳理。",
+          "ctime": "1619061180"
+        },
+        "author_user_info": {
+          "user_name": "someone"
+        },
+        "category": {
+          "category_id": "6809637767543259144",
+          "category_name": "前端"
+        },
+        "tags": [
+          { "tag_name": "CSS" }
+        ]
+      }
+    ]
+  }
+}
