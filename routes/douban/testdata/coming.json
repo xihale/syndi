@@ -1,0 +1,35 @@
+{
+  "start": 0,
+  "count": 20,
+  "total": 21,
+  "subjects": [
+    {
+      "id": "1292052",
+      "title": "肖申克的救赎",
+      "url": "https://movie.douban.com/subject/1292052/",
+      "cover_url": "https://img3.doubanio.com/view/photo/m_ratio_poster/public/p2934829882.jpg",
+      "pic": {"large": "https://img3.doubanio.com/view/photo/m_ratio_poster/public/p2934829882.jpg", "normal": "https://img3.doubanio.com/view/photo/s_ratio_poster/public/p2934829882.jpg"},
+      "pubdate": ["2026-08-28(中国大陆)"],
+      "wish_count": 519304,
+      "genres": ["犯罪", "剧情"],
+      "directors": [{"name": "弗兰克·德拉邦特"}],
+      "actors": [{"name": "蒂姆·罗宾斯"}, {"name": "摩根·弗里曼"}],
+      "rating": {"count": 3320468, "max": 10, "value": 9.7},
+      "intro": "一场谋杀案使银行家安迪蒙冤入狱。\n在肖申克监狱，他用自己的才智赢得尊重，并最终完成自我救赎。"
+    },
+    {
+      "id": "36919562",
+      "title": "下一个台风",
+      "url": "https://movie.douban.com/subject/36919562/",
+      "cover_url": "https://img1.doubanio.com/view/photo/m_ratio_poster/public/p2934418864.jpg",
+      "pubdate": ["2026-09-05(中国大陆)"],
+      "wish_count": 10415,
+      "genres": ["剧情", "爱情"],
+      "directors": [{"name": "李玉"}],
+      "actors": [{"name": "张子枫"}, {"name": "张伟丽"}],
+      "rating": null,
+      "null_rating_reason": "还未上映，暂无评分",
+      "intro": ""
+    }
+  ]
+}

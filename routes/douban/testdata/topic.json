@@ -1,0 +1,50 @@
+{
+  "items": [
+    {
+      "target": {"type": "status"},
+      "topic": {
+        "id": "48823",
+        "name": "令你难忘的深夜长谈",
+        "introduction": "卸下心防的深夜，你是否与爱人、朋友、亲人甚至是陌生人之间有过难以忘怀的长谈经历呢？"
+      }
+    },
+    {
+      "target": {
+        "type": "status",
+        "id": "330011223",
+        "status": {
+          "sharing_url": "https://www.douban.com/people/nightowl/status/330011223?track=tracking_junk",
+          "author": {"name": "深夜用户"},
+          "create_time": "2026-08-01 23:41:12",
+          "text": "凌晨三点和人聊起小时候的事\n越聊越清醒。",
+          "images": [
+            {"normal": {"url": "https://img1.doubanio.com/view/status/l/public/2b33f8ac7a95a58.jpg"}}
+          ]
+        }
+      }
+    },
+    {
+      "target": {
+        "type": "topic",
+        "id": "149988210",
+        "title": "和陌生人的通宵长谈",
+        "abstract": "在一趟绿皮火车上遇到一位前辈，聊了一整晚。",
+        "sharing_url": "https://www.douban.com/topic/149988210/",
+        "create_time": "2025-12-20 08:10:00",
+        "author": {"name": "绿皮火车"},
+        "photos": [{"src": "https://img2.doubanio.com/view/topic/l/public/p512345.jpg"}]
+      }
+    },
+    {
+      "target": {
+        "type": "note",
+        "id": "479202582",
+        "title": "那年夏天的夜谈",
+        "abstract": "日记摘要版本。",
+        "sharing_url": "https://www.douban.com/note/479202582/",
+        "create_time": "2024-07-15 22:00:00",
+        "author": {"name": "写日记的人"}
+      }
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "start": 0,
+  "count": 5,
+  "total": 15,
+  "subject_collection_items": [
+    {
+      "cover": {"url": "https://img9.doubanio.com/view/subject/m/public/s35602254.jpg", "width": 0, "height": 0, "shape": "square"},
+      "title": "快乐有时有",
+      "type": "music",
+      "subtype": "",
+      "info": "蔡旻佑/流行/2026-08-21",
+      "recommend_comment": "时隔多年再次发片的诚意之作。",
+      "pubdate": ["2026-08-21"],
+      "singer": "蔡旻佑",
+      "year": "2026",
+      "rating": {"value": 7.2, "count": 108},
+      "null_rating_reason": "",
+      "id": "38602233",
+      "url": "https://www.douban.com/doubanapp/dispatch/music/38602233"
+    },
+    {
+      "cover": {"url": "https://img1.doubanio.com/view/subject/m/public/s35601010.jpg", "width": 0, "height": 0, "shape": "square"},
+      "title": "无人评分专辑",
+      "info": "新人歌手/民谣/2026-08-14",
+      "recommend_comment": "",
+      "pubdate": ["2026-08-14"],
+      "singer": "新人歌手",
+      "rating": null,
+      "null_rating_reason": "评价人数不足",
+      "id": "38601000",
+      "url": "https://www.douban.com/doubanapp/dispatch/music/38601000"
+    }
+  ]
+}

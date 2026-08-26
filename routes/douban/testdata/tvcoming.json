@@ -1,0 +1,26 @@
+{
+  "start": 0,
+  "count": 30,
+  "total": 289,
+  "subjects": [
+    {
+      "id": "37045704",
+      "title": "血宝石之谜",
+      "url": "https://movie.douban.com/subject/37045704/",
+      "pubdate": ["2026-11-28(中国大陆)"],
+      "wish_count": 23456,
+      "card_subtitle": "2026 / 中国大陆 / 悬疑 奇幻",
+      "genres": ["悬疑", "奇幻"],
+      "intro": "一颗传世宝石牵出跨世纪悬案。"
+    },
+    {
+      "id": "36509090",
+      "title": "无名短剧的春天",
+      "url": "",
+      "pubdate": ["2026-09-01(网络)"],
+      "wish_count": 999,
+      "genres": ["喜剧"],
+      "intro": ""
+    }
+  ]
+}

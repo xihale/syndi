@@ -6,5 +6,30 @@ import "github.com/xihale/syndi/internal/routeutils"
 var Routes = []routeutils.RouteSpec{
 	doubanMoviePlayingRoute,
 	doubanMoviePlayingScoreRoute,
+
+	doubanMovieComingRoute,
+	doubanMovieLaterRoute,
 	doubanMovieWeeklyRoute,
+	doubanMovieWeeklyTypeRoute,
+	doubanMovieUSBoxRoute,
+
+	doubanGroupRoute,
+	doubanGroupTypeRoute,
+	doubanDoulistRoute,
+	doubanTopicRoute,
+	doubanTopicSortRoute,
+	doubanExploreRoute,
+
+	doubanBookLatestRoute,
+	doubanBookLatestTypeRoute,
+	doubanMusicLatestRoute,
+	doubanMusicLatestAreaRoute,
+
+	// Community extras
+	doubanEventHotRoute,
+	doubanTVComingRoute,
+	doubanTVComingSortRoute,
+	doubanJobsRoute,
+	doubanChannelRoute,
+	doubanChannelNavRoute,
 }

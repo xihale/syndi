@@ -1,0 +1,38 @@
+{
+  "start": 0,
+  "count": 5,
+  "total": 10000,
+  "default_nav": "hot",
+  "navs": [{"id": "default", "name": "默认"}, {"id": "hot", "name": "热门"}, {"id": "new", "name": "最新"}],
+  "items": [
+    {
+      "abstract": "一年的时间\r\n我从书法菜鸟\r\n到写得一手不错的字\r\n本文3000余字。",
+      "author": {"avatar": "https://img1.doubanio.com/icon/up1213794-10.jpg", "id": "1213794", "name": "雲胡不喜", "kind": "user"},
+      "comments_count": 21,
+      "cover_url": "https://img2.doubanio.com/view/note/l/public/p80337103.jpg",
+      "create_time": "2017-02-08 13:49:35",
+      "external_payload": {},
+      "has_video": false,
+      "id": "605477098",
+      "layout": 0,
+      "likers_count": 512,
+      "photo_count": 12,
+      "photos": [],
+      "reshares_count": 88,
+      "sharing_url": "https://www.douban.com/note/605477098/",
+      "title": "开始学书法 看这一篇就够了",
+      "type": "note",
+      "uri": "douban://douban.com/note/605477098",
+      "url": "https://www.douban.com/note/605477098/"
+    },
+    {
+      "abstract": "这是一张聚合卡片，应当被过滤。",
+      "author": {"id": "channel_bot", "name": "官方账号", "kind": "user"},
+      "create_time": "2026-08-01 10:00:00",
+      "external_payload": {"items": [{"title": "nested card item"}]},
+      "id": "aggregate-1",
+      "title": "聚合卡片",
+      "url": "https://www.douban.com/channel/30168934/card"
+    }
+  ]
+}

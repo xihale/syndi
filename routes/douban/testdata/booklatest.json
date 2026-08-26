@@ -1,0 +1,31 @@
+{
+  "start": 0,
+  "count": 2,
+  "total": 302,
+  "items": [
+    {
+      "id": "38556395",
+      "title": "一个村庄的陨落",
+      "card_subtitle": "[英] 朱莉娅·博伊德 [德] 安洁莉卡·帕特尔 / 2026 / 上海人民出版社",
+      "cards": [
+        {"content": "风景如画的奥伯斯特多夫村隐藏在巴伐利亚山脉深处。本书把目光投向这座帝国边缘的村庄。", "kind_cn": "内容简介"}
+      ],
+      "pic": {"large": "https://img3.doubanio.com/view/subject/l/public/s35566932.jpg", "normal": "https://img3.doubanio.com/view/subject/m/public/s35566932.jpg"},
+      "cover_url": "https://img3.doubanio.com/view/subject/l/public/s35566932.jpg",
+      "rating": {"count": 78, "max": 10, "value": 8.6},
+      "null_rating_reason": "",
+      "url": "https://book.douban.com/subject/38556395/"
+    },
+    {
+      "id": "38600001",
+      "title": "暂无评分的新书",
+      "card_subtitle": "[中] 某位作者 / 2026 / 理想国",
+      "cards": [{"content": "", "kind_cn": ""}],
+      "pic": null,
+      "cover_url": "",
+      "rating": null,
+      "null_rating_reason": "评价人数不足",
+      "url": "https://book.douban.com/subject/38600001/"
+    }
+  ]
+}

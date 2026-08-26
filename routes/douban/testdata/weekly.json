@@ -1,0 +1,27 @@
+{
+  "start": 0,
+  "count": 10,
+  "total": 10,
+  "subject_collection_items": [
+    {
+      "id": "36246195",
+      "rank": 1,
+      "title": "蜘蛛侠：崭新之日",
+      "url": "https://movie.douban.com/subject/36246195/",
+      "description": "面对身份暴露的代价，彼得·帕克踏上全新的旅程。",
+      "card_subtitle": "2026 / 美国 / 动作 科幻 冒险 / 导演 / 汤姆·赫兰德",
+      "pic": {"large": "https://img3.doubanio.com/view/photo/s_ratio_poster/public/p2934276912.jpg", "normal": "https://img3.doubanio.com/view/photo/s_ratio_poster/public/p2934276912.jpg"},
+      "rating": {"value": 7.8, "count": 90210}
+    },
+    {
+      "id": "36501234",
+      "rank": 2,
+      "title": "银河系边缘的小失常",
+      "url": "https://movie.douban.com/subject/36501234/",
+      "description": "",
+      "card_subtitle": "2026 / 以色列 / 剧情",
+      "rating": null,
+      "null_rating_reason": "评价人数不足"
+    }
+  ]
+}

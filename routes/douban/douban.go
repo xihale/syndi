@@ -1,12 +1,18 @@
 package routes
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"html"
+	"net/url"
+	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/xihale/syndi/internal/client"
 	"github.com/xihale/syndi/internal/disguise"
 	"github.com/xihale/syndi/internal/parser"
 	"github.com/xihale/syndi/internal/routeutils"
@@ -14,11 +20,149 @@ import (
 	"github.com/xihale/syndi/pkg/models"
 )
 
-const doubanBaseURL = "https://movie.douban.com"
+const (
+	doubanBaseURL    = "https://movie.douban.com"
+	doubanWWWBaseURL = "https://www.douban.com"
+	doubanMobileURL  = "https://m.douban.com"
+
+	doubanRexxarAPI = "https://m.douban.com/rexxar/api/v2"
+)
 
 // doubanWebProfile returns the shared disguise profile for douban pages/APIs.
 func doubanWebProfile() *disguise.Profile {
 	return disguise.Chrome().Lang("zh-CN,zh;q=0.9")
+}
+
+// doubanFetchHTML fetches a douban page through the shared disguise profile.
+func doubanFetchHTML(ctx context.Context, cl *client.Client, url, referer string) (*parser.Document, error) {
+	return doubanWebProfile().Referer(referer).Fetch(url).GetHTML(ctx, cl)
+}
+
+// doubanFetchJSON fetches a douban JSON API through an XHR-like disguise
+// profile and rejects well-formed error envelopes ({"code":103,...}).
+func doubanFetchJSON(ctx context.Context, cl *client.Client, url, referer string, target interface{}) error {
+	data, err := doubanWebProfile().JSONAccept().Referer(referer).Fetch(url).GetBytes(ctx, cl)
+	if err != nil {
+		return err
+	}
+	return decodeDoubanJSON(url, data, target)
+}
+
+// decodeDoubanJSON validates the response envelope and unmarshals the payload.
+func decodeDoubanJSON(sourceURL string, data []byte, target interface{}) error {
+	var env doubanAPIError
+	if err := json.Unmarshal(data, &env); err == nil && env.Code != 0 && env.Code != 200 {
+		env.URL = sourceURL
+		return &env
+	}
+	if err := json.Unmarshal(data, target); err != nil {
+		return fmt.Errorf("douban: invalid JSON from %s: %w", sourceURL, err)
+	}
+	return nil
+}
+
+// doubanAPIError models the error envelope douban APIs return on failures
+// such as {"code":103,"msg":"need_login"} or blocked apikeys.
+type doubanAPIError struct {
+	Code             int    `json:"code"`
+	Msg              string `json:"msg"`
+	LocalizedMessage string `json:"localized_message"`
+	URL              string `json:"-"`
+}
+
+func (e *doubanAPIError) Error() string {
+	msg := e.Msg
+	if msg == "" {
+		msg = e.LocalizedMessage
+	}
+	if msg == "" {
+		msg = "unknown api error"
+	}
+	return fmt.Sprintf("douban: api error code %d (%s) from %s", e.Code, msg, e.URL)
+}
+
+// doubanSimpleKeyPattern guards path params that are interpolated into URLs.
+var doubanSimpleKeyPattern = regexp.MustCompile(`^[A-Za-z0-9_-]+$`)
+
+// doubanSanitizeKey normalizes an optional path param used inside an upstream
+// URL; anything unexpected falls back to fallback.
+func doubanSanitizeKey(raw, fallback string) string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return fallback
+	}
+	if !doubanSimpleKeyPattern.MatchString(raw) {
+		return fallback
+	}
+	return raw
+}
+
+// doubanCollectionKeys returns sorted keys of a category map (stable order
+// for docs and ParseEnum).
+func doubanCollectionKeys(m map[string]string) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+// doubanIDFromLink extracts the trailing path segment of a link (e.g. the
+// subject/topic id), with query strings and fragments removed.
+func doubanIDFromLink(link string) string {
+	u, err := url.Parse(strings.TrimSpace(link))
+	if err != nil || u.Path == "" {
+		return ""
+	}
+	parts := strings.Split(strings.Trim(u.Path, "/"), "/")
+	for i := len(parts) - 1; i >= 0; i-- {
+		if parts[i] != "" {
+			return parts[i]
+		}
+	}
+	return ""
+}
+
+var doubanDateLayouts = []string{
+	"2006-01-02 15:04:05",
+	"2006-01-02 15:04",
+	"2006-01-02",
+}
+
+// doubanParseDate parses common douban date strings, zero time on failure.
+func doubanParseDate(s string) time.Time {
+	s = strings.TrimSpace(s)
+	for _, layout := range doubanDateLayouts {
+		if t, err := time.ParseInLocation(layout, s, time.Local); err == nil {
+			return t
+		}
+	}
+	return time.Time{}
+}
+
+var doubanPubdateYearPattern = regexp.MustCompile(`(\d{4})(?:-(\d{1,2}))?(?:-(\d{1,2}))?`)
+
+// doubanParsePubdate parses a douban pubdate entry like "2026-08-28(中国大陆)"
+// where trailing context in parentheses is common.
+func doubanParsePubdate(entries []string) time.Time {
+	for _, entry := range entries {
+		m := doubanPubdateYearPattern.FindStringSubmatch(entry)
+		if m == nil {
+			continue
+		}
+		year, _ := strconv.Atoi(m[1])
+		month := 1
+		day := 1
+		if m[2] != "" {
+			month, _ = strconv.Atoi(m[2])
+		}
+		if m[3] != "" {
+			day, _ = strconv.Atoi(m[3])
+		}
+		return time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.Local)
+	}
+	return time.Time{}
 }
 
 var doubanMoviePlayingRoute = routeutils.RouteSpec{
@@ -64,6 +208,22 @@ var doubanMovieWeeklyRoute = routeutils.RouteSpec{
 	Handler:  DoubanMovieWeeklyHandler,
 }
 
+var doubanMovieWeeklyTypeRoute = routeutils.RouteSpec{
+	Path:        "movie/weekly/:type",
+	Name:        "Douban Subject Collection Ranking",
+	Example:     "douban/movie/weekly/tv_chinese_best_weekly",
+	Maintainers: []string{"xihale"},
+	Description: "Douban ranking by subject collection id, e.g. movie_weekly_best (一周口碑电影榜), tv_chinese_best_weekly (华语口碑剧集榜)",
+	Categories:  []models.Category{{Name: "social-media"}},
+	Features:    models.Features{SupportRadar: true},
+	Parameters: []models.Parameter{
+		routeutils.RequiredParam("type", "Subject collection id from m.douban.com, e.g. movie_weekly_best"),
+		routeutils.OptionalParam("limit", "Maximum number of items, default 10, max 30"),
+	},
+	CacheTTL: 6 * time.Hour,
+	Handler:  DoubanMovieWeeklyHandler,
+}
+
 // DoubanMoviePlayingHandler handles /douban/movie/playing/:score?
 func DoubanMoviePlayingHandler(c *ctxpkg.Context) (*models.Feed, error) {
 	minScore := 0.0
@@ -74,9 +234,7 @@ func DoubanMoviePlayingHandler(c *ctxpkg.Context) (*models.Feed, error) {
 	}
 	ctx := c.Parent()
 
-	doc, err := doubanWebProfile().Referer(doubanBaseURL+"/").
-		Fetch(doubanBaseURL+"/cinema/nowplaying/beijing/").
-		GetHTML(ctx, c.Client())
+	doc, err := doubanFetchHTML(ctx, c.Client(), doubanBaseURL+"/cinema/nowplaying/beijing/", doubanBaseURL+"/")
 	if err != nil {
 		return nil, err
 	}
@@ -115,52 +273,215 @@ func DoubanMoviePlayingHandler(c *ctxpkg.Context) (*models.Feed, error) {
 	return feed, nil
 }
 
-// DoubanMovieWeeklyHandler handles /douban/movie/weekly
+// DoubanMovieWeeklyHandler handles /douban/movie/weekly/:type?
 func DoubanMovieWeeklyHandler(c *ctxpkg.Context) (*models.Feed, error) {
 	limit := routeutils.ParsePositiveInt(c.QueryParam("limit"), 10, 30)
+	typ := doubanSanitizeKey(c.Param("type"), "movie_weekly_best")
+	referer := doubanMobileURL + "/movie/"
 	ctx := c.Parent()
 
-	apiURL := fmt.Sprintf("https://m.douban.com/rexxar/api/v2/subject_collection/movie_weekly_best/items?start=0&count=%d", limit)
-	var resp doubanWeeklyResp
-	if err := doubanWebProfile().JSONAccept().
-		Referer("https://m.douban.com/movie/weekly/").
-		Fetch(apiURL).
-		GetJSON(ctx, c.Client(), &resp); err != nil {
+	itemsURL := fmt.Sprintf("%s/subject_collection/%s/items?start=0&count=%d", doubanRexxarAPI, typ, limit)
+	var coll doubanCollectionResp
+	if err := doubanFetchJSON(ctx, c.Client(), itemsURL, referer, &coll); err != nil {
 		return nil, err
 	}
 
-	feed := routeutils.NewFeed("豆瓣电影一周口碑榜", "https://m.douban.com/movie/weekly/", "豆瓣一周口碑电影榜")
-	for _, entry := range resp.SubjectCollectionItems {
-		if entry.Title == "" && entry.URL == "" {
+	feed := routeutils.NewFeed(
+		"豆瓣电影一周口碑榜",
+		doubanMobileURL+"/subject_collection/"+typ,
+		"豆瓣一周口碑电影榜",
+	)
+	// Collection metadata is optional decoration; ignore fetch failures.
+	metaURL := fmt.Sprintf("%s/subject_collection/%s", doubanRexxarAPI, typ)
+	var meta doubanCollectionMeta
+	if err := doubanFetchJSON(ctx, c.Client(), metaURL, referer, &meta); err == nil {
+		if meta.Title != "" {
+			feed.Title = meta.Title
+		}
+		if meta.Description != "" {
+			feed.Description = meta.Description
+		}
+	}
+	doubanAppendCollectionItems(feed, coll.items())
+	return feed, nil
+}
+
+// doubanCollectionResp is the payload of rexxar subject_collection list APIs.
+// Some collections use "subject_collection_items", others ("new_book_*") use
+// "items"; both are kept and unified via items().
+type doubanCollectionResp struct {
+	Start                  int                    `json:"start"`
+	Count                  int                    `json:"count"`
+	Total                  int                    `json:"total"`
+	Items                  []doubanCollectionItem `json:"items"`
+	SubjectCollectionItems []doubanCollectionItem `json:"subject_collection_items"`
+	Subjects               []doubanCollectionItem `json:"subjects"`
+}
+
+// items returns whichever item array is populated.
+func (r *doubanCollectionResp) items() []doubanCollectionItem {
+	if len(r.SubjectCollectionItems) > 0 {
+		return r.SubjectCollectionItems
+	}
+	if len(r.Items) > 0 {
+		return r.Items
+	}
+	return r.Subjects
+}
+
+// doubanCollectionMeta is a rexxar subject_collection info payload.
+type doubanCollectionMeta struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Subtitle    string `json:"subtitle"`
+}
+
+// doubanRating appears as object or null depending on collection.
+type doubanRating struct {
+	Value float64 `json:"value"`
+	Count int     `json:"count"`
+	Max   int     `json:"max"`
+}
+
+type doubanPicURL struct {
+	URL string `json:"url"`
+}
+
+type doubanPicSizes struct {
+	Large  string `json:"large"`
+	Normal string `json:"normal"`
+	Medium string `json:"medium"`
+}
+
+type doubanCard struct {
+	Content string `json:"content"`
+	KindCN  string `json:"kind_cn"`
+}
+
+// doubanCollectionItem is the union of fields used across douban rexxar
+// collections (rankings, book/music/event lists, frodo coming_soon).
+// Only field shapes verified against live payloads are modeled.
+type doubanCollectionItem struct {
+	ID               string          `json:"id"`
+	Rank             int             `json:"rank"`
+	Title            string          `json:"title"`
+	URL              string          `json:"url"`
+	Info             string          `json:"info"`
+	Subtype          string          `json:"subtype"`
+	PriceRange       string          `json:"price_range"`
+	Abstract         string          `json:"abstract"`
+	Description      string          `json:"description"`
+	CardSubtitle     string          `json:"card_subtitle"`
+	NullRatingReason string          `json:"null_rating_reason"`
+	RecommendComment string          `json:"recommend_comment"`
+	Year             string          `json:"year"`
+	Intro            string          `json:"intro"`
+	WishCount        float64         `json:"wish_count"`
+	Pubdate          []string        `json:"pubdate"`
+	Genres           []string        `json:"genres"`
+	Directors        []doubanName    `json:"directors"`
+	Actors           []doubanName    `json:"actors"`
+	Rating           *doubanRating   `json:"rating"`
+	Pic              *doubanPicSizes `json:"pic"`
+	Cover            *doubanPicURL   `json:"cover"`
+	CoverURL         string          `json:"cover_url"`
+	Cards            []doubanCard    `json:"cards"`
+}
+
+type doubanName struct {
+	Name string `json:"name"`
+}
+
+// Poster prefers pic.normal > pic.large > cover.url > cover_url.
+func (it *doubanCollectionItem) Poster() string {
+	if it.Pic != nil {
+		if it.Pic.Normal != "" {
+			return it.Pic.Normal
+		}
+		if it.Pic.Large != "" {
+			return it.Pic.Large
+		}
+	}
+	if it.Cover != nil && it.Cover.URL != "" {
+		return it.Cover.URL
+	}
+	return it.CoverURL
+}
+
+// RatingText renders a human rating line for the item.
+func (it *doubanCollectionItem) RatingText() string {
+	if it.Rating != nil && it.Rating.Value > 0 {
+		count := ""
+		if it.Rating.Count > 0 {
+			count = fmt.Sprintf("（%d 人评）", it.Rating.Count)
+		}
+		return fmt.Sprintf("%.1f 分%s", it.Rating.Value, count)
+	}
+	if it.NullRatingReason != "" {
+		return it.NullRatingReason
+	}
+	return "暂无评分"
+}
+
+func doubanLink(it *doubanCollectionItem, fallbackPrefix string) string {
+	if it.URL != "" {
+		return it.URL
+	}
+	if it.ID != "" {
+		return fallbackPrefix + it.ID + "/"
+	}
+	return ""
+}
+
+func doubanItemTitle(it *doubanCollectionItem) string {
+	title := it.Title
+	if title != "" && it.Info != "" {
+		title = title + "-" + it.Info
+	}
+	return routeutils.CollapseWhitespace(title)
+}
+
+// doubanAppendCollectionItems appends generic card-style items used by
+// rankings and latest-list routes.
+func doubanAppendCollectionItems(feed *models.Feed, items []doubanCollectionItem) {
+	for _, entry := range items {
+		link := doubanLink(&entry, "")
+		title := doubanItemTitle(&entry)
+		if title == "" && link == "" {
 			continue
 		}
-		link := entry.URL
-		if link == "" {
-			link = doubanBaseURL + "/subject/" + entry.ID
+		var sb strings.Builder
+		if poster := entry.Poster(); poster != "" {
+			sb.WriteString(fmt.Sprintf(`<img src="%s" alt=""/><br/>`, html.EscapeString(poster)))
 		}
-		rating := "暂无评分"
-		if entry.Rating.Value > 0 {
-			rating = fmt.Sprintf("%.1f (%d 人评)", entry.Rating.Value, entry.Rating.Count)
+		if line := routeutils.CollapseWhitespace(entry.CardSubtitle); line != "" {
+			sb.WriteString(html.EscapeString(line) + "<br/>")
+		} else if line := routeutils.CollapseWhitespace(entry.Info); line != "" {
+			sb.WriteString(html.EscapeString(line) + "<br/>")
 		}
-		desc := ""
-		if poster := entry.Pic.Large; poster != "" {
-			desc += fmt.Sprintf(`<img src="%s" alt=""/><br/>`, html.EscapeString(poster))
+		sb.WriteString(fmt.Sprintf("评分：%s<br/>", html.EscapeString(entry.RatingText())))
+		if text := routeutils.CollapseWhitespace(firstNonEmpty(entry.RecommendComment, entry.Description, entry.Abstract)); text != "" {
+			sb.WriteString(html.EscapeString(text))
 		}
-		desc += html.EscapeString(entry.CardSubtitle) + "<br/>" +
-			fmt.Sprintf("排名: %s | 评分: %s<br/>", rankText(entry.Rank), html.EscapeString(rating)) +
-			html.EscapeString(entry.Description)
 
-		title := fmt.Sprintf("%s. %s", rankText(entry.Rank), entry.Title)
-		item := routeutils.NewItem(title, link, desc, time.Time{})
+		item := routeutils.NewItem(title, link, sb.String(), time.Time{})
 		if item == nil {
 			continue
 		}
 		if entry.ID != "" {
-			item.GUID = "douban-weekly-" + entry.ID
+			item.GUID = "douban-subject-" + entry.ID
 		}
 		routeutils.AddItem(feed, item)
 	}
-	return feed, nil
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, v := range values {
+		if v != "" {
+			return v
+		}
+	}
+	return ""
 }
 
 func doubanPlayingTitle(minScore float64) string {
@@ -175,28 +496,4 @@ func rankText(rank int) string {
 		return "-"
 	}
 	return strconv.Itoa(rank)
-}
-
-type doubanWeeklyResp struct {
-	Start                  int                `json:"start"`
-	Count                  int                `json:"count"`
-	Total                  int                `json:"total"`
-	SubjectCollectionItems []doubanWeeklyItem `json:"subject_collection_items"`
-}
-
-type doubanWeeklyItem struct {
-	ID           string `json:"id"`
-	Rank         int    `json:"rank"`
-	Title        string `json:"title"`
-	URL          string `json:"url"`
-	Description  string `json:"description"`
-	CardSubtitle string `json:"card_subtitle"`
-	Pic          struct {
-		Large  string `json:"large"`
-		Normal string `json:"normal"`
-	} `json:"pic"`
-	Rating struct {
-		Value float64 `json:"value"`
-		Count int     `json:"count"`
-	} `json:"rating"`
 }
