@@ -1,0 +1,40 @@
+[
+  {
+    "number": 101,
+    "title": "Panic when parsing empty config",
+    "html_url": "https://github.com/mix/issues/101",
+    "created_at": "2026-08-10T09:00:00Z",
+    "body": "Steps to reproduce:\n1. start\n2. crash & <escape> me",
+    "user": { "login": "alice", "html_url": "https://github.com/alice", "avatar_url": "" },
+    "labels": [ { "name": "bug" }, { "name": "help wanted" } ]
+  },
+  {
+    "number": 100,
+    "title": "Add dark mode support",
+    "html_url": "",
+    "created_at": "2026-08-05T12:00:00Z",
+    "body": "It would be nice to have a dark theme.",
+    "user": { "login": "bob", "html_url": "https://github.com/bob", "avatar_url": "" },
+    "labels": []
+  },
+  {
+    "number": 99,
+    "title": "Improve documentation build",
+    "html_url": "https://github.com/mix/pull/99",
+    "created_at": "2026-08-01T08:00:00Z",
+    "body": "This PR rewrites the docs pipeline.",
+    "user": { "login": "carol", "html_url": "https://github.com/carol", "avatar_url": "" },
+    "labels": [ { "name": "documentation" } ],
+    "pull_request": {}
+  },
+  {
+    "number": 98,
+    "title": "Refactor storage layer",
+    "html_url": "https://github.com/mix/pull/98",
+    "created_at": "2026-07-30T16:20:00Z",
+    "body": "Big refactor, <b>keeps</b> behavior.",
+    "user": { "login": "dave", "html_url": "https://github.com/dave", "avatar_url": "" },
+    "labels": [],
+    "pull_request": { "url": "https://api.github.com/repos/mix/pulls/98" }
+  }
+]

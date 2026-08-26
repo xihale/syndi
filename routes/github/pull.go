@@ -1,7 +1,6 @@
 package routes
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/xihale/syndi/internal/routeutils"
@@ -25,55 +24,52 @@ var gitHubPullRoute = routeutils.RouteSpec{
 	Handler:  GitHubPullHandler,
 }
 
-// GitHubPullHandler handles /github/pull/:owner/:repo
-func GitHubPullHandler(c *ctxpkg.Context) (*models.Feed, error) {
-	owner := c.Param("owner")
-	repo := c.Param("repo")
-	ctx := c.Parent()
-
-	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/pulls?state=open&per_page=30", owner, repo)
-
-	var pulls []GitHubPull
-	if err := routeutils.GetJSON(ctx, c.Client(), url, &pulls); err != nil {
-		return nil, err
-	}
-
-	feed := routeutils.NewFeed(
-		fmt.Sprintf("%s/%s Pull Requests", owner, repo),
-		fmt.Sprintf("https://github.com/%s/%s/pulls", owner, repo),
-		fmt.Sprintf("Latest open pull requests from %s/%s", owner, repo),
-	)
-	routeutils.AppendMappedItems(feed, pulls, 30, func(pull GitHubPull) *models.Item {
-		if pull.Number == 0 {
-			return nil
-		}
-		link := pull.HTMLURL
-		if link == "" {
-			link = fmt.Sprintf("https://github.com/%s/%s/pull/%d", owner, repo, pull.Number)
-		}
-
-		item := routeutils.NewItem(pull.Title, link, excerptBody(pull.Body, 300), pull.CreatedAt)
-		item.GUID = link
-		if pull.User != nil && pull.User.Login != "" {
-			routeutils.SetItemAuthor(item, pull.User.Login, "", fmt.Sprintf("https://github.com/%s", pull.User.Login))
-		}
-		for _, label := range pull.Labels {
-			routeutils.SetCategories(item, label.Name)
-		}
-		return item
-	})
-
-	return feed, nil
+var gitHubPullStateRoute = routeutils.RouteSpec{
+	Path:        "pull/:owner/:repo/:state",
+	Name:        "GitHub Repository Pull Requests by State",
+	Example:     "github/pull/gin-gonic/gin/closed",
+	Maintainers: []string{"xihale"},
+	Description: "Fetch pull requests of a GitHub repository with an explicit state (open/closed/all)",
+	Categories:  []models.Category{{Name: "programming"}},
+	Features:    models.Features{SupportRadar: true},
+	Parameters: []models.Parameter{
+		routeutils.RequiredParam("owner", "Repository owner"),
+		routeutils.RequiredParam("repo", "Repository name"),
+		routeutils.RequiredParam("state", "Pull request state: open, closed or all"),
+	},
+	CacheTTL: 1 * time.Hour,
+	Handler:  GitHubPullHandler,
 }
 
-type GitHubPull struct {
-	Number    int         `json:"number"`
-	Title     string      `json:"title"`
-	HTMLURL   string      `json:"html_url"`
-	CreatedAt time.Time   `json:"created_at"`
-	User      *GitHubUser `json:"user"`
-	Labels    []struct {
-		Name string `json:"name"`
-	} `json:"labels"`
-	Body string `json:"body"`
+var gitHubPullLabelsRoute = routeutils.RouteSpec{
+	Path:        "pull/:owner/:repo/:state/:labels",
+	Name:        "GitHub Repository Pull Requests by State and Labels",
+	Example:     "github/pull/gin-gonic/gin/all/performance",
+	Maintainers: []string{"xihale"},
+	Description: "Fetch pull requests of a GitHub repository by state and a comma-separated label list",
+	Categories:  []models.Category{{Name: "programming"}},
+	Features:    models.Features{SupportRadar: true},
+	Parameters: []models.Parameter{
+		routeutils.RequiredParam("owner", "Repository owner"),
+		routeutils.RequiredParam("repo", "Repository name"),
+		routeutils.OptionalParam("state", "Pull request state: open (default), closed or all"),
+		routeutils.OptionalParam("labels", "Comma-separated label names to filter by"),
+	},
+	CacheTTL: 1 * time.Hour,
+	Handler:  GitHubPullHandler,
+}
+
+// GitHubPullHandler handles /github/pull/:owner/:repo[/:state[/:labels]].
+// Every pull request is also an issue, so the list is served through the
+// issues endpoint filtered down to PRs (mirroring the upstream behavior).
+func GitHubPullHandler(c *ctxpkg.Context) (*models.Feed, error) {
+	return gitHubIssuesFeed(c, gitHubIssuesFeedOptions{
+		Owner:      c.Param("owner"),
+		Repo:       c.Param("repo"),
+		State:      routeutils.ParseEnum(c.Param("state"), "open", "open", "closed", "all"),
+		Labels:     c.Param("labels"),
+		Noun:       "Pull Requests",
+		ItemPrefix: "gh-pull-",
+		WantPulls:  true,
+	})
 }

@@ -1,0 +1,18 @@
+[
+  {
+    "name": "main",
+    "commit": { "sha": "1111111222223333444455556666777788889999", "url": "https://api.github.com/repos/octo/hello/commits/1111111" }
+  },
+  {
+    "name": "feature/next-gen",
+    "commit": { "sha": "abcdefabcdefabcdefabcdefabcdefabcdefabcd", "url": "https://api.github.com/repos/octo/hello/commits/abcdefa" }
+  },
+  {
+    "name": "release-2.x",
+    "commit": { "sha": "", "url": "" }
+  },
+  {
+    "name": "",
+    "commit": { "sha": "0000000000000000000000000000000000000000" }
+  }
+]

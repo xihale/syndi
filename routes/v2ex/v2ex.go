@@ -15,6 +15,13 @@ import (
 
 const v2exBaseURL = "https://www.v2ex.com"
 
+// v2exAPIBase points at the JSON API origin. It is a variable so tests can
+// serve fixture data from an httptest server.
+var v2exAPIBase = v2exBaseURL
+
+// v2exAPI is a helper for building absolute API URLs.
+func v2exAPI(path string) string { return v2exAPIBase + path }
+
 var v2exHotRoute = routeutils.RouteSpec{
 	Path:        "hot",
 	Name:        "V2EX Hot Topics",
@@ -73,24 +80,29 @@ var v2exTopicRoute = routeutils.RouteSpec{
 
 // V2EXHotHandler handles /v2ex/hot
 func V2EXHotHandler(c *ctxpkg.Context) (*models.Feed, error) {
-	return fetchV2EXTopics(c, v2exBaseURL+"/api/topics/hot.json", "V2EX Hot Topics")
+	return fetchV2EXTopics(c, v2exAPI("/api/topics/hot.json"), "V2EX Hot Topics")
 }
 
 // V2EXLatestHandler handles /v2ex/latest
 func V2EXLatestHandler(c *ctxpkg.Context) (*models.Feed, error) {
-	return fetchV2EXTopics(c, v2exBaseURL+"/api/topics/latest.json", "V2EX Latest Topics")
+	return fetchV2EXTopics(c, v2exAPI("/api/topics/latest.json"), "V2EX Latest Topics")
 }
 
 // V2EXNodeHandler handles /v2ex/node/:name
 func V2EXNodeHandler(c *ctxpkg.Context) (*models.Feed, error) {
 	name := c.Param("name")
-	apiURL := fmt.Sprintf("%s/api/topics/show.json?node_name=%s", v2exBaseURL, url.QueryEscape(name))
+	apiURL := fmt.Sprintf("%s/api/topics/show.json?node_name=%s", v2exAPI(""), url.QueryEscape(name))
 	return fetchV2EXTopics(c, apiURL, fmt.Sprintf("V2EX Node: %s", name))
 }
 
 // V2EXTopicHandler handles /v2ex/topic/:id (replies of a topic)
 func V2EXTopicHandler(c *ctxpkg.Context) (*models.Feed, error) {
-	id := c.Param("id")
+	return v2exTopicRepliesFeed(c, c.Param("id"))
+}
+
+// v2exTopicRepliesFeed builds a replies feed for one V2EX topic id.
+// Shared by /v2ex/topic/:id and /v2ex/post/:postid.
+func v2exTopicRepliesFeed(c *ctxpkg.Context, id string) (*models.Feed, error) {
 	ctx := c.Parent()
 
 	if _, err := strconv.ParseInt(id, 10, 64); err != nil {
@@ -98,7 +110,7 @@ func V2EXTopicHandler(c *ctxpkg.Context) (*models.Feed, error) {
 	}
 
 	var topics []v2exTopic
-	if err := routeutils.GetJSON(ctx, c.Client(), fmt.Sprintf("%s/api/topics/show.json?id=%s", v2exBaseURL, id), &topics); err != nil {
+	if err := routeutils.GetJSON(ctx, c.Client(), fmt.Sprintf("%s/api/topics/show.json?id=%s", v2exAPI(""), id), &topics); err != nil {
 		return nil, err
 	}
 	if len(topics) == 0 {
@@ -111,7 +123,7 @@ func V2EXTopicHandler(c *ctxpkg.Context) (*models.Feed, error) {
 	}
 
 	var replies []v2exReply
-	if err := routeutils.GetJSON(ctx, c.Client(), fmt.Sprintf("%s/api/replies/show.json?topic_id=%s", v2exBaseURL, id), &replies); err != nil {
+	if err := routeutils.GetJSON(ctx, c.Client(), fmt.Sprintf("%s/api/replies/show.json?topic_id=%s", v2exAPI(""), id), &replies); err != nil {
 		return nil, err
 	}
 

@@ -8,4 +8,7 @@ var Routes = []routeutils.RouteSpec{
 	v2exLatestRoute,
 	v2exNodeRoute,
 	v2exTopicRoute,
+	v2exTopicsRoute,
+	v2exPostRoute,
+	v2exTabRoute,
 }

@@ -1,0 +1,29 @@
+{
+  "total_count": 3,
+  "incomplete_results": false,
+  "items": [
+    {
+      "full_name": "acme/great-framework",
+      "html_url": "https://github.com/acme/great-framework",
+      "description": "A <fast> & tiny web framework",
+      "language": "Go",
+      "stargazers_count": 12300,
+      "forks_count": 890,
+      "pushed_at": "2026-08-25T02:00:00Z",
+      "updated_at": "2026-08-26T01:00:00Z",
+      "owner": { "login": "acme", "html_url": "https://github.com/acme" },
+      "topics": ["framework", "web", "http", "server", "router", "extra"]
+    },
+    {
+      "full_name": "beta/tiny-framework",
+      "html_url": "https://github.com/beta/tiny-framework",
+      "description": "",
+      "language": "",
+      "stargazers_count": 42,
+      "forks_count": 1,
+      "updated_at": "2026-08-24T12:00:00Z",
+      "owner": {},
+      "topics": []
+    }
+  ]
+}

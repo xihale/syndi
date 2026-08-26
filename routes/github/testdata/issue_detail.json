@@ -1,0 +1,9 @@
+{
+  "number": 42,
+  "title": "Crash on startup with empty config & <special> chars",
+  "html_url": "https://github.com/octo/world/issues/42",
+  "created_at": "2026-08-01T09:00:00Z",
+  "body": "Repro: run the binary without a config file.",
+  "user": { "login": "alice" },
+  "labels": [ { "name": "bug" } ]
+}

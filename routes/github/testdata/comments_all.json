@@ -1,0 +1,20 @@
+[
+  {
+    "id": 9000001,
+    "html_url": "https://github.com/octo/hello/issues/42#issuecomment-9000001",
+    "issue_url": "https://api.github.com/repos/octo/hello/issues/42",
+    "body": "I can reproduce this on <em>linux</em>.",
+    "created_at": "2026-08-21T11:11:00Z",
+    "user": { "login": "alice" },
+    "actor": { "login": "alice" }
+  },
+  {
+    "id": 9000002,
+    "html_url": "https://github.com/octo/hello/pull/7#issuecomment-9000002",
+    "issue_url": "https://api.github.com/repos/octo/hello/issues/7",
+    "body": "Could you add a test?",
+    "created_at": "2026-08-22T15:30:00Z",
+    "user": {},
+    "actor": { "login": "review-bot" }
+  }
+]

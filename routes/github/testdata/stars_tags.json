@@ -1,0 +1,16 @@
+[
+  {
+    "name": "v0.9.0",
+    "zipball_url": "https://api.github.com/repos/octo/empty/zipball/refs/tags/v0.9.0",
+    "tarball_url": "https://api.github.com/repos/octo/empty/tarball/refs/tags/v0.9.0",
+    "commit": { "sha": "aaa111bbb222ccc333ddd444eee555fff6667778", "url": "https://api.github.com/repos/octo/empty/commits/aaa111b" },
+    "node_id": "MDM6UmVmMTpQdWxsUmVxdWVzdDE="
+  },
+  {
+    "name": "nightly",
+    "zipball_url": "https://api.github.com/repos/octo/empty/zipball/refs/tags/nightly",
+    "tarball_url": "https://api.github.com/repos/octo/empty/tarball/refs/tags/nightly",
+    "commit": { "sha": "000999888777666555444333222111000aaabbbc", "url": "https://api.github.com/repos/octo/empty/commits/0009998" },
+    "node_id": "MDM6UmVmMjpQdWxsUmVxdWVzdDI="
+  }
+]
