@@ -5,7 +5,7 @@ tmp_dir = "tmp"
 cmd = "go run scripts/generate-routes.go && go build -o ./tmp/syndi ./cmd"
 entrypoint = "./tmp/syndi"
 
-include_ext = ["go", "yaml"]
+include_ext = ["go", "yaml", "html", "css", "js"]
 exclude_dir = ["build", "tmp", "data", "docs", "RSSHub-ref", "scripts"]
 include_dir = []
 exclude_file = ["cmd/routes_gen.go"]

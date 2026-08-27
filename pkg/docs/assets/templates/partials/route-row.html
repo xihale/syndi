@@ -1,0 +1,7 @@
+{{define "route-row"}}
+<a class="route{{if .Unavailable}} off{{end}}" href="{{.Path}}" data-k="{{lower .Name}} {{lower .Description}} {{lower .Path}}"{{if .Unavailable}} title="缺少 {{range .MissingDeps}}{{.}} {{end}}配置"{{end}}>
+    <span class="r-path" title="{{.Path}}">{{pathHTML .Path}}</span>
+    <span class="r-name">{{.Name}}</span>
+    <span class="r-meta"><span class="ttl">{{.CacheTTL}}</span></span>
+</a>
+{{end}}

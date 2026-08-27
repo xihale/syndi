@@ -1,0 +1,9 @@
+{{define "ns-section"}}
+<div class="namespace" data-namespace="{{.Name}}">
+    <div class="ns-header">
+        <h2>{{.Name}}</h2>
+    </div>
+    {{range .Routes}}{{template "route-row" .}}
+    {{end}}
+</div>
+{{end}}

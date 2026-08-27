@@ -1,0 +1,13 @@
+{{define "content"}}
+{{if .CrumbNS}}{{template "crumbs-ns" .}}
+{{end}}
+<div class="search-box{{if .CrumbNS}} inset{{end}}">
+    <input type="text" id="q" placeholder="搜索路由，按 / 聚焦" autocomplete="off">
+</div>
+
+<div id="routesContainer">
+{{range .Namespaces}}{{template "ns-section" .}}
+{{end}}
+</div>
+<script type="module" src="/assets/js/home.js"></script>
+{{end}}

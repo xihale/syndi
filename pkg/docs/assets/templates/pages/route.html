@@ -1,0 +1,20 @@
+{{define "content"}}
+{{template "crumbs-route" .}}
+
+<div class="d-path">{{pathHTML .Route.Path}}</div>
+<p class="d-desc">{{.Route.Description}}</p>
+<div class="d-cats"><span class="ttl">缓存 {{.Route.CacheTTL}}</span></div>
+
+{{if .RouteEnvStatuses}}{{template "cred-panel" .}}
+{{end}}
+
+{{if .Route.ExampleURL}}{{template "try-panel" .}}
+{{end}}
+
+{{if .Route.Parameters}}{{template "params-list" .}}
+{{end}}
+
+{{if .Related}}{{template "related-list" .}}
+{{end}}
+<script type="module" src="/assets/js/detail.js"></script>
+{{end}}

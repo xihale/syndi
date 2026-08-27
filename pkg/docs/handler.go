@@ -8,9 +8,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/xihale/syndi/pkg/registry"
-	"go.uber.org/zap"
-
-	"github.com/xihale/syndi/pkg/logger"
 )
 
 // Handler handles documentation HTTP requests
@@ -22,7 +19,10 @@ type Handler struct {
 
 // NewHandler creates a new documentation handler
 func NewHandler() (*Handler, error) {
-	indexTmpl, routeTmpl := ParseTemplates()
+	tmpls, err := parseDocTemplates()
+	if err != nil {
+		return nil, err
+	}
 	docData := Generate()
 
 	// Resolve per-route availability against the live process environment.
@@ -44,8 +44,8 @@ func NewHandler() (*Handler, error) {
 	}
 
 	return &Handler{
-		indexTmpl: indexTmpl,
-		routeTmpl: routeTmpl,
+		indexTmpl: tmpls.index,
+		routeTmpl: tmpls.route,
 		docData:   docData,
 	}, nil
 }
@@ -57,6 +57,9 @@ func (h *Handler) RegisterRoutes(engine *gin.Engine) {
 	// /rss lists every available feed route (JSON catalog).
 	engine.GET("/rss", h.RoutesJSONHandler)
 	engine.NoRoute(h.DocsHandler)
+
+	// Embedded static assets (stylesheet, page scripts).
+	engine.GET("/assets/*filepath", ServeAssetHandler)
 
 	// Plain-text endpoints
 	engine.GET("/robots.txt", h.RobotsHandler)
@@ -76,16 +79,6 @@ func (h *Handler) RobotsHandler(c *gin.Context) {
 		"Disallow: /\n"
 	c.Header("Content-Type", "text/plain; charset=utf-8")
 	c.String(http.StatusOK, body)
-}
-
-func renderHTML(c *gin.Context, status int, tmpl *template.Template, data any) {
-	// gin presets 404 for NoRoute handlers; make the intended status explicit.
-	c.Status(status)
-	c.Header("Content-Type", "text/html; charset=utf-8")
-	if err := tmpl.Execute(c.Writer, data); err != nil {
-		// Headers may already be written; log and fall back to a plain error.
-		logger.Error("template execute failed", zap.Error(err))
-	}
 }
 
 // IndexHandler serves the main documentation page at "/".
@@ -164,6 +157,13 @@ func (h *Handler) DocsHandler(c *gin.Context) {
 			return
 		}
 		c.Redirect(http.StatusMovedPermanently, "/")
+		return
+	}
+
+	// Non-GET requests for asset paths (GET /assets/* matches the registered
+	// route above; anything else lands here so methods behave consistently).
+	if strings.HasPrefix(p, docsAssetsPrefix) {
+		ServeAssetHandler(c)
 		return
 	}
 

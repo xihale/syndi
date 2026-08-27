@@ -1,0 +1,11 @@
+{{define "try-panel"}}
+<section>
+    <span class="label">Try</span>
+    <form class="try-row">
+        <input id="tryPath" value="{{.Route.ExampleURL}}" spellcheck="false">
+        <button class="run" type="submit">RUN</button>
+    </form>
+    <div id="tryStatus" hidden></div>
+    <pre id="tryOut" hidden></pre>
+</section>
+{{end}}

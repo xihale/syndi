@@ -1,0 +1,11 @@
+{{define "params-list"}}
+<section>
+    <span class="label">Params</span>
+    <dl class="kv">
+        {{range .Route.Parameters}}
+        <dt>{{.Name}}{{if .Required}} <span class="no">*</span>{{end}}</dt>
+        <dd>{{.Description}}</dd>
+        {{end}}
+    </dl>
+</section>
+{{end}}

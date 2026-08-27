@@ -1,0 +1,14 @@
+{{define "related-list"}}
+<section>
+    <span class="label">Related</span>
+    <ul class="plain">
+    {{range .Related}}
+        <li{{if .Unavailable}} class="off" title="缺少 {{range .MissingDeps}}{{.}} {{end}}配置"{{end}}>
+            <a href="{{.Path}}">
+                <span class="r-path">{{pathHTML .Path}}</span><span class="r-name">{{.Name}}</span>
+            </a>
+        </li>
+    {{end}}
+    </ul>
+</section>
+{{end}}
