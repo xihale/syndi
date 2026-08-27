@@ -37,7 +37,7 @@ var doubanChannelNavRoute = routeutils.RouteSpec{
 	Features:    models.Features{SupportRadar: true},
 	Parameters: []models.Parameter{
 		routeutils.RequiredParam("id", "Channel id, e.g. 30168934"),
-		routeutils.OptionalParam("nav", "Nav tab: default (默认), hot (热门), new (最新)"),
+		routeutils.RequiredParam("nav", "Nav tab: default (默认), hot (热门), new (最新)"),
 	},
 	CacheTTL: 1 * time.Hour,
 	Handler:  DoubanChannelHandler,

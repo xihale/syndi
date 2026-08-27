@@ -40,6 +40,9 @@ var ithomeZtRoute = routeutils.RouteSpec{
 var ithomeZTIDRoute = func() routeutils.RouteSpec {
 	clone := ithomeZtRoute
 	clone.Path = "zt/:id"
+	clone.Parameters = append(
+		[]models.Parameter{routeutils.RequiredParam("id", "专题 id, e.g. xijiayi")},
+		clone.Parameters...)
 	return clone
 }()
 

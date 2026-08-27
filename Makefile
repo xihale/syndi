@@ -122,7 +122,7 @@ install-config:
 		echo "Backing up existing config.yaml to config.yaml.bak"; \
 		cp $(CONFIG_DIR)/config.yaml $(CONFIG_DIR)/config.yaml.bak; \
 	fi
-	@cp config.yaml $(CONFIG_DIR)/config.yaml
+	@cp config.example.yaml $(CONFIG_DIR)/config.yaml
 	@echo "Configuration file installed to $(CONFIG_DIR)/config.yaml"
 	@echo "Edit this file to customize your RSSHub Go configuration"
 

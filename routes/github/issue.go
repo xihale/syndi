@@ -55,8 +55,8 @@ var gitHubIssueLabelsRoute = routeutils.RouteSpec{
 	Parameters: []models.Parameter{
 		routeutils.RequiredParam("owner", "Repository owner"),
 		routeutils.RequiredParam("repo", "Repository name"),
-		routeutils.OptionalParam("state", "Issue state: open (default), closed or all"),
-		routeutils.OptionalParam("labels", "Comma-separated label names to filter by"),
+		routeutils.RequiredParam("state", "Issue state: open, closed or all"),
+		routeutils.RequiredParam("labels", "Comma-separated label names to filter by"),
 	},
 	CacheTTL: 1 * time.Hour,
 	Handler:  gitHubIssueHandler,

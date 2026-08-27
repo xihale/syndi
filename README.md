@@ -26,6 +26,7 @@
 ## 快速开始
 
 ```bash
+cp config.example.yaml config.yaml   # 可选：按需修改配置
 make build
 ./build/syndi          # 或 go run ./cmd
 ```

@@ -1,8 +1,9 @@
 # 配置参考（Configuration）
 
-`config.yaml` 全量键说明。仓库根目录的 [config.yaml](../config.yaml) 是带注释的
-完整示例。各子系统的深入文档：缓存见 [CACHING.md](./CACHING.md)，HTTP 客户端见
-[CLIENT_CONFIG.md](./CLIENT_CONFIG.md)。
+`config.yaml` 全量键说明。仓库根目录的 [config.example.yaml](../config.example.yaml)
+是带注释的完整示例；本地使用时先 `cp config.example.yaml config.yaml`（本地副本已被
+gitignore，避免把生产配置误提交）。各子系统的深入文档：缓存见
+[CACHING.md](./CACHING.md)，HTTP 客户端见 [CLIENT_CONFIG.md](./CLIENT_CONFIG.md)。
 
 ## 配置文件查找顺序
 

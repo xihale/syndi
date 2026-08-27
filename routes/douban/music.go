@@ -43,7 +43,7 @@ var doubanMusicLatestAreaRoute = routeutils.RouteSpec{
 	Categories:  []models.Category{{Name: "social-media"}},
 	Features:    models.Features{SupportRadar: true},
 	Parameters: []models.Parameter{
-		routeutils.OptionalParam("area", "Area: chinese (华语), western (欧美), japankorean (日韩)"),
+		routeutils.RequiredParam("area", "Area: chinese (华语), western (欧美), japankorean (日韩)"),
 	},
 	CacheTTL: 6 * time.Hour,
 	Handler:  DoubanMusicLatestHandler,

@@ -106,6 +106,20 @@ func OptionalParam(name, description string) models.Parameter {
 	}
 }
 
+// RequireParams flips the named parameters of spec to Required=true. Use it
+// on deeper-path clones whose added :segment matches a parameter that the
+// base route declared as optional (gin always requires the segment).
+func RequireParams(spec RouteSpec, names ...string) RouteSpec {
+	for i := range spec.Parameters {
+		for _, n := range names {
+			if spec.Parameters[i].Name == n {
+				spec.Parameters[i].Required = true
+			}
+		}
+	}
+	return spec
+}
+
 func resolveRoutePath(basePath, path string) (string, error) {
 	path = strings.TrimSpace(path)
 	if strings.HasPrefix(path, "/") {

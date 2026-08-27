@@ -58,7 +58,7 @@ All of them degrade gracefully to calling `fn()` when `cacheInstance == nil`.
 
 ## Configuration
 
-See the `cache:` block in [`config.yaml`](../config.yaml):
+See the `cache:` block in [`config.yaml`](../config.example.yaml):
 
 | Key               | Default    | Meaning                                          |
 | ----------------- | ---------- | ------------------------------------------------ |

@@ -25,6 +25,7 @@ func bilibiliWithEmbedPath(spec routeutils.RouteSpec) routeutils.RouteSpec {
 	clone := spec
 	if !strings.HasSuffix(clone.Path, "/:embed") {
 		clone.Path += "/:embed"
+		clone = routeutils.RequireParams(clone, "embed")
 	}
 	return clone
 }
@@ -87,7 +88,7 @@ var bilibiliUserDynamicRoute = routeutils.RouteSpec{
 	Features:    models.Features{},
 	Parameters: []models.Parameter{
 		routeutils.RequiredParam("uid", "用户 id, 可在 UP 主主页中找到"),
-		routeutils.OptionalParam("routeParams", "键值参数片段, 如 showEmoji=1&embed=0&useAvid=1"),
+		routeutils.RequiredParam("routeParams", "键值参数片段, 如 showEmoji=1&embed=0&useAvid=1"),
 	},
 	CacheTTL: 15 * time.Minute,
 	Handler:  BilibiliUserDynamicHandler,
@@ -159,7 +160,7 @@ var bilibiliPartionRankingRoute = routeutils.RouteSpec{
 	Features:    models.Features{},
 	Parameters: []models.Parameter{
 		routeutils.RequiredParam("tid", "分区 id"),
-		routeutils.OptionalParam("days", "最近多少天内的热度排序, 缺省为 7, 支持 1/3/7/30/90/120"),
+		routeutils.RequiredParam("days", "最近多少天内的热度排序, 缺省为 7, 支持 1/3/7/30/90/120"),
 	},
 	CacheTTL: 1 * time.Hour,
 	Handler:  BilibiliPartionRankingHandler,
@@ -265,7 +266,7 @@ var bilibiliVsearchRoute = routeutils.RouteSpec{
 	Features:    models.Features{},
 	Parameters: []models.Parameter{
 		routeutils.RequiredParam("kw", "检索关键字"),
-		routeutils.OptionalParam("order", "排序方式, 综合:totalrank 最多点击:click 最新发布:pubdate(缺省) 最多弹幕:dm 最多收藏:stow"),
+		routeutils.RequiredParam("order", "排序方式, 综合:totalrank 最多点击:click 最新发布:pubdate(缺省) 最多弹幕:dm 最多收藏:stow"),
 		routeutils.OptionalParam("embed", bilibiliEmbedParam().Description),
 		routeutils.OptionalParam("tid", "分区 id"),
 	},

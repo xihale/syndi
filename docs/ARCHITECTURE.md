@@ -36,7 +36,7 @@ Syndi 是 [RSSHub](https://github.com/DIYgod/RSSHub) 的 Go 重写，围绕四�
    (pkg/docs)          （不走缓存）              │
                                                 ▼
                               ┌──────────────────────────┐
-                              │ internal/cache.Cached    │
+                              │ internal/handlercache.Cached    │
                               │ 缓存键 = "feed:" + path  │
                               └──────────────────────────┘
                                  │ HIT              │ MISS
@@ -70,7 +70,7 @@ Syndi 是 [RSSHub](https://github.com/DIYgod/RSSHub) 的 Go 重写，围绕四�
 ```
 cmd/            入口。server.go 是 main；routes_gen.go 是生成物（勿手改）
 internal/       不对外的实现细节
-  cache/        handler 层缓存包装（internal/cache.Cached）
+  handlercache/ handler 层缓存包装（internal/handlercache.Cached）
   client/       共享 HTTP client（重试、限速、代理、重定向、Cookie jar）
   disguise/     请求伪装：浏览器预设、UA 轮换、Referer/Cookie/Lang
   middleware/   gin 中间件：Recovery/Logger/AccessKey/Header + 查询参数处理
@@ -109,7 +109,7 @@ import（比如两级缓存或 RSS 生成器），`internal` 强制不可。
      `Cache-Control: public, max-age=<全局默认 TTL>`、OPTIONS 预检直接 204。
 2. **路由匹配**：所有 feed 挂在 `/rss` 前缀下（根路径留给文档站），Gin 按
    `:param` 模式匹配到具体路由。
-3. **handler 层缓存**（`internal/cache.Cached` 包装）：
+3. **handler 层缓存**（`internal/handlercache.Cached` 包装）：
    - 缓存键只有路径（`feed:/rss/github/trending/daily/go`），**不含查询参数**；
    - 命中：取出缓存的原始 feed → `ProcessFeed` 按本次查询参数加工 → 序列化 →
      `X-Cache: HIT`，body 的 sha256 作为 ETag，命中 `If-None-Match` 回 304；

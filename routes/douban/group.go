@@ -43,7 +43,7 @@ var doubanGroupTypeRoute = routeutils.RouteSpec{
 	Features:    models.Features{SupportRadar: true},
 	Parameters: []models.Parameter{
 		routeutils.RequiredParam("groupid", "Douban group id, e.g. 648102"),
-		routeutils.OptionalParam("type", "Discussion type: latest (最新, default), essence (最热), elite (精华)"),
+		routeutils.RequiredParam("type", "Discussion type: latest (最新, default), essence (最热), elite (精华)"),
 	},
 	CacheTTL: 30 * time.Minute,
 	Handler:  DoubanGroupHandler,

@@ -98,7 +98,7 @@ var weiboSearchHotRoute = routeutils.RouteSpec{
 	Categories:  []models.Category{{Name: "social-media"}},
 	Features:    models.Features{SupportRadar: true, EnvDeps: []string{weiboCookiesEnv}},
 	Parameters: []models.Parameter{
-		routeutils.OptionalParam("fulltext", "仅兼容上游路径形状, 当前忽略并返回榜单本体"),
+		routeutils.RequiredParam("fulltext", "仅兼容上游路径形状, 当前忽略并返回榜单本体"),
 	},
 	CacheTTL: 10 * time.Minute,
 	Handler:  WeiboHotSearchHandler,

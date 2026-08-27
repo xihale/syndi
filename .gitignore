@@ -6,3 +6,6 @@ server.pid
 test_cache_db/
 tmp/
 RSSHub-ref
+
+# local configuration (start from config.example.yaml)
+/config.yaml

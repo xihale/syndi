@@ -48,7 +48,7 @@ var doubanBookLatestTypeRoute = routeutils.RouteSpec{
 	Categories:  []models.Category{{Name: "social-media"}},
 	Features:    models.Features{SupportRadar: true},
 	Parameters: []models.Parameter{
-		routeutils.OptionalParam("type", "Sub-category: all (全部), prose_poetry (文学), fiction (小说), history (历史文化), biography (社会纪实), science (科学新知), art (艺术设计), business (商业经管), comics (绘本漫画)"),
+		routeutils.RequiredParam("type", "Sub-category: all (全部), prose_poetry (文学), fiction (小说), history (历史文化), biography (社会纪实), science (科学新知), art (艺术设计), business (商业经管), comics (绘本漫画)"),
 	},
 	CacheTTL: 6 * time.Hour,
 	Handler:  DoubanBookLatestHandler,

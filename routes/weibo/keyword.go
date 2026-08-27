@@ -23,7 +23,7 @@ var weiboKeywordRoute = routeutils.RouteSpec{
 	Features:    models.Features{SupportRadar: true, EnvDeps: []string{weiboCookiesEnv}},
 	Parameters: []models.Parameter{
 		routeutils.RequiredParam("keyword", "你想订阅的微博关键词"),
-		routeutils.OptionalParam("routeParams", "预留的 RSSHub 风格参数片段, 兼容上游路径形状 (当前不解析开关)"),
+		routeutils.RequiredParam("routeParams", "预留的 RSSHub 风格参数片段, 兼容上游路径形状 (当前不解析开关)"),
 	},
 	CacheTTL: 15 * time.Minute,
 	Handler:  WeiboKeywordHandler,

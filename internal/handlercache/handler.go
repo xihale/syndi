@@ -1,4 +1,4 @@
-package cache
+package handlercache
 
 import (
 	"crypto/sha256"

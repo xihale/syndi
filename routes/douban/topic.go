@@ -38,7 +38,7 @@ var doubanTopicSortRoute = routeutils.RouteSpec{
 	Features:    models.Features{SupportRadar: true},
 	Parameters: []models.Parameter{
 		routeutils.RequiredParam("id", "Topic id, e.g. 48823"),
-		routeutils.OptionalParam("sort", "Sort order, hot or new, default new"),
+		routeutils.RequiredParam("sort", "Sort order, hot or new, default new"),
 	},
 	CacheTTL: 1 * time.Hour,
 	Handler:  DoubanTopicHandler,

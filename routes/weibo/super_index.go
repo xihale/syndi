@@ -43,7 +43,7 @@ var weiboSuperIndexRoute = routeutils.RouteSpec{
 	Features:    models.Features{SupportRadar: true, EnvDeps: []string{weiboCookiesEnv}},
 	Parameters: []models.Parameter{
 		routeutils.RequiredParam("id", "超话 ID, 可在超话页 URL 的 containerid 中找到"),
-		routeutils.OptionalParam("type", "soul 精华 / video 视频 / album 相册 / hot_sort 热门 / sort_time 最新帖子 / feed 最新评论(默认)"),
+		routeutils.RequiredParam("type", "soul 精华 / video 视频 / album 相册 / hot_sort 热门 / sort_time 最新帖子 / feed 最新评论(默认)"),
 	},
 	CacheTTL: 15 * time.Minute,
 	Handler:  WeiboSuperIndexHandler,

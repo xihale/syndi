@@ -17,7 +17,7 @@ grep -rhoE 'Example:\s+"[^"]+"' routes/ | sed -E 's/Example:\s+"([^"]+)"/\1/' | 
 total=$(wc -l < /tmp/rsshub-examples.txt)
 echo "routes to verify: $total"
 
-sed "s/port: \"1200\"/port: \"$PORT\"/" config.yaml > /tmp/rsshub-verify-config.yaml
+sed "s/port: \"1200\"/port: \"$PORT\"/" config.example.yaml > /tmp/rsshub-verify-config.yaml
 SYNDI_CONFIG=/tmp/rsshub-verify-config.yaml /tmp/rsshub-verify > /tmp/rsshub-verify.log 2>&1 &
 SRV=$!
 sleep 3

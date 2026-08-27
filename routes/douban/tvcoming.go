@@ -50,7 +50,7 @@ var doubanTVComingSortRoute = routeutils.RouteSpec{
 	Categories:  []models.Category{{Name: "social-media"}},
 	Features:    models.Features{SupportRadar: true},
 	Parameters: []models.Parameter{
-		routeutils.OptionalParam("sortBy", "Sort order: hot (default) or time"),
+		routeutils.RequiredParam("sortBy", "Sort order: hot (default) or time"),
 	},
 	CacheTTL: 6 * time.Hour,
 	Handler:  DoubanTVComingHandler,

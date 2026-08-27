@@ -15,8 +15,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	handlercache "github.com/xihale/syndi/internal/cache"
 	"github.com/xihale/syndi/internal/client"
+	handlercache "github.com/xihale/syndi/internal/handlercache"
 	"github.com/xihale/syndi/internal/middleware"
 	"github.com/xihale/syndi/pkg/cache"
 	"github.com/xihale/syndi/pkg/config"

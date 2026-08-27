@@ -30,7 +30,7 @@ var doubanJobsRoute = routeutils.RouteSpec{
 	Categories:  []models.Category{{Name: "social-media"}},
 	Features:    models.Features{SupportRadar: true},
 	Parameters: []models.Parameter{
-		routeutils.OptionalParam("type", "Recruiting type: social (社会招聘), campus (校园招聘), intern (实习生招聘)"),
+		routeutils.RequiredParam("type", "Recruiting type: social (社会招聘), campus (校园招聘), intern (实习生招聘)"),
 	},
 	CacheTTL: 12 * time.Hour,
 	Handler:  DoubanJobsHandler,
