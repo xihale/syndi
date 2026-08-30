@@ -1,7 +1,6 @@
 # 架构设计（Architecture）
 
-本文描述 Syndi 的整体架构：设计目标、请求生命周期、包布局与各子系统的职责边界。
-面向想理解系统全貌或改动核心基础设施的贡献者；只想新增路由的话读
+面向要理解系统全貌或改动核心基础设施的贡献者；只想新增路由的话读
 [PORTING_GUIDE.md](./PORTING_GUIDE.md) 即可。
 
 ## 设计目标
@@ -87,7 +86,7 @@ pkg/            可复用的库
   registry/     全局路由注册表（路径 → Route，按命名空间分组）
   rss/          RSS 2.0 / Atom 序列化
   utils/date/   宽容的日期解析
-routes/         121 个命名空间包，每包一个站点；详见下文"路由系统"
+routes/         命名空间包，每包一个站点；详见下文"路由系统"
 scripts/        generate-routes.go、new-route.sh、verify-routes.sh、verify-all.sh
 deploy/         systemd user service、env 模板与部署说明
 docs/           本文档
@@ -134,8 +133,8 @@ import（比如两级缓存或 RSS 生成器），`internal` 强制不可。
 | `sorted` | 按发布时间排序，默认开启 |
 | `brief` | 只保留标题等简要字段 |
 
-这是"缓存键只有路径"的直接原因：同一份上游抓取可以同时服务
-`?limit=5`、`?brief=true` 等任意变体，避免缓存被参数组合打爆。
+这是"缓存键只有路径"的原因：同一份上游抓取同时服务
+`?limit=5`、`?brief=true` 等任意变体。
 
 ## 路由系统：从 RouteSpec 到 HTTP 端点
 
@@ -196,7 +195,7 @@ type Route struct { Path, Name, Example, Description, Maintainers,
 
 `Chrome()`/`Firefox()` 等预设 + builder 覆盖（`.Referer` 默认同源、`.Lang`、
 `.Cookie`、`.JSONAccept`、`.Delay`、UA 轮换三策略，默认按 host 粘滞）。伪装层
-只产生 HTTP 头，传输行为完全由共享 client 决定——这是"零侵入"的关键。详见
+只产生 HTTP 头，传输行为完全由共享 client 决定。详见
 [DISGUISE.md](./DISGUISE.md)。
 
 ### 两级缓存（pkg/cache）
@@ -247,7 +246,7 @@ feed 包装类路由直接转发即可。
 | 缓存键只含路径 | 一份抓取服务所有 `limit/filter/brief` 变体，命中率最大化 | 原始 feed 必须存完整条目；加工必须在请求路径上做 |
 | 缓存原始 feed 而非响应体 | `?format=rss/atom/json` 共享同一份缓存 | 序列化每次执行（代价小，且换来稳定 ETag） |
 | 伪装只造 HTTP 头 | 传输层（重试/代理/限速）对路由作者永远可用，不可绕过 | TLS/JA3 层伪装暂不支持（可后续在单点接入） |
-| 路由注册靠代码生成 | 121 个包的 import 不可能手工维护；`make build` 自动跑 | 改动命名空间后需重新生成（脚手架会代劳） |
+| 路由注册靠代码生成 | 上百个包的 import 无法手工维护；`make build` 自动跑 | 改动命名空间后需重新生成（脚手架会代劳） |
 | gob 序列化缓存值 | `*models.Feed` 结构化存取，无反射开销 | 类型需 `gob.Register`（server 启动时注册） |
 | feed 挂 `/rss` 前缀 | 根路径留给文档站，二者不打架 | 与 RSSHub 原版路径不同，迁移要改 URL |
 

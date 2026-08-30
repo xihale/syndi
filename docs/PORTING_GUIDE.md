@@ -15,7 +15,6 @@ How to add or port routes into this Go project. Read fully before writing code.
   ```bash
   go run scripts/generate-routes.go   # also run automatically by make build / make run
   ```
-  (In batch-porting sessions a coordinator may centralize this step instead.)
 
 ## RouteSpec conventions
 
@@ -104,7 +103,7 @@ The frontend (`/`) renders a CREDENTIALS panel with ✓/✗ state resolved from 
 4. GUID: set explicitly when upstream id exists (`item.GUID = id`). Otherwise NewItem defaults GUID to link.
 5. Unique links per item; skip entries lacking title AND link.
 6. Escape text going INTO HTML descriptions with `html.EscapeString` when it isn't markup.
-7. Respect upstream ToS signals: if a probe gets 403/blocked/challenge pages, mark the route SKIP in your report (do not ship broken scrapers).
+7. Respect upstream ToS signals: if a probe gets 403/blocked/challenge pages, do not ship the scraper.
 8. No secrets in code. Public/demo keys only where upstream officially documents them.
 9. For sites that block default clients use the request disguise API — see [DISGUISE.md](./DISGUISE.md); keep transport behavior (retry/proxy/rate-limit) untouched.
 
@@ -132,7 +131,7 @@ go vet ./routes/<ns>/...
 LIVE=1 go test ./routes/<ns>/ -run Live -v
 ```
 
-All three must pass. If upstream is temporarily down, still ship structurally sound code but say so in your report.
+All three must pass.
 
 Then run the metadata verifier:
 
@@ -157,8 +156,3 @@ make new-route \
 ```
 
 The scaffold also updates `routes/<namespace>/routes.go` and regenerates `cmd/routes_gen.go`.
-
-## Report format (batch porting tasks)
-
-Per route: `PATH | OK/SKIP/DEGRADED | items-in-live-test | notes`
-Then: files created, anything unusual.

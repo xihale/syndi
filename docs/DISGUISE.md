@@ -1,8 +1,8 @@
 # Request Disguise API (internal/disguise)
 
-统一请求伪装方案。从已移植路由中提炼的共性需求：
+统一请求伪装方案：
 
-| 共性需求 | 典型场景 | API |
+| 需求 | 典型场景 | API |
 |---|---|---|
 | 浏览器级 UA + 头部集 | 默认 UA 被 403（crates.io、部分 CDN） | `disguise.Chrome()` 等预设 |
 | Referer / 防盗链 | 图片站、API 校验来源 | `.Referer(url)`（默认自动同源） |
@@ -45,12 +45,9 @@ err := disguise.Chrome().PostJSON(graphqlURL, map[string]any{"query": q}).
    - `RotateStickyPerHost`（默认）按目标 host 固定一个 UA，保证同一站点指纹稳定，避免同会话内 UA 跳变触发风控。
 4. **Referer 默认同源**：未显式设置时自动补 `scheme://host/`，显著降低图片/API 防盗链拒绝率。
 5. **Cookie 显式优先**：设置的 Cookie 头覆盖 client cookie jar 对该请求的影响，行为可预期。
-6. 可拓展方向：TLS/JA3 指纹（需 utls transport）、HTTP/2 帧指纹、代理池轮换 —— 均可在 `Request.GetBytes` 单点接入，不改变调用方 API。
 
 ## 测试
 
 ```bash
 go test ./internal/disguise/
 ```
-
-覆盖预设头部完整性、builder 覆盖优先级、三种轮换策略语义、httptest 端到端 GET/POST。

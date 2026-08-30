@@ -1,26 +1,24 @@
 # Syndi
 
-**Syndi** 是 [RSSHub](https://docs.rsshub.app) 的轻量级 Go 重写版（当前版本 **0.0.1**）。
-
-它保留了 RSSHub 的核心思路——把互联网上五花八门的内容统一转写成 RSS/Atom feed，但用 Go 从零实现：单二进制、低内存、内置缓存与请求伪装，部署只要一个文件。
+**Syndi** 是 [RSSHub](https://docs.rsshub.app) 的 Go 重写版：把各站点内容统一转写成 RSS/Atom feed。单二进制、低内存、内置缓存与请求伪装。
 
 ## 特性
 
-- 🚀 单二进制部署，Go 并发模型
-- 📡 RSS / Atom 输出，原生 RSS/Atom 直接转发
-- 🧩 路由注册表机制，移植自 RSSHub 的同名路由保持路径一致
-- ⚡ 路由级 TTL 缓存 + ETag
-- 🥸 请求伪装：UA 轮换、Referer/Cookie/Language 一行调用（见 `docs/DISGUISE.md`）
-- 🔐 凭据声明机制：命名空间声明所需环境变量，文档站自动展示配置状态
-- 📄 内置瑞士极简风文档站（暗色自适应），feed 挂载在 `/rss/<route>`
+- 单二进制部署
+- RSS / Atom 输出，原生 feed 直接转发
+- 路由注册表机制，移植自 RSSHub 的同名路由保持路径一致
+- 路由级 TTL 缓存 + ETag
+- 请求伪装：UA 轮换、Referer/Cookie/Language 一行调用（见 [`docs/DISGUISE.md`](docs/DISGUISE.md)）
+- 凭据声明机制：命名空间声明所需环境变量，文档站自动展示配置状态
+- 内置文档站，feed 挂载在 `/rss/<route>`
 
 ## 项目状态
 
-已移植 **204 条路由 / 121 个命名空间**，经 `make verify-all` 实测验证：184 条正常返回、5 条上游暂空、15 条因凭据缺失或上游拦截失败（结果见 [`docs/ROUTES_CATALOG.md`](docs/ROUTES_CATALOG.md)）。
+已移植 **288 条路由 / 122 个命名空间**，完整清单见 [`docs/ROUTES_CATALOG.md`](docs/ROUTES_CATALOG.md)。
 
 已知限制：
 
-- `steam/news` 部分网络下被上游 403 拦截；`techne98.com` 域名已失效
+- `steam/news` 部分网络下被上游 403 拦截
 - Reddit 对未认证 `.json` API 限流严重，路由改用伪装请求走原生 `.rss`
 
 ## 快速开始
@@ -53,7 +51,7 @@ ZHIHU_COOKIES='z_c0=xxx; d_c0=yyy' ./build/syndi
 | [`docs/CACHING.md`](docs/CACHING.md) | 缓存架构与配置 |
 | [`docs/DISGUISE.md`](docs/DISGUISE.md) | 请求伪装 API |
 | [`docs/CLIENT_CONFIG.md`](docs/CLIENT_CONFIG.md) | HTTP 客户端配置项 |
-| [`docs/ROUTES_CATALOG.md`](docs/ROUTES_CATALOG.md) | 全部路由目录与验证状态 |
+| [`docs/ROUTES_CATALOG.md`](docs/ROUTES_CATALOG.md) | 全部路由目录 |
 | [`deploy/README.md`](deploy/README.md) | 部署：systemd 服务、反向代理与认证 |
 
 ## 与 RSSHub 的关系

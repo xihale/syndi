@@ -2,16 +2,8 @@
 
 Syndi uses a **two-tier cache**: a hot in-memory LRU layer plus a persistent
 BadgerDB cold layer (`pkg/cache`). Route handlers consume it through small
-helpers in `internal/routeutils`.
-
-## Table of Contents
-
-- [Architecture](#architecture)
-- [How handlers use the cache](#how-handlers-use-the-cache)
-- [Configuration](#configuration)
-- [Memory tuning](#memory-tuning)
-- [Disk reclamation](#disk-reclamation)
-- [HTTP cache semantics](#http-cache-semantics)
+helpers in `internal/routeutils`. All keys live in the `cache:` block of
+[`CONFIGURATION.md`](./CONFIGURATION.md).
 
 ---
 
@@ -56,37 +48,13 @@ routeutils.InvalidateCacheEntry(cacheInstance, key)
 
 All of them degrade gracefully to calling `fn()` when `cacheInstance == nil`.
 
-## Configuration
-
-See the `cache:` block in [`config.yaml`](../config.example.yaml):
-
-| Key               | Default    | Meaning                                          |
-| ----------------- | ---------- | ------------------------------------------------ |
-| `type`            | `memory`   | `memory` or `badger` (two-tier)                  |
-| `badger.path`     | `./data/cache` | Badger data directory                        |
-| `ttl`             | `15m`      | Default TTL for cached feeds                     |
-| `cleanup_interval`| `5m`       | Periodic scan deleting expired keys from disk    |
-| `memory_size`     | `10000`    | LRU capacity (entries)                           |
-| `gc_interval`     | `10m`      | Value-log GC cadence (`0s` disables)             |
-| `gc_discard_ratio`| `0.5`      | Garbage fraction required before vlog rewrite    |
-
 ## Memory tuning
 
 Badger's out-of-the-box defaults assume a dedicated database server
 (256MB block cache, five 64MB memtables ≈ up to ~576MB RAM). Syndi ships
-smaller defaults suited to a ≤512MB VPS:
-
-| Key              | Default | Meaning                                   |
-| ---------------- | ------- | ----------------------------------------- |
-| `memtable_mb`    | `16`    | Per-memtable budget                       |
-| `num_memtables`  | `4`     | Max in-memory memtables before flush      |
-| `block_cache_mb` | `32`    | Data block cache                          |
-| `index_cache_mb` | `0`     | Index cache; `0` = Badger auto-sizes      |
-| `vlog_file_mb`   | `128`   | Max single value-log file size            |
-
-Total steady-state memory for the cold layer is roughly
-`block_cache_mb + memtable_mb × num_memtables` (~96MB at defaults), plus the
-LRU entries themselves.
+smaller defaults suited to a ≤512MB VPS: steady-state memory for the cold
+layer is roughly `block_cache_mb + memtable_mb × num_memtables` (~96MB at
+defaults), plus the LRU entries themselves.
 
 ## Disk reclamation
 
