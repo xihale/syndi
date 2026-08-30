@@ -1,10 +1,20 @@
-.PHONY: all build build-packed test run clean fmt lint install-config gen-routes-imports new-route verify-routes verify-routes-strict ci-local
+.PHONY: all build build-packed release test run clean fmt lint install-config gen-routes-imports new-route verify-routes verify-routes-strict ci-local
 
 # Build variables
 BINARY_NAME=syndi
 CMD_DIR=cmd
 BUILD_DIR=build
 CONFIG_DIR=/etc/syndi
+
+# Version metadata, injected into binaries via -ldflags -X (see internal/version)
+VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
+COMMIT ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
+DATE ?= $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
+VERSION_LDFLAGS = -X github.com/xihale/syndi/internal/version.Version=$(VERSION) -X github.com/xihale/syndi/internal/version.Commit=$(COMMIT) -X github.com/xihale/syndi/internal/version.Date=$(DATE)
+
+# Platforms shipped by the tag-triggered release workflow (make release)
+RELEASE_PLATFORMS ?= linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64
+DIST_DIR=dist
 
 all: build
 
@@ -26,9 +36,9 @@ new-route:
 
 # Build the server binary
 build: gen-routes-imports
-	@echo "Building $(BINARY_NAME)..."
+	@echo "Building $(BINARY_NAME) $(VERSION)..."
 	@mkdir -p $(BUILD_DIR)
-	go build -o $(BUILD_DIR)/$(BINARY_NAME) ./$(CMD_DIR)
+	go build -ldflags "$(VERSION_LDFLAGS)" -o $(BUILD_DIR)/$(BINARY_NAME) ./$(CMD_DIR)
 	@echo "Built $(BUILD_DIR)/$(BINARY_NAME)"
 
 # Build a size-optimized release binary (stripped, then UPX packed if available)
@@ -36,13 +46,35 @@ build: gen-routes-imports
 build-packed: gen-routes-imports
 	@echo "Building stripped $(BINARY_NAME)..."
 	@mkdir -p $(BUILD_DIR)
-	go build -trimpath -ldflags="-s -w" -o $(BUILD_DIR)/$(BINARY_NAME) ./$(CMD_DIR)
+	go build -trimpath -ldflags="-s -w $(VERSION_LDFLAGS)" -o $(BUILD_DIR)/$(BINARY_NAME) ./$(CMD_DIR)
 	@if command -v upx > /dev/null 2>&1; then \
 		upx -q $(BUILD_DIR)/$(BINARY_NAME); \
 		echo "Packed $(BUILD_DIR)/$(BINARY_NAME)"; \
 	else \
 		echo "upx not installed, keeping stripped binary (install upx for ~3x smaller output)"; \
 	fi
+
+# Cross-compile release archives into dist/ (CI publishes these on v* tags)
+# Usage: make release [VERSION=v0.1.0]
+release: gen-routes-imports
+	@rm -rf $(DIST_DIR) && mkdir -p $(DIST_DIR)
+	@for platform in $(RELEASE_PLATFORMS); do \
+		goos=$${platform%/*}; goarch=$${platform#*/}; \
+		binary=syndi; if [ "$$goos" = "windows" ]; then binary=syndi.exe; fi; \
+		name=syndi-$(VERSION)-$$goos-$$goarch; \
+		echo "Building $$name"; \
+		CGO_ENABLED=0 GOOS=$$goos GOARCH=$$goarch \
+			go build -trimpath -ldflags "-s -w $(VERSION_LDFLAGS)" \
+			-o $(DIST_DIR)/$$binary ./$(CMD_DIR); \
+		if [ "$$goos" = "windows" ]; then \
+			(cd $(DIST_DIR) && zip -q $$name.zip syndi.exe && rm syndi.exe); \
+		else \
+			tar -czf $(DIST_DIR)/$$name.tar.gz -C $(DIST_DIR) syndi && rm $(DIST_DIR)/syndi; \
+		fi; \
+	done
+	@cd $(DIST_DIR) && sha256sum *.tar.gz *.zip > checksums.txt
+	@echo "Release artifacts in $(DIST_DIR)/:"
+	@ls -lh $(DIST_DIR)
 
 # Run the server
 run: gen-routes-imports
@@ -131,6 +163,7 @@ help:
 	@echo "Available targets:"
 	@echo "  build         - Build the server binary"
 	@echo "  build-packed  - Build stripped binary, UPX-packed if upx is installed"
+	@echo "  release       - Cross-compile release archives into dist/ (VERSION=vX.Y.Z to override)"
 	@echo "  run           - Run the server directly"
 	@echo "  dev           - Run with hot reload (air)"
 	@echo "  new-route     - Scaffold a new route file and test skeleton"

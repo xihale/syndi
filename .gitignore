@@ -1,11 +1,13 @@
 rsshub-server
 data/
 build/
+dist/
 server.log
 server.pid
 test_cache_db/
 tmp/
 RSSHub-ref
+.zcode/
 
 # local configuration (start from config.example.yaml)
 /config.yaml

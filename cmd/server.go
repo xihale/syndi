@@ -18,6 +18,7 @@ import (
 	"github.com/xihale/syndi/internal/client"
 	handlercache "github.com/xihale/syndi/internal/handlercache"
 	"github.com/xihale/syndi/internal/middleware"
+	"github.com/xihale/syndi/internal/version"
 	"github.com/xihale/syndi/pkg/cache"
 	"github.com/xihale/syndi/pkg/config"
 	ctxpkg "github.com/xihale/syndi/pkg/context"
@@ -29,6 +30,15 @@ import (
 )
 
 func main() {
+	// version command: syndi version / syndi --version
+	if len(os.Args) > 1 {
+		switch os.Args[1] {
+		case "version", "--version":
+			fmt.Println(version.Summary())
+			return
+		}
+	}
+
 	// Load configuration
 	cfg, err := config.Load("")
 	if err != nil {
@@ -49,7 +59,7 @@ func main() {
 	gob.Register(&models.Item{})
 	gob.Register(&models.Author{})
 
-	logger.Info("Starting Syndi", zap.String("port", cfg.GetPort()))
+	logger.Info("Starting Syndi", zap.String("version", version.Version), zap.String("port", cfg.GetPort()))
 
 	// Initialize cache (two-tier: memory + badger)
 	var cacheInstance cache.Cache

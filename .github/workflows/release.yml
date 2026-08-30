@@ -1,0 +1,45 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Verify Generated Route Bootstrap
+        run: |
+          make gen-routes-imports
+          git diff --exit-code -- cmd/routes_gen.go scripts/verify-routes/register_gen.go
+
+      - name: Verify Route Metadata (Strict)
+        run: make verify-routes-strict
+
+      - name: Run Tests
+        run: go test ./...
+
+      - name: Build Release Artifacts
+        run: make release
+        env:
+          VERSION: ${{ github.ref_name }}
+          COMMIT: ${{ github.sha }}
+          DATE: ${{ github.event.head_commit.timestamp }}
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/* --title "$GITHUB_REF_NAME" --generate-notes
